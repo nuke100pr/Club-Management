@@ -13,7 +13,7 @@ woalla you are done.
 changes required
 all components under ##src/components/board_admin
 
-##src/components/admin_panel
+## src/components/admin_panel
 
 and all the pages starting with current in the src/app
 
@@ -21,3 +21,4 @@ and all the pages starting with current in the src/app
 
 make sure that everything works otherwise the work can increase by twice.
 
+### Important note: Work with "material-ui" elements, and use "fetch()" only. Usage of "axios()" is PROHIBITED.
