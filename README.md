@@ -11,8 +11,9 @@ in the new ui code. check if the integraion works .
 woalla you are done.
 
 changes required
-all components under src/components/board_admin
-src/components/admin_panel
+all components under ##src/components/board_admin
+
+##src/components/admin_panel
 
 and all the pages starting with current in the src/app
 
