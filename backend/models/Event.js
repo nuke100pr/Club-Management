@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
 
 const eventSchema = new mongoose.Schema({
-  club_id: { type: String, required: true, ref: 'Clubs' },
-  board_id: { type: String, required: true, ref: 'Boards' },
+  club_id: { type: String, required: false, ref: 'Clubs' },
+  board_id: { type: String, required: false, ref: 'Boards' },
   name: { type: String, required: true },
   venue: { type: String, required: true },
   timestamp: { type: String, required: true },

@@ -3,42 +3,56 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import Cookies from "js-cookie";
-import landscapeImage from "../../../public/img1.jpg";
 import { useRouter } from "next/navigation";
+
+// Import all background images
+// Note: You'll need to add these images to your public directory
+import img1 from "../../../public/img1.jpg";
+import img2 from "../../../public/img2.jpg";
+import img3 from "../../../public/img3.jpg";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
+  // State for the image carousel
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const backgroundImages = [img1, img2, img3];
+  
   const router = useRouter();
+
+  // Image rotation effect
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setCurrentImageIndex((prevIndex) => 
+        prevIndex === backgroundImages.length - 1 ? 0 : prevIndex + 1
+      );
+    }, 5000); // Change image every 5 seconds
+    
+    return () => clearInterval(intervalId);
+  }, []);
 
   // Check for authentication tokens on page load (for OAuth redirects)
   useEffect(() => {
-    // Get URL parameters
     const params = new URLSearchParams(window.location.search);
     const token = params.get('token');
     const userParam = params.get('user');
     
-    // If token exists in URL (from Google OAuth redirect)
     if (token && userParam) {
       try {
-        // Parse user data and store in localStorage
         const user = JSON.parse(decodeURIComponent(userParam));
         localStorage.setItem("user", JSON.stringify(user));
         
-        // Store token in cookies
         Cookies.set("auth_token", token, {
           secure: process.env.NODE_ENV === "production",
           sameSite: "strict",
-          expires: 30 // 30 days
+          expires: 30
         });
         
-        // Show success message and redirect
         setMessage({ type: "success", text: "Google login successful! Redirecting..." });
         setTimeout(() => {
           router.push("/home");
@@ -50,9 +64,9 @@ export default function LoginPage() {
   }, [router]);
 
   const validateEmail = (email) => {
-    // return email.endsWith("@iitrpr.ac.in");
-    return true;
+    return true; // For testing purposes
   };
+  
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -61,12 +75,11 @@ export default function LoginPage() {
   const handleGoogleLogin = () => {
     // Redirect to Google OAuth endpoint
     window.location.href = "http://localhost:5000/users/auth/google";
-  };
+ };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Form validation
     if (!formData.email || !formData.password) {
       setMessage({ type: "error", text: "Email and password are required" });
       return;
@@ -86,7 +99,7 @@ export default function LoginPage() {
     try {
       // Login request
       const response = await fetch("http://localhost:5000/users/auth/login", {
-        method: "POST",
+       method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
@@ -102,20 +115,15 @@ export default function LoginPage() {
         throw new Error(data.message || "Login failed");
       }
 
-      // Store the token in cookies
       if (data.token) {
         const cookieOptions = {
           secure: process.env.NODE_ENV === "production",
           sameSite: "strict",
+          expires: 30*10000
         };
-
-        if (rememberMe) {
-          cookieOptions.expires = 30; // 30 days
-        }
 
         Cookies.set("auth_token", data.token, cookieOptions);
 
-        // Store user data in localStorage
         if (data.user) {
           localStorage.setItem("user", JSON.stringify(data.user));
         }
@@ -123,7 +131,6 @@ export default function LoginPage() {
 
       setMessage({ type: "success", text: "Login successful! Redirecting..." });
 
-      // Redirect after successful login
       setTimeout(() => {
         router.push("/home");
       }, 1000);
@@ -137,87 +144,71 @@ export default function LoginPage() {
     }
   };
 
+  // Function to render slide indicators
+  const renderSlideIndicators = () => {
+    return (
+      <div className="flex space-x-2">
+        {backgroundImages.map((_, index) => (
+          <div 
+            key={index}
+            className={`h-1 rounded-full transition-all duration-300 ${
+              index === currentImageIndex 
+                ? "w-12 bg-white" 
+                : "w-6 bg-white/40"
+            }`}
+            onClick={() => setCurrentImageIndex(index)}
+          ></div>
+        ))}
+      </div>
+    );
+  };
+
   return (
-    <div className="flex h-screen bg-[#ffffff]">
-      {/* Left Side with Image */}
-      <div className="hidden md:block md:w-1/2 relative bg-[#30C1E0]">
+    <div className="flex h-screen bg-[#f8faff] font-['Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif]">
+      {/* Left Side with Image Carousel */}
+      <div className="hidden md:block md:w-1/2 relative overflow-hidden">
         <div className="relative w-full h-full">
-          <div className="absolute inset-0 z-10">
-            <Image
-              src={landscapeImage}
-              alt="Landscape image"
-              fill
-              style={{ objectFit: "cover" }}
-              priority
-            />
-          </div>
-          <div className="absolute inset-0 bg-black opacity-30 z-20"></div>
+          {/* Image Carousel */}
+          {backgroundImages.map((img, index) => (
+            <div 
+              key={index} 
+              className={`absolute inset-0 z-10 transition-opacity duration-1000 ${
+                index === currentImageIndex ? "opacity-100" : "opacity-0"
+              }`}
+            >
+              <Image
+                src={img}
+                alt={`Background ${index + 1}`}
+                fill
+                style={{ objectFit: "cover" }}
+                priority={index === 0}
+              />
+            </div>
+          ))}
+          
+          {/* Primary Gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-br from-[#4776E6] to-[#8E54E9] opacity-50 z-20"></div>
+          
+          {/* Bottom text and slide indicators */}
           <div className="absolute bottom-16 left-16 text-white z-30">
-            <h2 className="text-4xl font-bold mb-2">Welcome Back</h2>
-            <h2 className="text-4xl font-bold mb-8">
+            <h2 className="text-4xl font-semibold mb-2">Welcome Back</h2>
+            <h2 className="text-4xl font-semibold mb-8">
               Let's Continue Your Journey
             </h2>
-            <div className="flex space-x-2">
-              <div className="w-6 h-1 bg-white rounded-full"></div>
-              <div className="w-6 h-1 bg-gray-400 rounded-full"></div>
-              <div className="w-6 h-1 bg-gray-400 rounded-full"></div>
-            </div>
+            {renderSlideIndicators()}
           </div>
         </div>
       </div>
 
       {/* Right Side with Form */}
-      <div className="w-full md:w-1/2 p-6 md:p-12 flex flex-col justify-center">
+      <div className="w-full md:w-1/2 p-6 md:p-8 flex flex-col justify-center">
         <div className="max-w-md mx-auto w-full">
-          {/* Back button for mobile */}
-          <div className="md:hidden mb-6">
-            <Link href="/" className="text-[#002F60] flex items-center">
-              <span>Back to website</span>
-              <svg
-                className="ml-1 w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M9 5l7 7-7 7"
-                ></path>
-              </svg>
-            </Link>
-          </div>
-
-          {/* Back button for desktop */}
-          <div className="hidden md:block absolute top-6 right-8">
-            <Link
-              href="/"
-              className="text-[#002F60] bg-[#E1F5FE] px-4 py-2 rounded-full flex items-center"
-            >
-              <span>Back to website</span>
-              <svg
-                className="ml-1 w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M9 5l7 7-7 7"
-                ></path>
-              </svg>
-            </Link>
-          </div>
-
           {/* Form Header */}
-          <div className="mb-6">
-            <h1 className="text-4xl font-bold text-[#002F60]">Log in</h1>
-            <p className="mt-2 text-[#2A93D5]">
+          <div className="mb-8">
+            <h1 className="text-4xl font-semibold bg-gradient-to-r from-[#4776E6] to-[#8E54E9] bg-clip-text text-transparent">Log in</h1>
+            <p className="mt-2 text-[#607080]">
               Don't have an account?{" "}
-              <Link href="/register" className="text-[#002F60] underline">
+              <Link href="/register" className="text-[#4776E6] hover:text-[#3a5fc0] font-medium transition duration-300">
                 Sign up
               </Link>
             </p>
@@ -226,44 +217,54 @@ export default function LoginPage() {
           {/* Status Message */}
           {message.text && (
             <div
-              className={`mb-4 p-3 rounded-md ${
+              className={`mb-6 p-4 rounded-lg ${
                 message.type === "error"
-                  ? "bg-red-100 text-red-700"
-                  : "bg-green-100 text-green-700"
-              }`}
+                  ? "bg-red-50 text-red-700 border-l-4 border-red-500"
+                  : "bg-green-50 text-green-700 border-l-4 border-green-500"
+              } transition-all duration-300 animate-fadeIn`}
             >
               {message.text}
             </div>
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit}>
-            <div className="mb-4">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#607080]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              </div>
               <input
                 type="email"
                 name="email"
                 placeholder="Email"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full p-3 border border-[#30C1E0] rounded-md bg-[#E1F5FE] text-[#002F60] focus:outline-none focus:ring-2 focus:ring-[#002F60]"
+                className="w-full p-3 pl-10 border border-gray-200 rounded-lg bg-white text-[#2A3B4F] shadow-[0_2px_8px_rgba(95,150,230,0.1)] hover:shadow-[0_4px_15px_rgba(95,150,230,0.2)] focus:shadow-[0_4px_15px_rgba(95,150,230,0.2)] focus:outline-none focus:ring-2 focus:ring-[#4776E6] focus:border-transparent transition duration-300"
                 disabled={loading}
               />
             </div>
 
-            <div className="mb-6 relative">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#607080]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
               <input
                 type={showPassword ? "text" : "password"}
                 name="password"
                 placeholder="Password"
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full p-3 border border-[#30C1E0] rounded-md bg-[#E1F5FE] text-[#002F60] pr-10 focus:outline-none focus:ring-2 focus:ring-[#002F60]"
+                className="w-full p-3 pl-10 border border-gray-200 rounded-lg bg-white text-[#2A3B4F] pr-10 shadow-[0_2px_8px_rgba(95,150,230,0.1)] hover:shadow-[0_4px_15px_rgba(95,150,230,0.2)] focus:shadow-[0_4px_15px_rgba(95,150,230,0.2)] focus:outline-none focus:ring-2 focus:ring-[#4776E6] focus:border-transparent transition duration-300"
                 disabled={loading}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-[#2A93D5]"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-[#607080] hover:text-[#4776E6] transition duration-300"
                 disabled={loading}
               >
                 {showPassword ? (
@@ -304,23 +305,10 @@ export default function LoginPage() {
               </button>
             </div>
 
-            <div className="mb-6 flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="remember"
-                  checked={rememberMe}
-                  onChange={() => setRememberMe(!rememberMe)}
-                  className="mr-2 h-5 w-5 border-[#30C1E0] rounded accent-[#002F60]"
-                  disabled={loading}
-                />
-                <label htmlFor="remember" className="text-sm text-[#002F60]">
-                  Remember me
-                </label>
-              </div>
+            <div className="text-right">
               <Link
                 href="/forgot-password"
-                className="text-sm text-[#002F60] underline"
+                className="text-sm text-[#4776E6] hover:text-[#3a5fc0] font-medium transition duration-300"
               >
                 Forgot password?
               </Link>
@@ -328,11 +316,11 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              className={`w-full font-medium py-3 px-4 rounded-md transition duration-300 flex justify-center items-center ${
-                loading
-                  ? "bg-[#30C1E0] cursor-not-allowed"
-                  : "bg-[#2A93D5] hover:bg-[#002F60] text-white"
-              }`}
+              className={`w-full font-medium py-3 px-4 rounded-lg transition duration-300 flex justify-center items-center transform hover:-translate-y-1 
+                ${loading 
+                  ? "bg-opacity-70 cursor-not-allowed bg-gradient-to-r from-[#4776E6] to-[#8E54E9]"
+                  : "bg-gradient-to-r from-[#4776E6] to-[#8E54E9] hover:from-[#3a5fc0] hover:to-[#7b46d7] text-white shadow-[0_4px_10px_rgba(71,118,230,0.3)] hover:shadow-[0_6px_15px_rgba(71,118,230,0.4)]"
+                }`}
               disabled={loading}
             >
               {loading ? (
@@ -366,16 +354,16 @@ export default function LoginPage() {
             
             {/* Divider */}
             <div className="flex items-center my-6">
-              <div className="flex-grow border-t border-[#30C1E0]"></div>
-              <span className="px-4 text-sm text-[#002F60]">or</span>
-              <div className="flex-grow border-t border-[#30C1E0]"></div>
+              <div className="flex-grow border-t border-gray-200"></div>
+              <span className="px-4 text-sm text-[#607080]">or</span>
+              <div className="flex-grow border-t border-gray-200"></div>
             </div>
             
             {/* Google Login Button */}
             <button
               type="button"
               onClick={handleGoogleLogin}
-              className="w-full bg-white border border-[#30C1E0] text-[#002F60] font-medium py-3 px-4 rounded-md transition duration-300 hover:bg-[#E1F5FE] flex justify-center items-center"
+              className="w-full bg-white border border-gray-200 text-[#2A3B4F] font-medium py-3 px-4 rounded-lg transition duration-300 hover:bg-gray-50 flex justify-center items-center shadow-[0_2px_8px_rgba(95,150,230,0.1)] hover:shadow-[0_4px_15px_rgba(95,150,230,0.15)] transform hover:-translate-y-1"
               disabled={loading}
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="w-5 h-5 mr-3">
@@ -387,6 +375,11 @@ export default function LoginPage() {
               Sign in with Google
             </button>
           </form>
+          
+          {/* Additional info section */}
+          <div className="mt-8 text-center text-xs text-[#607080]">
+            <p>By logging in, you agree to our <a href="#" className="text-[#4776E6] hover:underline">Terms of Service</a> and <a href="#" className="text-[#4776E6] hover:underline">Privacy Policy</a></p>
+          </div>
         </div>
       </div>
     </div>

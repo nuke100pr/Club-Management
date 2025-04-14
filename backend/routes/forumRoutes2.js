@@ -22,7 +22,7 @@ storage: multer.memoryStorage(),
 router.post('/forums',upload.single('image'), forumController.createForum);
 router.get('/api/forums', forumController.getAllForums);
 router.get('/forums/:id', forumController.getForumById);
-router.put('/forums/:id', forumController.updateForum);
+router.put('/forums/:id',  upload.single("image"), forumController.updateForum);
 router.delete('/forums/:id', forumController.deleteForum);
 
 // Forum Member Routes

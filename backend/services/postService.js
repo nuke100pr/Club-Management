@@ -3,6 +3,8 @@ const File = require("../models/File");
 const fs = require("fs");
 const path = require("path");
 const mongoose = require("mongoose");
+const BoardService = require("./boardService");
+const ClubService = require("./clubService");
 
 const uploadDir = path.join(__dirname, "../uploads");
 
@@ -70,8 +72,6 @@ const getPosts = async (query = {}, page = 1, limit = 10) => {
   // Get like counts and reaction/vote summaries for each post
   const postsWithEngagement = await Promise.all(
     posts.map(async (post) => {
-
-
       // Calculate reaction counts
       const reactionCounts = {};
       post.reactions.forEach((r) => {
@@ -83,12 +83,34 @@ const getPosts = async (query = {}, page = 1, limit = 10) => {
       const downvotes = post.votes.filter((v) => v.vote === -1).length;
       const netVotes = upvotes - downvotes;
 
+      // Get board information if board_id exists
+      let boardInfo = null;
+      if (post.board_id && post.board_id.toString().trim() !== '') {
+        try {
+          boardInfo = await BoardService.fetchBoardById(post.board_id);
+        } catch (error) {
+          console.error(`Error fetching board with ID ${post.board_id}:`, error);
+        }
+      }
+
+      // Get club information if club_id exists
+      let clubInfo = null;
+      if (post.club_id && post.club_id.toString().trim() !== '') {
+        try {
+          clubInfo = await ClubService.fetchClubById(post.club_id);
+        } catch (error) {
+          console.error(`Error fetching club with ID ${post.club_id}:`, error);
+        }
+      }
+
       return {
         ...post,
-        reactionCount:reactionCounts,
+        reactionCount: reactionCounts,
         upvotes,
         downvotes,
         netVotes,
+        board: boardInfo,
+        club: clubInfo
       };
     })
   );
@@ -111,8 +133,6 @@ const getPostById = async (postId) => {
     throw new Error("Post not found");
   }
 
-
-
   // Calculate reaction counts
   const reactionCounts = {};
   post.reactions.forEach((r) => {
@@ -124,12 +144,34 @@ const getPostById = async (postId) => {
   const downvotes = post.votes.filter((v) => v.vote === -1).length;
   const netVotes = upvotes - downvotes;
 
+  // Get board information if board_id exists
+  let boardInfo = null;
+  if (post.board_id && post.board_id.toString().trim() !== '') {
+    try {
+      boardInfo = await BoardService.fetchBoardById(post.board_id);
+    } catch (error) {
+      console.error(`Error fetching board with ID ${post.board_id}:`, error);
+    }
+  }
+
+  // Get club information if club_id exists
+  let clubInfo = null;
+  if (post.club_id && post.club_id.toString().trim() !== '') {
+    try {
+      clubInfo = await ClubService.fetchClubById(post.club_id);
+    } catch (error) {
+      console.error(`Error fetching club with ID ${post.club_id}:`, error);
+    }
+  }
+
   return {
     ...post,
     reactions: reactionCounts,
     upvotes,
     downvotes,
     netVotes,
+    board: boardInfo,
+    club: clubInfo
   };
 };
 

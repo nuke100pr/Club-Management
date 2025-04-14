@@ -16,6 +16,7 @@ import {
   OutlinedInput,
   IconButton,
   Chip,
+  Grid,
 } from "@mui/material";
 import { PhotoCamera, Add as AddIcon } from "@mui/icons-material";
 
@@ -42,6 +43,7 @@ const CreateProjectDialog = ({
   });
 
   const [newTag, setNewTag] = useState("");
+  const [imagePreview, setImagePreview] = useState(null);
 
   // Effect to populate form when editing
   useEffect(() => {
@@ -60,12 +62,31 @@ const CreateProjectDialog = ({
               : "",
             image: null, // Reset image as it needs to be re-uploaded if changed
           });
+
+          // Set image preview if there's an existing image
+          if (projectData.imageUrl) {
+            setImagePreview(projectData.imageUrl);
+          }
         }
       }
     };
 
     if (open && projectToEdit) {
       loadProjectDetails();
+    } else if (open) {
+      // Reset form when opening for new project
+      setNewProject({
+        title: "",
+        description: "",
+        start_date: "",
+        end_date: "",
+        status: "Running",
+        members: [],
+        image: null,
+        tags: [],
+      });
+      setNewTag("");
+      setImagePreview(null);
     }
   }, [projectToEdit, open, fetchProjectDetails]);
 
@@ -77,6 +98,12 @@ const CreateProjectDialog = ({
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+
       setNewProject({
         ...newProject,
         image: file,
@@ -114,7 +141,6 @@ const CreateProjectDialog = ({
       formData.append("start_date", newProject.start_date);
       formData.append("end_date", newProject.end_date);
       formData.append("status", newProject.status);
-
       formData.append("created_on", new Date().toISOString());
 
       newProject.tags.forEach((tag, index) => {
@@ -150,6 +176,7 @@ const CreateProjectDialog = ({
           tags: [],
         });
         setNewTag("");
+        setImagePreview(null);
 
         // Close dialog and call onSubmit
         onSubmit(result);
@@ -167,116 +194,135 @@ const CreateProjectDialog = ({
         {projectToEdit ? "Edit Project" : "Add New Project"}
       </DialogTitle>
       <DialogContent>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
-          <TextField
-            label="Project Title"
-            name="title"
-            value={newProject.title}
-            onChange={handleChange}
-            fullWidth
-            required
-          />
-          <TextField
-            label="Description"
-            name="description"
-            value={newProject.description}
-            onChange={handleChange}
-            fullWidth
-            multiline
-            rows={3}
-          />
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <OutlinedInput
-              value={newTag}
-              onChange={(e) => setNewTag(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleAddTag(e)}
-              placeholder="Add Tags"
-              endAdornment={
-                <IconButton onClick={handleAddTag}>
-                  <AddIcon />
-                </IconButton>
-              }
-            />
-            <Box sx={{ mt: 1 }}>
-              {newProject.tags.map((tag, index) => (
-                <Chip
-                  key={index}
-                  label={tag}
-                  onDelete={() => handleRemoveTag(index)}
-                  sx={{ mr: 1, mt: 1 }}
-                />
-              ))}
-            </Box>
-          </FormControl>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <input
-              accept="image/*"
-              style={{ display: "none" }}
-              id="image-upload"
-              type="file"
-              onChange={handleImageUpload}
-            />
-            <label htmlFor="image-upload">
-              <Button
-                variant="contained"
-                component="span"
-                startIcon={<PhotoCamera />}
-              >
-                Upload Project Image
-              </Button>
-            </label>
-            {newProject.image && (
-              <Typography variant="body2">{newProject.image.name}</Typography>
-            )}
-          </Box>
-          <Box sx={{ display: "flex", gap: 2 }}>
+        <Grid container spacing={3}>
+          <Grid item xs={12}>
             <TextField
+              fullWidth
+              label="Project Title"
+              name="title"
+              value={newProject.title}
+              onChange={handleChange}
+              required
+            />
+          </Grid>
+
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Description"
+              name="description"
+              value={newProject.description}
+              onChange={handleChange}
+              multiline
+              rows={4}
+            />
+          </Grid>
+
+          <Grid item xs={12}>
+            <Button
+              variant="contained"
+              component="label"
+              startIcon={<PhotoCamera />}
+            >
+              Upload Project Image
+              <input
+                type="file"
+                hidden
+                accept="image/*"
+                onChange={handleImageUpload}
+              />
+            </Button>
+            {imagePreview && (
+              <Box sx={{ mt: 2 }}>
+                <img
+                  src={imagePreview}
+                  alt="Project Preview"
+                  style={{ maxWidth: "300px", maxHeight: "300px" }}
+                />
+              </Box>
+            )}
+          </Grid>
+
+          <Grid item xs={12}>
+            <FormControl fullWidth sx={{ mb: 2 }}>
+              <OutlinedInput
+                value={newTag}
+                onChange={(e) => setNewTag(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && handleAddTag(e)}
+                placeholder="Add Tags"
+                endAdornment={
+                  <IconButton onClick={handleAddTag}>
+                    <AddIcon />
+                  </IconButton>
+                }
+              />
+              <Box sx={{ mt: 1 }}>
+                {newProject.tags.map((tag, index) => (
+                  <Chip
+                    key={index}
+                    label={tag}
+                    onDelete={() => handleRemoveTag(index)}
+                    sx={{ mr: 1, mt: 1 }}
+                  />
+                ))}
+              </Box>
+            </FormControl>
+          </Grid>
+
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
               label="Start Date"
               name="start_date"
               type="date"
               value={newProject.start_date}
               onChange={handleChange}
               InputLabelProps={{ shrink: true }}
-              fullWidth
               required
             />
+          </Grid>
+
+          <Grid item xs={12} md={6}>
             <TextField
+              fullWidth
               label="End Date"
               name="end_date"
               type="date"
               value={newProject.end_date}
               onChange={handleChange}
               InputLabelProps={{ shrink: true }}
-              fullWidth
               required
             />
-          </Box>
-          <FormControl fullWidth>
-            <Typography variant="subtitle1">Status</Typography>
-            <RadioGroup
-              name="status"
-              value={newProject.status}
-              onChange={handleChange}
-              row
-            >
-              <FormControlLabel
-                value="Running"
-                control={<Radio />}
-                label="Running"
-              />
-              <FormControlLabel
-                value="Completed"
-                control={<Radio />}
-                label="Completed"
-              />
-              <FormControlLabel
-                value="Inactive"
-                control={<Radio />}
-                label="Inactive"
-              />
-            </RadioGroup>
-          </FormControl>
-        </Box>
+          </Grid>
+
+          <Grid item xs={12}>
+            <FormControl fullWidth>
+              <Typography variant="subtitle1">Status</Typography>
+              <RadioGroup
+                name="status"
+                value={newProject.status}
+                onChange={handleChange}
+                row
+              >
+                <FormControlLabel
+                  value="Running"
+                  control={<Radio />}
+                  label="Running"
+                />
+                <FormControlLabel
+                  value="Completed"
+                  control={<Radio />}
+                  label="Completed"
+                />
+                <FormControlLabel
+                  value="Inactive"
+                  control={<Radio />}
+                  label="Inactive"
+                />
+              </RadioGroup>
+            </FormControl>
+          </Grid>
+        </Grid>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>

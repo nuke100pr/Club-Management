@@ -1,27 +1,33 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import {
-  Box, Container, Grid, Typography, Card, CardContent, Button, Chip,
-  IconButton, Tooltip, Fab
-} from "@mui/material";
-import {
-  Share as ShareIcon, Add as AddIcon
-} from "@mui/icons-material";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
+import { Box, Container, Typography, Button, Chip, IconButton, Tooltip, Fab } from "@mui/material";
+import { Share as ShareIcon, Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from "@mui/icons-material";
 import SearchAndFilterBar from "../../components/resources/SearchAndFilterBar";
 import CreateResourceDialog from "../../components/resources/CreateResourceDialog";
+import UniversalShareMenu from "../../components/shared/UniversalShareMenu";
 import { fetchUserData } from "@/utils/auth";
 
+// Modern color palette based on design system
+const COLORS = {
+  primary: "#4776E6",
+  secondary: "#8E54E9",
+  background: "#f8faff",
+  cardBg: "#ffffff",
+  textPrimary: "#2A3B4F",
+  textSecondary: "#607080",
+};
+
+// Tag color palette with more vibrant colors matching design system
 const getTagColor = (index) => {
   const colors = [
-    "#1976d2", "#388e3c", "#d32f2f", "#7b1fa2", 
-    "#f57c00", "#455a64", "#00796b", "#c2185b"
+    "#4776E6", "#8E54E9", "#1976d2", "#388e3c", 
+    "#d32f2f", "#7b1fa2", "#f57c00", "#455a64"
   ];
   return colors[index % colors.length];
 };
 
 const ResourceCards = () => {
+  const [userNames, setUserNames] = useState({});
   const [allResources, setAllResources] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredResources, setFilteredResources] = useState([]);
@@ -36,6 +42,9 @@ const ResourceCards = () => {
   const [userBoardsWithResourcePermission, setUserBoardsWithResourcePermission] = useState([]);
   const [selectedBoard, setSelectedBoard] = useState(null);
   const [selectedClub, setSelectedClub] = useState(null);
+  // State for share menu
+  const [shareMenuAnchor, setShareMenuAnchor] = useState(null);
+  const [currentSharedResource, setCurrentSharedResource] = useState(null);
 
   useEffect(() => {
     async function loadUserData() {
@@ -61,7 +70,20 @@ const ResourceCards = () => {
     }
     loadUserData();
   }, []);
-
+  const fetchUserNameById = async (userId) => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users/${userId}/details`);
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        return result.data.name || "Unknown User";
+      }
+      return "Unknown User";
+    } catch (error) {
+      console.error("Error fetching user details:", error);
+      return "Unknown User";
+    }
+  };
   const hasResourcePermission = (resource) => {
     if (isSuperAdmin) return true;
 
@@ -109,7 +131,7 @@ const ResourceCards = () => {
   useEffect(() => {
     const fetchResources = async () => {
       try {
-        const response = await fetch("http://localhost:5000/resources/api/resource");
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/resources/api/resource`);
         const result = await response.json();
         
         if (result.success && result.data) {
@@ -123,7 +145,7 @@ const ResourceCards = () => {
             url: resource.resource_link,
             tags: resource.tags || [],
             club_id: resource.club_id || null,
-            board_id: resource.board_id || null
+            board_id: resource.board_id || null,
           }));
 
           setAllResources(formattedResources);
@@ -135,6 +157,7 @@ const ResourceCards = () => {
 
     fetchResources();
   }, []);
+  
 
   useEffect(() => {
     let result = allResources;
@@ -156,25 +179,47 @@ const ResourceCards = () => {
 
     setFilteredResources(result);
   }, [searchTerm, allResources, selectedKeywords]);
+  useEffect(() => {
+    const fetchUserNames = async () => {
+      const namePromises = allResources.map(async (resource) => {
+        // Only fetch if we don't already have this user's name and userId is not "Unknown"
+        if (!userNames[resource.publishedBy] && resource.publishedBy !== "Unknown") {
+          const name = await fetchUserNameById(resource.publishedBy);
+          return { id: resource.publishedBy, name };
+        }
+        return null;
+      });
+      
+      const results = await Promise.all(namePromises);
+      const newUserNames = { ...userNames };
+      
+      results.forEach(result => {
+        if (result) {
+          newUserNames[result.id] = result.name;
+        }
+      });
+      
+      setUserNames(newUserNames);
+    };
+    
+    fetchUserNames();
+  }, [allResources]);
 
-  const shareResource = (resource) => {
-    if (navigator.share) {
-      navigator.share({
-        title: resource.title,
-        text: resource.description,
-        url: resource.url,
-      }).catch(error => console.error("Error sharing:", error));
-    } else {
-      navigator.clipboard
-        .writeText(resource.url)
-        .then(() => alert("Link copied to clipboard: " + resource.url))
-        .catch(err => console.error("Failed to copy link: ", err));
-    }
+  // Handle opening the share menu
+  const handleShareClick = (event, resource) => {
+    setShareMenuAnchor(event.currentTarget);
+    setCurrentSharedResource(resource);
+  };
+
+  // Handle closing the share menu
+  const handleShareClose = () => {
+    setShareMenuAnchor(null);
+    setCurrentSharedResource(null);
   };
 
   const handleEdit = async (resourceId) => {
     try {
-      const response = await fetch(`http://localhost:5000/resources/bpi/${resourceId}`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/resources/bpi/${resourceId}`);
       const result = await response.json();
       
       if (result.success) {
@@ -199,7 +244,7 @@ const ResourceCards = () => {
 
   const handleDelete = async (resourceId) => {
     try {
-      const response = await fetch(`http://localhost:5000/resources/bpi/${resourceId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/resources/bpi/${resourceId}`, {
         method: 'DELETE'
       });
       const result = await response.json();
@@ -239,7 +284,13 @@ const ResourceCards = () => {
   const defaultContext = getDefaultClubOrBoardId();
 
   return (
-    <Box>
+    <Box sx={{ 
+      backgroundColor: COLORS.background, 
+      minHeight: "100vh",
+      padding: "32px"
+    }}>
+
+
       <SearchAndFilterBar 
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
@@ -251,89 +302,214 @@ const ResourceCards = () => {
         handleFilterReset={handleFilterReset}
       />
 
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        <Grid container spacing={3}>
+      <Container maxWidth="xl" sx={{ mt: 4, mb: 4, px: 0 }}>
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+            gap: 3,
+          }}
+        >
           {filteredResources.length > 0 ? (
-            filteredResources.map((resource) => {
-              return (
-                <Grid item key={resource.id} xs={12} sm={6} md={4}>
-                  <Card variant="outlined" sx={{ height: "100%", display: "flex", flexDirection: "column", position: "relative" }}>
-                    {hasResourcePermission(resource) && (
-                      <Box sx={{ position: "absolute", top: 8, right: 8, zIndex: 1 }}>
-                        <IconButton 
-                          onClick={() => handleEdit(resource.id)} 
-                          color="primary" 
+            filteredResources.map((resource) => (
+              <Box
+                key={resource.id}
+                sx={{
+                  backgroundColor: COLORS.cardBg,
+                  borderRadius: "16px",
+                  overflow: "hidden",
+                  boxShadow: "0 4px 12px rgba(95, 150, 230, 0.1)",
+                  transition: "all 0.3s ease",
+                  position: "relative",
+                  border: "1px solid rgba(95, 150, 230, 0.1)",
+                  "&:hover": {
+                    boxShadow: "0 12px 20px rgba(95, 150, 230, 0.2)",
+                    transform: "translateY(-8px)",
+                  },
+                  display: "flex",
+                  flexDirection: "column",
+                  height: "100%",
+                }}
+              >
+                {hasResourcePermission(resource) && (
+                  <Box sx={{ 
+                    position: "absolute", 
+                    top: "12px", 
+                    right: "12px", 
+                    display: "flex",
+                    gap: 1
+                  }}>
+                    <IconButton
+                      onClick={() => handleEdit(resource.id)}
+                      sx={{
+                        backgroundColor: "rgba(71, 118, 230, 0.1)",
+                        width: "32px",
+                        height: "32px",
+                        "&:hover": {
+                          backgroundColor: "rgba(71, 118, 230, 0.2)",
+                        }
+                      }}
+                    >
+                      <EditIcon sx={{ fontSize: "16px", color: COLORS.primary }} />
+                    </IconButton>
+                    <IconButton
+                      onClick={() => handleDelete(resource.id)}
+                      sx={{
+                        backgroundColor: "rgba(211, 47, 47, 0.1)",
+                        width: "32px",
+                        height: "32px",
+                        "&:hover": {
+                          backgroundColor: "rgba(211, 47, 47, 0.2)",
+                        }
+                      }}
+                    >
+                      <DeleteIcon sx={{ fontSize: "16px", color: "#d32f2f" }} />
+                    </IconButton>
+                  </Box>
+                )}
+
+                <Box sx={{ p: 3, flex: 1, display: "flex", flexDirection: "column" }}>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontSize: "1.1rem",
+                      fontWeight: 600,
+                      color: COLORS.textPrimary,
+                      mb: 2,
+                      mt: 3
+                    }}
+                  >
+                    {resource.title}
+                  </Typography>
+
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: COLORS.textSecondary,
+                      mb: 2,
+                      lineHeight: 1.6,
+                      flex: 1
+                    }}
+                  >
+                    {resource.description}
+                  </Typography>
+
+                  {resource.tags && resource.tags.length > 0 && (
+                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}>
+                      {resource.tags.map((tag, index) => (
+                        <Chip
+                          key={index}
+                          label={tag}
                           size="small"
-                        >
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton onClick={() => handleDelete(resource.id)} color="error" size="small">
-                          <DeleteIcon />
-                        </IconButton>
-                      </Box>
-                    )}
-                    
-                    <CardContent sx={{ flexGrow: 1 }}>
-                      <Typography variant="h5" component="h3" gutterBottom>
-                        {resource.title}
-                      </Typography>
-
-                      <Typography variant="body2" color="text.secondary" paragraph>
-                        {resource.description}
-                      </Typography>
-
-                      {resource.tags && resource.tags.length > 0 && (
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 2 }}>
-                          {resource.tags.map((tag, index) => (
-                            <Chip
-                              key={index}
-                              label={tag}
-                              size="small"
-                              sx={{
-                                backgroundColor: getTagColor(index),
-                                color: "white",
-                              }}
-                            />
-                          ))}
-                        </Box>
-                      )}
-
-                      <Typography variant="body2" color="text.secondary">
-                        Published by: {resource.publishedBy}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Published at: {new Date(resource.publishedAt).toLocaleDateString()}
-                      </Typography>
-                    </CardContent>
-
-                    <Box sx={{ p: 2, pt: 0, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={() => window.open(resource.url, "_blank")}
-                      >
-                        View Resource
-                      </Button>
-
-                      <Box display="flex" alignItems="center">
-                        <Tooltip title="Share resource">
-                          <IconButton onClick={() => shareResource(resource)} color="primary">
-                            <ShareIcon />
-                          </IconButton>
-                        </Tooltip>
-                      </Box>
+                          sx={{
+                            backgroundColor: `${getTagColor(index)}20`,
+                            color: getTagColor(index),
+                            borderRadius: "8px",
+                            height: "22px",
+                            fontSize: "0.65rem",
+                            fontWeight: 500,
+                          }}
+                        />
+                      ))}
                     </Box>
-                  </Card>
-                </Grid>
-              );
-            })
+                  )}
+
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 1 }}>
+                    <Button
+                      variant="contained"
+                      size="small"
+                      onClick={() => window.open(resource.url, "_blank")}
+                      sx={{
+                        background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.secondary})`,
+                        color: "white",
+                        borderRadius: "8px",
+                        padding: "6px 12px",
+                        textTransform: "none",
+                        fontSize: "0.8rem",
+                        fontWeight: 500,
+                        boxShadow: "0 2px 6px rgba(71, 118, 230, 0.3)",
+                        "&:hover": {
+                          boxShadow: "0 4px 10px rgba(71, 118, 230, 0.4)",
+                          transform: "translateY(-2px)",
+                        },
+                        transition: "all 0.3s ease"
+                      }}
+                    >
+                      View Resource
+                    </Button>
+
+                    <Tooltip title="Share resource">
+                      <IconButton 
+                        onClick={(e) => handleShareClick(e, resource)}
+                        sx={{
+                          color: COLORS.primary,
+                          "&:hover": {
+                            backgroundColor: "rgba(71, 118, 230, 0.1)",
+                          }
+                        }}
+                      >
+                        <ShareIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                </Box>
+
+                <Box 
+                  sx={{ 
+                    p: 2,
+                    borderTop: "1px solid rgba(95, 150, 230, 0.1)",
+                    backgroundColor: "rgba(95, 150, 230, 0.03)",
+                    display: "flex",
+                    justifyContent: "space-between"
+                  }}
+                >
+                  <Typography variant="caption" sx={{ color: COLORS.textSecondary }}>
+                    By: {userNames[resource.publishedBy] || resource.publishedBy}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: COLORS.textSecondary }}>
+                    {new Date(resource.publishedAt).toLocaleDateString()}
+                  </Typography>
+                </Box>
+              </Box>
+            ))
           ) : (
-            <Typography variant="h6" sx={{ textAlign: "center", width: "100%", mt: 4 }}>
-              No resources found
-            </Typography>
+            <Box 
+              sx={{ 
+                gridColumn: "1 / -1", 
+                textAlign: "center", 
+                backgroundColor: "white",
+                borderRadius: "16px",
+                padding: 4,
+                boxShadow: "0 4px 12px rgba(95, 150, 230, 0.1)",
+              }}
+            >
+              <Typography 
+                variant="h6" 
+                sx={{ 
+                  color: COLORS.textSecondary,
+                  fontWeight: 500
+                }}
+              >
+                No resources found
+              </Typography>
+            </Box>
           )}
-        </Grid>
+        </Box>
       </Container>
+
+      {/* Universal Share Menu Component */}
+      {currentSharedResource && (
+        <UniversalShareMenu
+          anchorEl={shareMenuAnchor}
+          open={Boolean(shareMenuAnchor)}
+          onClose={handleShareClose}
+          id={currentSharedResource.id}
+          title={currentSharedResource.title}
+          url={currentSharedResource.url}
+          contentType="resource"
+          customShareText={`Check out this resource: ${currentSharedResource.title}`}
+        />
+      )}
 
       <CreateResourceDialog 
         open={createDialogOpen}
@@ -347,20 +523,6 @@ const ResourceCards = () => {
         defaultClubId={defaultContext?.type === 'club' ? defaultContext.id : null}
         userId={userId}
       />
-
-      {false && (
-        <Fab
-          color="primary"
-          aria-label="add"
-          sx={{ position: "fixed", bottom: 16, right: 16 }}
-          onClick={() => {
-            setEditingResource(null);
-            setCreateDialogOpen(true);
-          }}
-        >
-          <AddIcon />
-        </Fab>
-      )}
     </Box>
   );
 };

@@ -27,6 +27,8 @@ import {
   CircularProgress,
   Checkbox,
   InputAdornment,
+  styled,
+  alpha,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -42,7 +44,88 @@ import ForumCreateDialog from "../../components/forums/ForumCreateDialog";
 import Navbar from "../../components/Navbar";
 import { fetchUserData } from "@/utils/auth";
 
-// ForumMembersDialog component to show and manage forum members
+// Styled components for the premium UI
+const GradientText = styled(Typography)(({ theme }) => ({
+  background: 'linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)',
+  WebkitBackgroundClip: 'text',
+  WebkitTextFillColor: 'transparent',
+  fontWeight: 600,
+}));
+
+const PremiumCard = styled(Card)(({ theme }) => ({
+  width: 350,
+  borderRadius: '16px',
+  boxShadow: '0 4px 12px rgba(95, 150, 230, 0.1)',
+  transition: 'all 0.3s ease',
+  '&:hover': {
+    transform: 'translateY(-8px)',
+    boxShadow: '0 12px 20px rgba(95, 150, 230, 0.2)',
+  },
+  borderTop: '4px solid #4776E6',
+}));
+
+const PrimaryButton = styled(Button)(({ theme }) => ({
+  background: 'linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)',
+  color: 'white',
+  fontWeight: 500,
+  borderRadius: '8px',
+  boxShadow: '0 4px 10px rgba(71, 118, 230, 0.3)',
+  padding: '8px 16px',
+  textTransform: 'none',
+  transition: 'all 0.3s ease',
+  '&:hover': {
+    background: 'linear-gradient(90deg, #3a5fc0 0%, #7b3dc1 100%)',
+    boxShadow: '0 6px 15px rgba(71, 118, 230, 0.4)',
+    transform: 'translateY(-2px)',
+  },
+}));
+
+const SecondaryButton = styled(Button)(({ theme }) => ({
+  color: '#4776E6',
+  borderColor: '#4776E6',
+  borderRadius: '8px',
+  padding: '8px 16px',
+  textTransform: 'none',
+  transition: 'all 0.3s ease',
+  '&:hover': {
+    backgroundColor: alpha('#4776E6', 0.08),
+    borderColor: '#3a5fc0',
+    transform: 'translateY(-2px)',
+  },
+}));
+
+const PremiumChip = styled(Chip)(({ theme }) => ({
+  height: 22,
+  fontSize: '0.65rem',
+  backgroundColor: alpha('#4776E6', 0.1),
+  color: '#4776E6',
+  '& .MuiChip-label': {
+    padding: '0 8px',
+  },
+}));
+
+const PremiumTextField = styled(TextField)(({ theme }) => ({
+  '& .MuiOutlinedInput-root': {
+    borderRadius: '8px',
+    boxShadow: '0 2px 8px rgba(95, 150, 230, 0.1)',
+    '&:hover': {
+      boxShadow: '0 4px 15px rgba(95, 150, 230, 0.2)',
+    },
+    '&.Mui-focused': {
+      boxShadow: '0 4px 15px rgba(95, 150, 230, 0.2)',
+      borderColor: '#4776E6',
+    },
+  },
+}));
+
+const PremiumDialog = styled(Dialog)(({ theme }) => ({
+  '& .MuiPaper-root': {
+    borderRadius: '16px',
+    boxShadow: '0 8px 32px rgba(95, 150, 230, 0.2)',
+  },
+}));
+
+// ForumMembersDialog component with premium styling
 const ForumMembersDialog = ({ open, onClose, forumId }) => {
   const [members, setMembers] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
@@ -52,7 +135,6 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
   const [searchNewMember, setSearchNewMember] = useState("");
   const [searchExistingMember, setSearchExistingMember] = useState("");
 
-  // Fetch forum members when dialog opens
   useEffect(() => {
     if (open && forumId) {
       fetchMembers();
@@ -64,13 +146,13 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
     setLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:5000/forums2/forums/${forumId}/members`
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/forums2/forums/${forumId}/members`
       );
       if (!response.ok) {
         throw new Error("Failed to fetch forum members");
       }
       const data = await response.json();
-      setMembers(data.members || data); // Handle both response formats
+      setMembers(data.members || data);
     } catch (error) {
       console.error("Error fetching forum members:", error);
     } finally {
@@ -80,12 +162,12 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
 
   const fetchAllUsers = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/users/users/`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users/users/`);
       if (!response.ok) {
         throw new Error("Failed to fetch users");
       }
       const data = await response.json();
-      setAllUsers(data.users || data); // Handle both response formats
+      setAllUsers(data.users || data);
     } catch (error) {
       console.error("Error fetching users:", error);
     }
@@ -94,7 +176,7 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
   const handleRemoveMember = async (userId) => {
     try {
       const response = await fetch(
-        `http://localhost:5000/forums2/forums/${forumId}/members/${userId}`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/forums2/forums/${forumId}/members/${userId}`,
         {
           method: "DELETE",
         }
@@ -104,7 +186,6 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
         throw new Error("Failed to remove forum member");
       }
 
-      // Update the members list after successful removal
       setMembers(
         members.filter(
           (member) => member._id !== userId || member.user_id !== userId
@@ -122,12 +203,10 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
 
     setAddingMember(true);
     try {
-      // Create current date for joined_at field
       const currentDate = new Date().toISOString();
 
-      // Add all selected users
       const addPromises = selectedUsers.map((userId) =>
-        fetch(`http://localhost:5000/forums2/forums/${forumId}/members`, {
+        fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/forums2/forums/${forumId}/members`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -147,7 +226,6 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
         throw new Error("Failed to add some forum members");
       }
 
-      // Refresh members list
       await fetchMembers();
       setSelectedUsers([]);
     } catch (error) {
@@ -165,7 +243,6 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
     );
   };
 
-  // Filter out users who are already members
   const availableUsers = allUsers.filter(
     (user) =>
       !members.some(
@@ -173,7 +250,6 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
       )
   );
 
-  // Filter available users based on search term
   const filteredAvailableUsers = availableUsers.filter(
     (user) =>
       user.name?.toLowerCase().includes(searchNewMember.toLowerCase()) ||
@@ -182,27 +258,18 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
 
   const filteredMembers = members.filter((member) => {
     const searchTerm = searchExistingMember.toLowerCase();
-
-    // Check name if it exists
     if (member.name && member.name.toLowerCase().includes(searchTerm)) {
       return true;
     }
-
-    // Check email if it exists
     if (member.email && member.email.toLowerCase().includes(searchTerm)) {
       return true;
     }
-
-    // Check user_id as fallback
     if (member.user_id && member.user_id.toLowerCase().includes(searchTerm)) {
       return true;
     }
-
-    // If no search term is provided, show all members
     return searchTerm === "";
   });
 
-  // Format date to a more readable format
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
@@ -213,8 +280,10 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>Forum Members</DialogTitle>
+    <PremiumDialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+      <DialogTitle>
+        <GradientText variant="h5">Forum Members</GradientText>
+      </DialogTitle>
       <DialogContent>
         {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
@@ -223,11 +292,11 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
         ) : (
           <>
             <Box sx={{ mb: 3 }}>
-              <Typography variant="h6" sx={{ mb: 1 }}>
+              <Typography variant="h6" sx={{ mb: 1, color: '#2A3B4F', fontWeight: 600 }}>
                 Add New Members
               </Typography>
 
-              <TextField
+              <PremiumTextField
                 fullWidth
                 variant="outlined"
                 size="small"
@@ -237,7 +306,7 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <SearchIcon />
+                      <SearchIcon color="primary" />
                     </InputAdornment>
                   ),
                 }}
@@ -270,16 +339,24 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
                         key={user._id}
                         button="true"
                         onClick={() => handleUserSelect(user._id)}
+                        sx={{
+                          '&:hover': {
+                            backgroundColor: alpha('#4776E6', 0.05),
+                          },
+                        }}
                       >
                         <Checkbox
                           edge="start"
                           checked={selectedUsers.includes(user._id)}
                           tabIndex={-1}
                           disableRipple
+                          color="primary"
                         />
                         <ListItemText
                           primary={user.name || user._id}
                           secondary={user.email}
+                          primaryTypographyProps={{ color: '#2A3B4F' }}
+                          secondaryTypographyProps={{ color: '#607080' }}
                         />
                       </ListItem>
                     ))}
@@ -288,28 +365,27 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
               </Box>
 
               <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
-                <Button
-                  variant="contained"
+                <PrimaryButton
                   onClick={handleAddMember}
                   disabled={selectedUsers.length === 0 || addingMember}
                   sx={{ minWidth: 100 }}
                 >
                   {addingMember ? (
-                    <CircularProgress size={24} />
+                    <CircularProgress size={24} color="inherit" />
                   ) : (
                     `Add (${selectedUsers.length})`
                   )}
-                </Button>
+                </PrimaryButton>
               </Box>
             </Box>
 
             <Divider sx={{ my: 2 }} />
 
-            <Typography variant="h6" sx={{ mb: 1 }}>
+            <Typography variant="h6" sx={{ mb: 1, color: '#2A3B4F', fontWeight: 600 }}>
               Current Members ({members.length})
             </Typography>
 
-            <TextField
+            <PremiumTextField
               fullWidth
               variant="outlined"
               size="small"
@@ -319,7 +395,7 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <SearchIcon />
+                    <SearchIcon color="primary" />
                   </InputAdornment>
                 ),
               }}
@@ -334,7 +410,13 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
               <List>
                 {filteredMembers.map((member) => (
                   <React.Fragment key={member._id || member.user_id}>
-                    <ListItem>
+                    <ListItem
+                      sx={{
+                        '&:hover': {
+                          backgroundColor: alpha('#4776E6', 0.05),
+                        },
+                      }}
+                    >
                       <ListItemText
                         primary={member.name || member.user_id}
                         secondary={
@@ -347,6 +429,8 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
                             )}
                           </>
                         }
+                        primaryTypographyProps={{ color: '#2A3B4F' }}
+                        secondaryTypographyProps={{ color: '#607080' }}
                       />
                       <ListItemSecondaryAction>
                         <IconButton
@@ -367,11 +451,11 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} color="primary">
+        <SecondaryButton onClick={onClose}>
           Close
-        </Button>
+        </SecondaryButton>
       </DialogActions>
-    </Dialog>
+    </PremiumDialog>
   );
 };
 
@@ -396,7 +480,7 @@ const ForumCard = ({
   const handleDelete = async (forumId) => {
     try {
       const response = await fetch(
-        `http://localhost:5000/forums2/forums/${forumId}`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/forums2/forums/${forumId}`,
         {
           method: "DELETE",
         }
@@ -412,19 +496,9 @@ const ForumCard = ({
     }
   };
 
-  // Array of colors for tags
   const tagColors = [
-    "#2196F3", // Blue
-    "#4CAF50", // Green
-    "#FF9800", // Orange
-    "#9C27B0", // Purple
-    "#F44336", // Red
-    "#00BCD4", // Cyan
-    "#673AB7", // Deep Purple
-    "#3F51B5", // Indigo
-    "#009688", // Teal
-    "#CDDC39", // Lime
-    "#607D8B", // Blue Grey
+    "#2196F3", "#4CAF50", "#FF9800", "#9C27B0", 
+    "#F44336", "#00BCD4", "#673AB7", "#3F51B5"
   ];
 
   const getTagColor = (index) => {
@@ -432,24 +506,18 @@ const ForumCard = ({
   };
 
   return (
-    <Card
-      sx={{
-        width: 350,
-        boxShadow: "0px 2px 6px rgba(0,0,0,0.1)",
-        borderRadius: 2,
-        mb: 2,
-      }}
-    >
+    <PremiumCard>
       <CardMedia
         component="img"
-        height="140"
+        height="160"
         image={
-          `http://localhost:5000/uploads/${forum.image.filename}` ||
-          "https://via.placeholder.com/350x140"
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/uploads/${forum.image.filename}` ||
+          "https://via.placeholder.com/350x160"
         }
         alt={forum.title}
+        sx={{ borderTopLeftRadius: '12px', borderTopRightRadius: '12px' }}
       />
-      <Box p={2}>
+      <Box p={3}>
         <Box
           sx={{
             display: "flex",
@@ -458,7 +526,7 @@ const ForumCard = ({
             mb: 1,
           }}
         >
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
+          <Typography variant="h6" sx={{ flexGrow: 1, color: '#2A3B4F', fontWeight: 600 }}>
             {forum.title}
           </Typography>
           {hasPermission && (
@@ -484,9 +552,9 @@ const ForumCard = ({
           >
             <IconButton size="small" sx={{ ml: 1 }}>
               {forum.public_or_private === "private" ? (
-                <LockIcon fontSize="small" />
+                <LockIcon fontSize="small" color="error" />
               ) : (
-                <PublicIcon fontSize="small" />
+                <PublicIcon fontSize="small" color="success" />
               )}
             </IconButton>
           </Tooltip>
@@ -494,41 +562,41 @@ const ForumCard = ({
 
         <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mb: 2 }}>
           {boardName && (
-            <Chip
+            <PremiumChip
               label={boardName}
               size="small"
               sx={{
-                backgroundColor: "#4CAF50",
-                color: "white",
+                backgroundColor: alpha('#4CAF50', 0.1),
+                color: '#4CAF50',
               }}
             />
           )}
           {clubName && (
-            <Chip
+            <PremiumChip
               label={clubName}
               size="small"
               sx={{
-                backgroundColor: "#FF5722",
-                color: "white",
+                backgroundColor: alpha('#FF5722', 0.1),
+                color: '#FF5722',
               }}
             />
           )}
 
           {forum.tags &&
             forum.tags.map((tag, index) => (
-              <Chip
+              <PremiumChip
                 key={index}
                 label={tag}
                 size="small"
                 sx={{
-                  backgroundColor: getTagColor(index),
-                  color: "white",
+                  backgroundColor: alpha(getTagColor(index), 0.1),
+                  color: getTagColor(index),
                 }}
               />
             ))}
         </Box>
 
-        <Typography variant="body2" sx={{ mb: 2 }}>
+        <Typography variant="body2" sx={{ mb: 2, color: '#607080' }}>
           {truncateText(forum.description)}
         </Typography>
 
@@ -563,49 +631,28 @@ const ForumCard = ({
         </Box>
 
         <Box sx={{ display: "flex", gap: 1 }}>
-          <Button
-            variant="outlined"
-            color="primary"
+          <PrimaryButton
             onClick={() => onViewForum(forum._id)}
             sx={{
               flexGrow: 1,
-              borderRadius: 2,
-              textTransform: "none",
-              py: 1.5,
-              borderColor: "#1976d2",
-              color: "#1976d2",
-              "&:hover": {
-                backgroundColor: "transparent",
-                borderColor: "#1976d2",
-                opacity: 0.8,
-              },
+              py: 1,
             }}
           >
             VIEW DISCUSSION
-          </Button>
+          </PrimaryButton>
 
-          <Button
-            variant="outlined"
-            color="secondary"
+          <SecondaryButton
             onClick={() => onViewMembers(forum._id)}
             sx={{
-              borderRadius: 2,
-              textTransform: "none",
-              py: 1.5,
-              borderColor: "#9c27b0",
-              color: "#9c27b0",
-              "&:hover": {
-                backgroundColor: "transparent",
-                borderColor: "#9c27b0",
-                opacity: 0.8,
-              },
+              py: 1,
+              minWidth: 'auto',
             }}
           >
             <PeopleIcon sx={{ mr: 0.5 }} fontSize="small" />
-          </Button>
+          </SecondaryButton>
         </Box>
       </Box>
-    </Card>
+    </PremiumCard>
   );
 };
 
@@ -638,7 +685,6 @@ const ForumList = ({ boards: propBoards = {}, clubs: propClubs = {} }) => {
     club3: "Music Club",
   };
 
-  // Fetch user data on mount
   useEffect(() => {
     async function loadUserData() {
       const result = await fetchUserData();
@@ -648,7 +694,6 @@ const ForumList = ({ boards: propBoards = {}, clubs: propClubs = {} }) => {
         setUserId(result.userId);
         setIsSuperAdmin(result.isSuperAdmin);
 
-        // Extract clubs with forums permission
         if (result.userData?.data?.clubs) {
           const clubsWithPermission = Object.keys(
             result.userData.data.clubs
@@ -658,7 +703,6 @@ const ForumList = ({ boards: propBoards = {}, clubs: propClubs = {} }) => {
           setUserClubsWithForumPermission(clubsWithPermission);
         }
 
-        // Extract boards with forums permission
         if (result.userData?.data?.boards) {
           const boardsWithPermission = Object.keys(
             result.userData.data.boards
@@ -672,12 +716,9 @@ const ForumList = ({ boards: propBoards = {}, clubs: propClubs = {} }) => {
     loadUserData();
   }, []);
 
-  // Check if user has permission to edit/delete a forum
   const hasForumPermission = (forum) => {
-    // Superadmins have all permissions
     if (isSuperAdmin) return true;
 
-    // Check if forum belongs to a club where user has permission
     if (forum.club_id) {
       const clubId = forum.club_id._id || forum.club_id;
       if (userClubsWithForumPermission.includes(clubId)) {
@@ -685,7 +726,6 @@ const ForumList = ({ boards: propBoards = {}, clubs: propClubs = {} }) => {
       }
     }
 
-    // Check if forum belongs to a board where user has permission
     if (forum.board_id) {
       const boardId = forum.board_id._id || forum.board_id;
       if (userBoardsWithForumPermission.includes(boardId)) {
@@ -696,7 +736,6 @@ const ForumList = ({ boards: propBoards = {}, clubs: propClubs = {} }) => {
     return false;
   };
 
-  // Check if user can create forums
   const canCreateForums = () => {
     return (
       isSuperAdmin ||
@@ -705,7 +744,6 @@ const ForumList = ({ boards: propBoards = {}, clubs: propClubs = {} }) => {
     );
   };
 
-  // Get the first club or board ID where user has permission
   const getDefaultClubOrBoardId = () => {
     if (userClubsWithForumPermission.length > 0) {
       return {
@@ -722,12 +760,11 @@ const ForumList = ({ boards: propBoards = {}, clubs: propClubs = {} }) => {
     return null;
   };
 
-  // Fetch forums from API
   useEffect(() => {
     const fetchForums = async () => {
       try {
         const response = await fetch(
-          "http://localhost:5000/forums2/api/forums"
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/forums2/api/forums`
         );
         if (!response.ok) {
           throw new Error("Failed to fetch forums");
@@ -743,12 +780,10 @@ const ForumList = ({ boards: propBoards = {}, clubs: propClubs = {} }) => {
     fetchForums();
   }, []);
 
-  // Function to handle navigation to the forum page
   const handleViewForum = (forumId) => {
     router.push(`/current_forum/${forumId}`);
   };
 
-  // Function to handle opening members dialog
   const handleViewMembers = (forumId) => {
     setSelectedForumId(forumId);
     setMembersDialogOpen(true);
@@ -778,7 +813,7 @@ const ForumList = ({ boards: propBoards = {}, clubs: propClubs = {} }) => {
 
   const handleCreateForum = async (newForum) => {
     try {
-      const response = await fetch("http://localhost:5000/forums2/forums", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/forums2/forums`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -816,70 +851,78 @@ const ForumList = ({ boards: propBoards = {}, clubs: propClubs = {} }) => {
   const defaultContext = getDefaultClubOrBoardId();
 
   return (
-    <div>
+    <Box sx={{ 
+      backgroundColor: '#f8faff',
+      minHeight: '100vh',
+      p: 4,
+    }}>
+      <Box sx={{ maxWidth: 1600, mx: 'auto' }}>
+        <GradientText variant="h4" sx={{ mb: 3 }}>
+          Community Forums
+        </GradientText>
+        
+        <SearchAndFilter
+          onSearchChange={handleSearchChange}
+          onFilterChange={handleFilterChange}
+          availableBoards={availableBoards}
+          availableClubs={availableClubs}
+        />
 
-      <>
-        <Box sx={{ position: "relative", minHeight: "100vh", pb: 8 }}>
-          <SearchAndFilter
-            onSearchChange={handleSearchChange}
-            onFilterChange={handleFilterChange}
-            availableBoards={availableBoards}
-            availableClubs={availableClubs}
+        <Grid container spacing={3} sx={{ mt: 2 }}>
+          {filteredForums.map((forum) => (
+            <Grid item key={forum._id} xs={12} sm={6} md={4} lg={3}>
+              <ForumCard
+                forum={forum}
+                boardName={availableBoards[forum.board_id]}
+                clubName={availableClubs[forum.club_id]}
+                onViewForum={handleViewForum}
+                onViewMembers={handleViewMembers}
+                onDeleteForum={handleDeleteForum}
+                hasPermission={hasForumPermission(forum)}
+              />
+            </Grid>
+          ))}
+        </Grid>
+
+        {canCreateForums() && (
+          <Fab
+            color="primary"
+            aria-label="add"
+            onClick={handleCreateForumToggle}
+            sx={{
+              position: "fixed",
+              bottom: 32,
+              right: 32,
+              background: 'linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)',
+              '&:hover': {
+                background: 'linear-gradient(90deg, #3a5fc0 0%, #7b3dc1 100%)',
+              },
+            }}
+          >
+            <AddIcon />
+          </Fab>
+        )}
+
+        {createForumOpen && (
+          <ForumCreateDialog
+            open={createForumOpen}
+            onClose={handleCreateForumToggle}
+            onCreateForum={handleCreateForum}
+            userId={userId}
+            board_id={selectedBoard}
+            club_id={selectedClub}
           />
+        )}
 
-          <Grid container spacing={3} sx={{ px: 2 }}>
-            {filteredForums.map((forum) => (
-              <Grid item key={forum._id}>
-                <ForumCard
-                  forum={forum}
-                  boardName={availableBoards[forum.board_id]}
-                  clubName={availableClubs[forum.club_id]}
-                  onViewForum={handleViewForum}
-                  onViewMembers={handleViewMembers}
-                  onDeleteForum={handleDeleteForum}
-                  hasPermission={hasForumPermission(forum)}
-                />
-              </Grid>
-            ))}
-          </Grid>
-
-          {false && (
-            <Fab
-              color="primary"
-              aria-label="add"
-              onClick={handleCreateForumToggle}
-              sx={{
-                position: "fixed",
-                bottom: 16,
-                right: 16,
-              }}
-            >
-              <AddIcon />
-            </Fab>
-          )}
-
-          {createForumOpen && (
-            <ForumCreateDialog
-              open={createForumOpen}
-              onClose={handleCreateForumToggle}
-              onCreateForum={handleCreateForum}
-              userId={userId}
-              board_id={selectedBoard} // pass the selected board_id
-              club_id={selectedClub} // pass the selected club_id
-            />
-          )}
-
-          {/* Forum Members Dialog */}
-          {membersDialogOpen && (
-            <ForumMembersDialog
-              open={membersDialogOpen}
-              onClose={handleCloseMembersDialog}
-              forumId={selectedForumId}
-            />
-          )}
-        </Box>
-      </>
-    </div>
+        {membersDialogOpen && (
+          <ForumMembersDialog
+            open={membersDialogOpen}
+            onClose={handleCloseMembersDialog}
+            forumId={selectedForumId}
+          />
+        )}
+      </Box>
+    </Box>
   );
 };
 

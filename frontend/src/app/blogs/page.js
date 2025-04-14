@@ -1,25 +1,32 @@
 "use client";
 import { useState, useEffect } from "react";
 import {
-  Container,
+  Box,
+  Grid,
   Card,
+  CardMedia,
   CardContent,
   Typography,
   Button,
-  Box,
-  Grid,
-  Divider,
-  Chip,
+  Avatar,
+  Stack,
+  Container,
   IconButton,
   Fab,
+  Chip,
 } from "@mui/material";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import BlogCreateForm from "../../components/blogs/BlogCreateForm";
 import SearchBar from "../../components/blogs/SearchBar";
 import { fetchUserData } from "@/utils/auth";
-
+import { useRouter } from "next/navigation";
+import ShareIcon from "@mui/icons-material/Share";
+import UniversalShareMenu from "../../components/shared/UniversalShareMenu";
 export default function BLOGS() {
   const [blogs, setBlogs] = useState([]);
   const [filteredBlogs, setFilteredBlogs] = useState([]);
@@ -32,11 +39,29 @@ export default function BLOGS() {
   const [userData, setUserData] = useState(null);
   const [userId, setUserId] = useState(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-  const [userClubsWithBlogPermission, setUserClubsWithBlogPermission] = useState([]);
-  const [userBoardsWithBlogPermission, setUserBoardsWithBlogPermission] = useState([]);
+  const [userClubsWithBlogPermission, setUserClubsWithBlogPermission] = useState(
+    []
+  );
+  const [shareMenuAnchorEl, setShareMenuAnchorEl] = useState(null);
+const [blogToShare, setBlogToShare] = useState(null);
+  const [userBoardsWithBlogPermission, setUserBoardsWithBlogPermission] =
+    useState([]);
   const [selectedClubId, setSelectedClubId] = useState(null);
   const [selectedBoardId, setSelectedBoardId] = useState(null);
-
+  const router = useRouter();
+  useEffect(() => {
+    const handleBackButton = (e) => {
+      e.preventDefault();
+      router.push("/home");
+    };
+  
+    window.history.pushState(null, "", window.location.pathname);
+    window.addEventListener("popstate", handleBackButton);
+  
+    return () => {
+      window.removeEventListener("popstate", handleBackButton);
+    };
+  }, [router]);
   // Fetch user data on mount
   useEffect(() => {
     async function loadUserData() {
@@ -49,10 +74,11 @@ export default function BLOGS() {
 
         // Extract clubs with blogs permission
         if (result.userData?.data?.clubs) {
-          const clubsWithPermission = Object.keys(result.userData.data.clubs)
-            .filter(clubId => result.userData.data.clubs[clubId].blogs === true);
+          const clubsWithPermission = Object.keys(
+            result.userData.data.clubs
+          ).filter((clubId) => result.userData.data.clubs[clubId].blogs === true);
           setUserClubsWithBlogPermission(clubsWithPermission);
-          
+
           // Set the first club as default if available
           if (clubsWithPermission.length > 0) {
             setSelectedClubId(clubsWithPermission[0]);
@@ -61,10 +87,13 @@ export default function BLOGS() {
 
         // Extract boards with blogs permission
         if (result.userData?.data?.boards) {
-          const boardsWithPermission = Object.keys(result.userData.data.boards)
-            .filter(boardId => result.userData.data.boards[boardId].blogs === true);
+          const boardsWithPermission = Object.keys(
+            result.userData.data.boards
+          ).filter(
+            (boardId) => result.userData.data.boards[boardId].blogs === true
+          );
           setUserBoardsWithBlogPermission(boardsWithPermission);
-          
+
           // Set the first board as default if available
           if (boardsWithPermission.length > 0) {
             setSelectedBoardId(boardsWithPermission[0]);
@@ -98,12 +127,23 @@ export default function BLOGS() {
 
     return false;
   };
-
+  const handleShareClick = (event, blog) => {
+    event.stopPropagation();
+    setShareMenuAnchorEl(event.currentTarget);
+    setBlogToShare(blog);
+  };
+  
+  const handleCloseShareMenu = () => {
+    setShareMenuAnchorEl(null);
+    setBlogToShare(null);
+  };
   // Check if user can create blogs
   const canCreateBlogs = () => {
-    return isSuperAdmin || 
-           userClubsWithBlogPermission.length > 0 || 
-           userBoardsWithBlogPermission.length > 0;
+    return (
+      isSuperAdmin ||
+      userClubsWithBlogPermission.length > 0 ||
+      userBoardsWithBlogPermission.length > 0
+    );
   };
 
   // Fetch blogs from backend
@@ -111,7 +151,7 @@ export default function BLOGS() {
     const fetchBlogs = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch("http://localhost:5000/blogs/blogs");
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/blogs/blogs`);
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -123,15 +163,28 @@ export default function BLOGS() {
           .map((blog) => ({
             id: blog._id,
             title: blog.title || "Untitled Blog",
-            publisher: "Unknown",
+            publisher: {
+              name: "Unknown Publisher",
+              avatar: "/api/placeholder/40/40",
+            },
             introduction: blog.introduction || "",
             mainContent: blog.main_content || "",
             conclusion: blog.conclusion || "",
             tags: blog.tags || [],
-            image: blog.image || null,
+            image: blog.image
+              ? {
+                  url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/uploads/${blog.image.filename}`,
+                  alt: blog.title,
+                }
+              : { url: "/api/placeholder/800/500", alt: "Blog image" },
             club_id: blog.club_id || null,
             board_id: blog.board_id || null,
-            createdAt: new Date().toLocaleDateString(),
+            createdAt: new Date(blog.createdAt).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            }),
+            views: Math.floor(Math.random() * 5000),
           }))
           .filter((blog) => blog.title !== "Untitled Blog");
 
@@ -160,7 +213,8 @@ export default function BLOGS() {
       (blog) =>
         blog.title.toLowerCase().includes(lowercaseQuery) ||
         blog.introduction.toLowerCase().includes(lowercaseQuery) ||
-        blog.tags.some((tag) => tag.toLowerCase().includes(lowercaseQuery))
+        (blog.tags &&
+          blog.tags.some((tag) => tag.toLowerCase().includes(lowercaseQuery)))
     );
 
     setFilteredBlogs(filtered);
@@ -169,7 +223,7 @@ export default function BLOGS() {
   const handleDelete = async (blogId) => {
     try {
       const response = await fetch(
-        `http://localhost:5000/blogs/blogs/${blogId}`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/blogs/blogs/${blogId}`,
         {
           method: "DELETE",
         }
@@ -190,7 +244,7 @@ export default function BLOGS() {
   const handleEdit = async (blog) => {
     try {
       const response = await fetch(
-        `http://localhost:5000/blogs/blogs/${blog.id}`
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/blogs/blogs/${blog.id}`
       );
 
       if (!response.ok) {
@@ -231,8 +285,8 @@ export default function BLOGS() {
   const handleFormSubmit = async (formData) => {
     try {
       const url = isEditing
-        ? `http://localhost:5000/blogs/blogs/${selectedBlog.id}`
-        : "http://localhost:5000/blogs/blogs";
+        ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/blogs/blogs/${selectedBlog.id}`
+        : `${process.env.NEXT_PUBLIC_BACKEND_URL}/blogs/blogs`;
 
       const method = isEditing ? "PUT" : "POST";
 
@@ -288,6 +342,12 @@ export default function BLOGS() {
                 ...updatedBlog,
                 id: updatedBlog._id,
                 createdAt: new Date(updatedBlog.createdAt).toLocaleDateString(),
+                image: updatedBlog.image
+                  ? {
+                      url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/uploads/${updatedBlog.image.filename}`,
+                      alt: updatedBlog.title,
+                    }
+                  : { url: "/api/placeholder/800/500", alt: "Blog image" },
               }
             : blog
         );
@@ -297,7 +357,25 @@ export default function BLOGS() {
         const newBlog = {
           ...updatedBlog,
           id: updatedBlog._id,
-          createdAt: new Date(updatedBlog.createdAt).toLocaleDateString(),
+          publisher: {
+            name: "Unknown Publisher",
+            avatar: "/api/placeholder/40/40",
+          },
+          createdAt: new Date(updatedBlog.createdAt).toLocaleDateString(
+            "en-US",
+            {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            }
+          ),
+          views: Math.floor(Math.random() * 5000),
+          image: updatedBlog.image
+            ? {
+                url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/uploads/${updatedBlog.image.filename}`,
+                alt: updatedBlog.title,
+              }
+            : { url: "/api/placeholder/800/500", alt: "Blog image" },
         };
         const updatedBlogs = [...blogs, newBlog];
         setBlogs(updatedBlogs);
@@ -314,158 +392,436 @@ export default function BLOGS() {
     setSearchQuery(query);
   };
 
-  const handleFilterToggle = () => {};
+  const handleReadMore = (blogId) => {
+    router.push(`/current_blog/${blogId}`);
+  };
 
   if (isLoading) {
     return (
-      <Container maxWidth="lg" sx={{ py: 2, textAlign: "center" }}>
-        <Typography variant="h6">Loading blogs...</Typography>
-      </Container>
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        minHeight: '80vh', 
+        backgroundColor: '#f9fafe' 
+      }}>
+        <Typography variant="h6" sx={{ fontWeight: 500, color: '#4776E6' }}>
+          Loading blogs...
+        </Typography>
+      </Box>
     );
   }
 
   if (error) {
     return (
-      <Container maxWidth="lg" sx={{ py: 2, textAlign: "center" }}>
-        <Typography variant="h6" color="error">
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        minHeight: '80vh',
+        backgroundColor: '#f9fafe'
+      }}>
+        <Typography variant="h6" sx={{ fontWeight: 500, color: '#f44336' }}>
           Error loading blogs: {error}
         </Typography>
-      </Container>
+      </Box>
     );
   }
 
   return (
-    <Container
-      maxWidth="lg"
-      sx={{ py: 2, position: "relative", minHeight: "80vh" }}
-    >
-      <SearchBar
-        searchQuery={searchQuery}
-        onSearchChange={handleSearchChange}
-        onFilterToggle={handleFilterToggle}
-      />
-
-      <Grid container spacing={2}>
-        {filteredBlogs.map((blog) => (
-          <Grid item xs={12} sm={6} md={4} key={blog.id}>
-            <Card elevation={1} sx={{ height: "100%" }}>
-              <CardContent>
-                {blog.image && (
-                  <Box
-                    component="img"
-                    sx={{
-                      width: "100%",
-                      height: 200,
-                      objectFit: "contain",
-                      mb: 2,
-                      borderRadius: 1,
-                    }}
-                    src={`http://localhost:5000/uploads/${blog.image.filename}`}
-                    alt={blog.title}
-                  />
-                )}
-                <Box
-                  sx={{
-                    mb: 1,
-                    display: "flex",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <Typography variant="h6">{blog.title}</Typography>
-                  {hasBlogPermission(blog) && (
-                    <Box>
-                      <IconButton
-                        onClick={() => handleEdit(blog)}
-                        color="primary"
-                        size="small"
-                      >
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton
-                        onClick={() => handleDelete(blog.id)}
-                        color="error"
-                        size="small"
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Box>
-                  )}
-                </Box>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ mb: 1 }}
-                >
-                  <strong>By:</strong> {blog.publisher}
-                </Typography>
-                <Box sx={{ mb: 2 }}>
-                  {blog.tags && blog.tags.length > 0 && (
-                    <Box
-                      sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 1 }}
-                    >
-                      {blog.tags.map((tag, index) => (
-                        <Chip
-                          key={index}
-                          label={tag}
-                          size="small"
-                          color="primary"
-                          variant="outlined"
-                        />
-                      ))}
-                    </Box>
-                  )}
-                  <Typography variant="body2" color="text.secondary">
-                    <strong>Published:</strong> {blog.createdAt}
-                  </Typography>
-                </Box>
-                <Button variant="outlined" fullWidth color="primary">
-                  Read More
-                </Button>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
-
-      {false && (
-        <Fab
-          color="primary"
-          aria-label="add"
-          onClick={handleAddNew}
-          sx={{
-            position: "fixed",
-            bottom: 24,
-            right: 24,
-            boxShadow: 3,
+    <Box
+  sx={{
+    backgroundColor: '#f9fafe',
+    minHeight: '100vh',
+    p: { xs: 2, md: 4 },
+  }}
+>
+  <Container maxWidth="xl">
+    {/* Header Section */}
+    <Box sx={{ 
+      mb: 5, 
+      display: 'flex', 
+      flexDirection: { xs: 'column', md: 'row' }, 
+      justifyContent: 'space-between',
+      alignItems: { xs: 'flex-start', md: 'center' },
+      gap: 2,
+      position: 'relative'
+    }}>
+      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+        <IconButton 
+          onClick={() => router.push("/home")}
+          sx={{ 
+            backgroundColor: 'white',
+            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.08)',
+            mr: 2,
+            '&:hover': {
+              backgroundColor: '#f0f4ff',
+            }
           }}
         >
-          <AddIcon />
-        </Fab>
-      )}
+          <ArrowBackIcon sx={{ color: '#4776E6' }} />
+        </IconButton>
+        
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{
+            fontWeight: 700,
+            background: 'linear-gradient(45deg, #4776E6 0%, #8E54E9 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            letterSpacing: '-0.5px',
+          }}
+        >
+          Latest Blog Posts
+        </Typography>
+      </Box>
+      
+      <Box sx={{ width: { xs: '100%', md: '40%' } }}>
+        <SearchBar
+          searchQuery={searchQuery}
+          onSearchChange={handleSearchChange}
+        />
+      </Box>
+    </Box>
+        
+        {/* Blog Grid */}
+        {filteredBlogs.length === 0 ? (
+          <Box sx={{ 
+            textAlign: 'center', 
+            py: 10, 
+            backgroundColor: 'white', 
+            borderRadius: 3,
+            boxShadow: '0 4px 20px rgba(71, 118, 230, 0.08)',
+          }}>
+            <Typography variant="h6" sx={{ color: '#607080', fontWeight: 500 }}>
+              No blogs found. Try a different search term.
+            </Typography>
+          </Box>
+        ) : (
+          <Grid container spacing={3}>
+            {filteredBlogs.map((blog) => (
+              <Grid item xs={12} sm={6} md={4} lg={3} key={blog.id}>
+                <Card
+                  sx={{
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    borderRadius: 3,
+                    overflow: 'hidden',
+                    boxShadow: '0 8px 24px rgba(71, 118, 230, 0.12)',
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      transform: 'translateY(-8px)',
+                      boxShadow: '0 16px 32px rgba(71, 118, 230, 0.18)',
+                    },
+                    position: 'relative',
+                    border: 'none',
+                  }}
+                >
+                  {/* Image Section */}
+                  <Box sx={{ position: 'relative' }}>
+                    <CardMedia
+                      component="img"
+                      height="180"
+                      image={blog.image.url}
+                      alt={blog.image.alt}
+                      sx={{ 
+                        objectFit: 'cover',
+                      }}
+                    />
+                    
+                    {/* Tags overlay on image */}
+                    {blog.tags && blog.tags.length > 0 && (
+                      <Box sx={{ 
+                        position: 'absolute', 
+                        bottom: 8, 
+                        left: 8, 
+                        display: 'flex', 
+                        flexWrap: 'wrap', 
+                        gap: 0.5 
+                      }}>
+                        {blog.tags.slice(0, 2).map((tag, index) => (
+                          <Chip
+                            key={index}
+                            label={tag}
+                            size="small"
+                            sx={{
+                              backgroundColor: 'rgba(255, 255, 255, 0.85)',
+                              color: '#4776E6',
+                              fontWeight: 500,
+                              fontSize: '0.7rem',
+                              height: 24,
+                            }}
+                          />
+                        ))}
+                        {blog.tags.length > 2 && (
+                          <Chip
+                            label={`+${blog.tags.length - 2}`}
+                            size="small"
+                            sx={{
+                              backgroundColor: 'rgba(255, 255, 255, 0.85)',
+                              color: '#607080',
+                              fontWeight: 500,
+                              fontSize: '0.7rem',
+                              height: 24,
+                            }}
+                          />
+                        )}
+                      </Box>
+                    )}
+                  </Box>
 
-      <BlogCreateForm
-        open={openDialog}
-        onClose={() => {
-          setOpenDialog(false);
-          setIsEditing(false);
-        }}
-        onSubmit={handleFormSubmit}
-        initialData={
-          selectedBlog
-            ? {
-                title: selectedBlog.title,
-                publisher: selectedBlog.publisher,
-                introduction: selectedBlog.introduction,
-                mainContent: selectedBlog.mainContent,
-                conclusion: selectedBlog.conclusion,
-                tags: selectedBlog.tags,
-                image: selectedBlog.image,
-              }
-            : null
-        }
-        club_id={selectedClubId}
-        board_id={selectedBoardId}
+                  {/* Content Section */}
+                  <CardContent sx={{ 
+                    p: 3, 
+                    flexGrow: 1, 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    backgroundColor: 'white'
+                  }}>
+                  
+                    {/* Admin Controls */}
+                    {hasBlogPermission(blog) && (
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          top: 8,
+                          right: 8,
+                          display: 'flex',
+                          gap: 1,
+                          zIndex: 2,
+                        }}
+                      >
+                        <IconButton
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(blog);
+                          }}
+                          size="small"
+                          sx={{
+                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                            color: '#4776E6',
+                            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+                            '&:hover': {
+                              backgroundColor: '#4776E6',
+                              color: 'white',
+                            },
+                            width: 32,
+                            height: 32,
+                          }}
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(blog.id);
+                          }}
+                          size="small"
+                          sx={{
+                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                            color: '#ff5252',
+                            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+                            '&:hover': {
+                              backgroundColor: '#ff5252',
+                              color: 'white',
+                            },
+                            width: 32,
+                            height: 32,
+                          }}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    )}
+
+                    {/* Title */}
+                    <Typography
+                      variant="h6"
+                      component="h2"
+                      sx={{
+                        fontWeight: 600,
+                        fontSize: '1.1rem',
+                        color: '#2A3B4F',
+                        mb: 2,
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        minHeight: '2.75rem',
+                        lineHeight: 1.25,
+                      }}
+                    >
+                      {blog.title}
+                    </Typography>
+
+                    {/* Publisher Info */}
+                    <Stack
+                      direction="row"
+                      spacing={1.5}
+                      alignItems="center"
+                      sx={{ mb: 2 }}
+                    >
+                      <Avatar
+                        src={blog.publisher.avatar}
+                        alt={blog.publisher.name}
+                        sx={{ 
+                          width: 28, 
+                          height: 28,
+                          border: '2px solid #f0f4ff'
+                        }}
+                      />
+                      <Typography 
+                        variant="body2" 
+                        sx={{ 
+                          color: '#607080',
+                          fontWeight: 500,
+                          fontSize: '0.85rem'
+                        }}
+                      >
+                        {blog.publisher.name}
+                      </Typography>
+                    </Stack>
+
+                    {/* Blog Info */}
+                    <Stack
+  direction="row"
+  justifyContent="space-between"
+  alignItems="center"
+  sx={{ mb: 'auto', mt: 2 }}
+>
+  <Stack direction="row" alignItems="center" spacing={0.5}>
+    <CalendarTodayIcon
+      sx={{ color: '#8E54E9', fontSize: '0.9rem' }}
+    />
+    <Typography
+      variant="caption"
+      sx={{ color: '#607080', fontSize: '0.75rem' }}
+    >
+      {blog.createdAt}
+    </Typography>
+  </Stack>
+
+  <Stack direction="row" alignItems="center" spacing={1.5}>
+    <Stack direction="row" alignItems="center" spacing={0.5}>
+      <VisibilityIcon
+        sx={{ color: '#4776E6', fontSize: '0.9rem' }}
       />
-    </Container>
+      <Typography
+        variant="caption"
+        sx={{ color: '#607080', fontSize: '0.75rem', fontWeight: 500 }}
+      >
+        {blog.views.toLocaleString()}
+      </Typography>
+    </Stack>
+    
+    <IconButton
+      onClick={(e) => handleShareClick(e, blog)}
+      size="small"
+      sx={{
+        color: '#4776E6',
+        padding: 0,
+        height: 20,
+        width: 20,
+      }}
+    >
+      <ShareIcon sx={{ fontSize: '1rem' }} />
+    </IconButton>
+  </Stack>
+</Stack>
+
+                    {/* Read More Button */}
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      onClick={() => handleReadMore(blog.id)}
+                      sx={{
+                        mt: 3,
+                        background: 'linear-gradient(45deg, #4776E6 0%, #8E54E9 100%)',
+                        color: 'white',
+                        borderRadius: 2,
+                        textTransform: 'none',
+                        fontWeight: 600,
+                        py: 1,
+                        boxShadow: '0 4px 14px rgba(71, 118, 230, 0.3)',
+                        '&:hover': {
+                          boxShadow: '0 6px 20px rgba(71, 118, 230, 0.4)',
+                          background: 'linear-gradient(45deg, #3a5fc0 0%, #7843c4 100%)',
+                        },
+                      }}
+                    >
+                      Read Article
+                    </Button>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        )}
+        
+        {/* Add New Blog Button */}
+        {canCreateBlogs() && (
+          <Fab
+            color="primary"
+            aria-label="add"
+            onClick={handleAddNew}
+            sx={{
+              position: 'fixed',
+              bottom: 32,
+              right: 32,
+              background: 'linear-gradient(45deg, #4776E6 0%, #8E54E9 100%)',
+              boxShadow: '0 8px 16px rgba(71, 118, 230, 0.3)',
+              '&:hover': {
+                boxShadow: '0 12px 24px rgba(71, 118, 230, 0.4)',
+                transform: 'translateY(-4px)',
+                background: 'linear-gradient(45deg, #3a5fc0 0%, #7843c4 100%)',
+              },
+              transition: 'all 0.3s ease',
+              width: 64,
+              height: 64,
+            }}
+          >
+            <AddIcon sx={{ fontSize: '1.75rem' }} />
+          </Fab>
+        )}
+
+        {/* Blog Create Form Dialog */}
+        <BlogCreateForm
+          open={openDialog}
+          onClose={() => {
+            setOpenDialog(false);
+            setIsEditing(false);
+          }}
+          onSubmit={handleFormSubmit}
+          initialData={
+            selectedBlog
+              ? {
+                  title: selectedBlog.title,
+                  publisher: selectedBlog.publisher,
+                  introduction: selectedBlog.introduction,
+                  mainContent: selectedBlog.mainContent,
+                  conclusion: selectedBlog.conclusion,
+                  tags: selectedBlog.tags,
+                  image: selectedBlog.image,
+                }
+              : null
+          }
+          club_id={selectedClubId}
+          board_id={selectedBoardId}
+        />
+        {/* Share Menu */}
+{blogToShare && (
+  <UniversalShareMenu
+    anchorEl={shareMenuAnchorEl}
+    open={Boolean(shareMenuAnchorEl)}
+    onClose={handleCloseShareMenu}
+    id={blogToShare.id}
+    title={blogToShare.title}
+    contentType="blog"
+  />
+)}
+      </Container>
+    </Box>
   );
 }

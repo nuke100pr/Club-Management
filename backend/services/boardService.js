@@ -4,6 +4,7 @@ const BoardFollow = require("../models/BoardFollow");
 const File = require("../models/File");
 const fs = require("fs");
 const path = require("path");
+const mongoose = require("mongoose");
 
 const uploadDir = path.join(__dirname, "../uploads");
 
@@ -53,44 +54,69 @@ async function saveFile(file) {
 class BoardService {
   // Fetch all boards with follow status for a user
   async fetchAllBoards(userId = null) {
-    const boards = await Board.find({}).populate('image');
-    
+    const boards = await Board.find({}).populate("image");
+
+    // Get follower counts for all boards
+    const followerCounts = await BoardFollow.aggregate([
+      { $group: { _id: "$board_id", count: { $sum: 1 } } },
+    ]);
+
+    // Convert to a map for easy lookup
+    const followersMap = {};
+    followerCounts.forEach((item) => {
+      followersMap[item._id.toString()] = item.count;
+    });
+
     if (!userId) {
-      return boards.map(board => ({
-        ...board.toObject(),
-        isFollowing: false
-      }));
+      return boards.map((board) => {
+        const boardId = board._id.toString();
+        return {
+          ...board.toObject(),
+          isFollowing: false,
+          totalFollowers: followersMap[boardId] || 0,
+        };
+      });
     }
 
     const userFollows = await BoardFollow.find({ user_id: userId });
-    const followedBoardIds = userFollows.map(follow => follow.board_id.toString());
+    const followedBoardIds = userFollows.map((follow) =>
+      follow.board_id.toString()
+    );
 
-    return boards.map(board => ({
-      ...board.toObject(),
-      isFollowing: followedBoardIds.includes(board._id.toString())
-    }));
+    return boards.map((board) => {
+      const boardId = board._id.toString();
+      return {
+        ...board.toObject(),
+        isFollowing: followedBoardIds.includes(boardId),
+        totalFollowers: followersMap[boardId] || 0,
+      };
+    });
   }
 
-  // Fetch board by ID with follow status
   async fetchBoardById(boardId, userId = null) {
-    const board = await Board.findById(boardId);
+    const board = await Board.findById(boardId).populate("image");
     if (!board) return null;
-
+  
+    // Get follower count for this board
+    const followerCount = await BoardFollow.countDocuments({ board_id: boardId });
+  
     if (!userId) {
       return {
         ...board.toObject(),
-        isFollowing: false
+        isFollowing: false,
+        totalFollowers: followerCount,
       };
     }
-
+  
     const follow = await BoardFollow.findOne({
       board_id: boardId,
-      user_id: userId
+      user_id: userId,
     });
-
+  
     return {
       ...board.toObject(),
-      isFollowing: !!follow
+      isFollowing: !!follow,
+      totalFollowers: followerCount,
     };
   }
 
@@ -105,7 +131,8 @@ class BoardService {
     if (!board) {
       throw new Error("Board not found");
     }
-    
+
+    // Delete associated image file if exists
     if (board.image) {
       const file = await File.findById(board.image);
       if (file) {
@@ -115,7 +142,7 @@ class BoardService {
         await File.findByIdAndDelete(board.image);
       }
     }
-    
+
     await Club.deleteMany({ board_id: boardId });
     await BoardFollow.deleteMany({ board_id: boardId });
     return await Board.findByIdAndDelete(boardId);
@@ -129,6 +156,7 @@ class BoardService {
     }
 
     if (imageFile) {
+      // Delete old image if exists
       if (board.image) {
         const oldFile = await File.findById(board.image);
         if (oldFile) {
@@ -138,18 +166,19 @@ class BoardService {
           await File.findByIdAndDelete(board.image);
         }
       }
-      
+
+      // Save new image
       const newImageId = await saveFile(imageFile);
       if (newImageId) {
         updateData.image = newImageId;
       }
     }
 
-    return await Board.findByIdAndUpdate(
-      boardId, 
-      updateData, 
-      { new: true }
-    ).populate('image');
+    const updatedBoard = await Board.findByIdAndUpdate(boardId, updateData, {
+      new: true,
+    }).populate("image");
+
+    return updatedBoard;
   }
 
   // Create a new board with optional image
@@ -163,22 +192,21 @@ class BoardService {
 
     const board = new Board(boardData);
     await board.save();
-    return await Board.findById(board._id).populate('image');
+    return await Board.findById(board._id).populate("image");
   }
 
   // Fetch all boards followed by a user
   async fetchBoardsByUserId(userId) {
-    const follows = await BoardFollow.find({ user_id: userId })
-      .populate({
-        path: "board_id",
-        populate: {
-          path: "image"
-        }
-      });
-      
+    const follows = await BoardFollow.find({ user_id: userId }).populate({
+      path: "board_id",
+      populate: {
+        path: "image",
+      },
+    });
+
     return follows.map((follow) => ({
       ...follow.board_id.toObject(),
-      isFollowing: true
+      isFollowing: true,
     }));
   }
 
@@ -196,11 +224,11 @@ class BoardService {
       user_id: userId,
       board_id: boardId,
     });
-    
+
     if (existingFollow) {
       return existingFollow;
     }
-    
+
     const follow = new BoardFollow({ user_id: userId, board_id: boardId });
     return await follow.save();
   }

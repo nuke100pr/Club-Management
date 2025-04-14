@@ -2,38 +2,33 @@
 import { NextResponse } from "next/server";
 
 // Define route categories
-const PUBLIC_ROUTES = ["/about", "/contact", "/faq"]; // Routes accessible to everyone
-const AUTH_ROUTES = ["/dashboard", "/profile", "/settings"]; // Routes requiring authentication
-const AUTH_PAGES = ["/login", "/register"]; // Auth pages that should redirect to home if already logged in
+const AUTH_PAGES = ["/login", "/register"]; // Only pages accessible without auth
 
 export function middleware(request) {
   const { pathname } = request.nextUrl;
   const hasAuthToken = request.cookies.has("auth_token");
 
-  // Check if the current path is an authentication page (login/register)
-  if (AUTH_PAGES.includes(pathname)) {
-    // If user has auth token and tries to access login/register, redirect to home
-    if (hasAuthToken) {
-      return NextResponse.redirect(new URL("/home", request.url));
-    }
-    // Otherwise, allow access to login/register pages
-    return NextResponse.next();
-  }
-
-  // Check if the path requires authentication
-  const isProtectedRoute = AUTH_ROUTES.some(
-    (route) => pathname === route || pathname.startsWith(`${route}/`)
-  );
-
-  // If it's a protected route and user doesn't have an auth token
-  if (isProtectedRoute && !hasAuthToken) {
-    // Store the original URL to redirect back after login
+  // If user is not authenticated
+  if (!hasAuthToken) {
+    // Only allow access to login and register pages
+    if (AUTH_PAGES.includes(pathname)) {
+      return NextResponse.next();
+    } 
+    
+    // For all other routes, redirect to login
     const url = new URL("/login", request.url);
     url.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(url);
   }
+  
+  // User is authenticated
 
-  // All other cases, proceed normally
+  // If user has auth token and tries to access login/register, redirect to home
+  if (AUTH_PAGES.includes(pathname)) {
+    return NextResponse.redirect(new URL("/home", request.url));
+  }
+
+  // For all other routes, allow access since user is authenticated
   return NextResponse.next();
 }
 

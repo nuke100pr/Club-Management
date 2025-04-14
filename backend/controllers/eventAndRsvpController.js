@@ -105,8 +105,18 @@ const deleteEventController = async (req, res) => {
 const getAllEventsController = async (req, res) => {
   try {
     const userId = req.query.userId;
+    const { board_id, club_id } = req.query;
 
-    let events = await Event.find({})
+    // Create base query with optional board_id/club_id filters
+    let query = {};
+    if (board_id && isValidObjectId(board_id)) {
+      query.board_id = board_id;
+    }
+    if (club_id && isValidObjectId(club_id)) {
+      query.club_id = club_id;
+    }
+
+    let events = await Event.find(query)
       .sort({ timestamp: -1 })
       .populate("image")
       .lean();
@@ -116,14 +126,13 @@ const getAllEventsController = async (req, res) => {
         if (event.club_id && isValidObjectId(event.club_id)) {
           event.club_id = await Club.findById(event.club_id).lean();
         }
-
         if (event.board_id && isValidObjectId(event.board_id)) {
           event.board_id = await Board.findById(event.board_id).lean();
         }
       })
     );
 
-    // 2. If userId provided, fetch all related data
+    // If userId provided, fetch user-specific data
     if (userId) {
       const [userRSVPs, userClubFollows, userBoardFollows] = await Promise.all([
         RSVP.find({ user_id: userId }),
@@ -131,7 +140,6 @@ const getAllEventsController = async (req, res) => {
         BoardFollow.find({ user_id: userId }),
       ]);
 
-      // Create maps for quick lookup
       const rsvpMap = new Map(
         userRSVPs.map((rsvp) => [rsvp.event_id.toString(), true])
       );
@@ -142,7 +150,6 @@ const getAllEventsController = async (req, res) => {
         userBoardFollows.map((follow) => [follow.board_id.toString(), true])
       );
 
-      // 3. Enhance each event with additional information
       events = events.map((event) => ({
         ...event,
         registered: rsvpMap.has(event?._id?.toString()),
@@ -155,12 +162,11 @@ const getAllEventsController = async (req, res) => {
       }));
     }
 
-    // 4. Apply date filters if provided
+    // Apply date filters if provided
     if (req.query.startDate) {
       const startDate = new Date(req.query.startDate);
       events = events.filter((event) => new Date(event.timestamp) >= startDate);
     }
-
     if (req.query.endDate) {
       const endDate = new Date(req.query.endDate);
       events = events.filter((event) => new Date(event.timestamp) <= endDate);

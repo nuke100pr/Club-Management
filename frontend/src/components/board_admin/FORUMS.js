@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import SearchIcon from "@mui/icons-material/Search"
+import SearchIcon from "@mui/icons-material/Search";
 import { useRouter } from "next/navigation";
 import {
   Card,
@@ -199,51 +199,99 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>Forum Members</DialogTitle>
-      <DialogContent>
+    <Dialog 
+      open={open} 
+      onClose={onClose} 
+      maxWidth="md" 
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: 2,
+          boxShadow: "0 12px 24px rgba(95, 150, 230, 0.15)",
+          overflow: "hidden"
+        }
+      }}
+    >
+      <DialogTitle sx={{ 
+        background: "linear-gradient(135deg, #4776E6 0%, #8E54E9 100%)", 
+        color: "white",
+        fontWeight: 600,
+        fontFamily: "'Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif"
+      }}>
+        Forum Members
+      </DialogTitle>
+      <DialogContent sx={{ p: 3, bgcolor: "#f8faff" }}>
         {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
-            <CircularProgress />
+            <CircularProgress sx={{ color: "#4776E6" }} />
           </Box>
         ) : (
           <>
             <Box sx={{ mb: 3 }}>
-              <Typography variant="h6" sx={{ mb: 1 }}>
+              <Typography 
+                variant="h5" 
+                sx={{ 
+                  mb: 2,
+                  fontWeight: 600,
+                  background: "linear-gradient(135deg, #4776E6 0%, #8E54E9 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  fontFamily: "'Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif"
+                }}
+              >
                 Add New Members
               </Typography>
 
               <TextField
                 fullWidth
                 variant="outlined"
-                size="small"
                 placeholder="Search users..."
                 value={searchNewMember}
                 onChange={(e) => setSearchNewMember(e.target.value)}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <SearchIcon />
+                      <SearchIcon sx={{ color: "#607080" }} />
                     </InputAdornment>
                   ),
                 }}
-                sx={{ mb: 2 }}
+                sx={{
+                  mb: 2,
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 2,
+                    bgcolor: "white",
+                    boxShadow: "0 2px 8px rgba(95, 150, 230, 0.1)",
+                    transition: "box-shadow 0.3s ease",
+                    "&:hover": {
+                      boxShadow: "0 4px 15px rgba(95, 150, 230, 0.2)",
+                    },
+                    "&.Mui-focused": {
+                      boxShadow: "0 4px 15px rgba(95, 150, 230, 0.2)",
+                    },
+                  },
+                  "& .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "rgba(95, 150, 230, 0.2)",
+                  },
+                  "& .Mui-focused .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#4776E6",
+                  },
+                }}
               />
 
-              <Box
+              <Paper
                 sx={{
                   maxHeight: 200,
                   overflow: "auto",
-                  border: "1px solid #eee",
-                  borderRadius: 1,
-                  p: 1,
+                  borderRadius: 2,
+                  boxShadow: "0 4px 12px rgba(95, 150, 230, 0.1)",
+                  bgcolor: "white",
                 }}
               >
                 {filteredAvailableUsers.length === 0 ? (
                   <Typography
                     variant="body2"
-                    color="text.secondary"
-                    sx={{ p: 1 }}
+                    color="#607080"
+                    sx={{ p: 3, textAlign: "center" }}
                   >
                     {searchNewMember
                       ? "No matching users found"
@@ -256,32 +304,82 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
                         key={user._id}
                         button="true"
                         onClick={() => handleUserSelect(user._id)}
+                        sx={{
+                          borderRadius: 1,
+                          transition: "background-color 0.3s ease",
+                          "&:hover": {
+                            bgcolor: "rgba(95, 150, 230, 0.05)",
+                          },
+                        }}
                       >
                         <Checkbox
                           edge="start"
                           checked={selectedUsers.includes(user._id)}
                           tabIndex={-1}
                           disableRipple
+                          sx={{
+                            color: "#4776E6",
+                            "&.Mui-checked": {
+                              color: "#4776E6",
+                            },
+                          }}
                         />
                         <ListItemText
-                          primary={user.name || user._id}
-                          secondary={user.email}
+                          primary={
+                            <Typography 
+                              sx={{ 
+                                fontWeight: 500, 
+                                color: "#2A3B4F",
+                                fontFamily: "'Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif"
+                              }}
+                            >
+                              {user.name || user._id}
+                            </Typography>
+                          }
+                          secondary={
+                            <Typography 
+                              variant="body2" 
+                              sx={{ color: "#607080" }}
+                            >
+                              {user.email}
+                            </Typography>
+                          }
                         />
                       </ListItem>
                     ))}
                   </List>
                 )}
-              </Box>
+              </Paper>
 
               <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
                 <Button
                   variant="contained"
                   onClick={handleAddMember}
                   disabled={selectedUsers.length === 0 || addingMember}
-                  sx={{ minWidth: 100 }}
+                  sx={{
+                    minWidth: 120,
+                    py: 1,
+                    px: 3,
+                    borderRadius: 2,
+                    background: "linear-gradient(135deg, #4776E6 0%, #8E54E9 100%)",
+                    boxShadow: "0 4px 10px rgba(71, 118, 230, 0.3)",
+                    fontWeight: 500,
+                    textTransform: "none",
+                    transition: "all 0.3s ease",
+                    fontFamily: "'Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif",
+                    "&:hover": {
+                      boxShadow: "0 6px 15px rgba(71, 118, 230, 0.4)",
+                      transform: "translateY(-1px)",
+                      background: "linear-gradient(135deg, #3a5fc0 0%, #7b46cd 100%)",
+                    },
+                    "&:disabled": {
+                      background: "linear-gradient(135deg, #a3b8e0 0%, #c5aee0 100%)",
+                      boxShadow: "none",
+                    },
+                  }}
                 >
                   {addingMember ? (
-                    <CircularProgress size={24} />
+                    <CircularProgress size={24} sx={{ color: "white" }} />
                   ) : (
                     `Add (${selectedUsers.length})`
                   )}
@@ -289,71 +387,169 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
               </Box>
             </Box>
 
-            <Divider sx={{ my: 2 }} />
+            <Divider sx={{ my: 3 }} />
 
-            <Typography variant="h6" sx={{ mb: 1 }}>
+            <Typography 
+              variant="h5" 
+              sx={{ 
+                mb: 2,
+                fontWeight: 600,
+                background: "linear-gradient(135deg, #4776E6 0%, #8E54E9 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                fontFamily: "'Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif"
+              }}
+            >
               Current Members ({members.length})
             </Typography>
 
             <TextField
               fullWidth
               variant="outlined"
-              size="small"
               placeholder="Search members..."
               value={searchExistingMember}
               onChange={(e) => setSearchExistingMember(e.target.value)}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <SearchIcon />
+                    <SearchIcon sx={{ color: "#607080" }} />
                   </InputAdornment>
                 ),
               }}
-              sx={{ mb: 2 }}
+              sx={{
+                mb: 2,
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: 2,
+                  bgcolor: "white",
+                  boxShadow: "0 2px 8px rgba(95, 150, 230, 0.1)",
+                  transition: "box-shadow 0.3s ease",
+                  "&:hover": {
+                    boxShadow: "0 4px 15px rgba(95, 150, 230, 0.2)",
+                  },
+                  "&.Mui-focused": {
+                    boxShadow: "0 4px 15px rgba(95, 150, 230, 0.2)",
+                  },
+                },
+                "& .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "rgba(95, 150, 230, 0.2)",
+                },
+                "& .Mui-focused .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#4776E6",
+                },
+              }}
             />
 
             {filteredMembers.length === 0 ? (
-              <Typography variant="body2" color="text.secondary">
+              <Typography 
+                variant="body2" 
+                color="#607080"
+                sx={{ p: 3, textAlign: "center" }}
+              >
                 No members found for this forum.
               </Typography>
             ) : (
-              <List>
-                {filteredMembers.map((member) => (
-                  <React.Fragment key={member._id || member.user_id}>
-                    <ListItem>
-                      <ListItemText
-                        primary={member.name || member.user_id}
-                        secondary={
-                          <>
-                            {member.email && <span>{member.email}</span>}
-                            {member.joined_at && (
-                              <span style={{ display: "block" }}>
-                                Joined: {formatDate(member.joined_at)}
-                              </span>
-                            )}
-                          </>
-                        }
-                      />
-                      <ListItemSecondaryAction>
-                        <IconButton
-                          edge="end"
-                          color="error"
-                          onClick={() => handleRemoveMember(member.user_id)}
-                        >
-                          <PersonRemoveIcon />
-                        </IconButton>
-                      </ListItemSecondaryAction>
-                    </ListItem>
-                    <Divider component="li" />
-                  </React.Fragment>
-                ))}
-              </List>
+              <Paper
+                sx={{
+                  overflow: "hidden",
+                  borderRadius: 2,
+                  boxShadow: "0 4px 12px rgba(95, 150, 230, 0.1)",
+                  bgcolor: "white",
+                }}
+              >
+                <List>
+                  {filteredMembers.map((member) => (
+                    <React.Fragment key={member._id || member.user_id}>
+                      <ListItem
+                        sx={{
+                          transition: "background-color 0.3s ease",
+                          "&:hover": {
+                            bgcolor: "rgba(95, 150, 230, 0.05)",
+                          },
+                        }}
+                      >
+                        <ListItemText
+                          primary={
+                            <Typography 
+                              sx={{ 
+                                fontWeight: 500, 
+                                color: "#2A3B4F",
+                                fontFamily: "'Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif"
+                              }}
+                            >
+                              {member.name || member.user_id}
+                            </Typography>
+                          }
+                          secondary={
+                            <>
+                              {member.email && (
+                                <Typography 
+                                  variant="body2" 
+                                  sx={{ color: "#607080", display: "block" }}
+                                >
+                                  {member.email}
+                                </Typography>
+                              )}
+                              {member.joined_at && (
+                                <Typography 
+                                  variant="body2" 
+                                  sx={{ 
+                                    color: "#607080", 
+                                    display: "block",
+                                    fontSize: "0.75rem"
+                                  }}
+                                >
+                                  Joined: {formatDate(member.joined_at)}
+                                </Typography>
+                              )}
+                            </>
+                          }
+                        />
+                        <ListItemSecondaryAction>
+                          <IconButton
+                            edge="end"
+                            color="error"
+                            onClick={() => handleRemoveMember(member.user_id)}
+                            sx={{
+                              color: "#d32f2f",
+                              transition: "all 0.3s ease",
+                              "&:hover": {
+                                background: "rgba(211, 47, 47, 0.08)",
+                                transform: "scale(1.05)",
+                              },
+                            }}
+                          >
+                            <PersonRemoveIcon />
+                          </IconButton>
+                        </ListItemSecondaryAction>
+                      </ListItem>
+                      <Divider component="li" />
+                    </React.Fragment>
+                  ))}
+                </List>
+              </Paper>
             )}
           </>
         )}
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} color="primary">
+      <DialogActions sx={{ p: 2, bgcolor: "#f8faff" }}>
+        <Button 
+          onClick={onClose} 
+          sx={{
+            px: 3,
+            py: 1,
+            borderRadius: 2,
+            color: "#4776E6",
+            borderColor: "#4776E6",
+            fontWeight: 500,
+            textTransform: "none",
+            transition: "all 0.3s ease",
+            fontFamily: "'Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif",
+            "&:hover": {
+              borderColor: "#3a5fc0",
+              backgroundColor: "rgba(71, 118, 230, 0.05)",
+            },
+          }}
+        >
           Close
         </Button>
       </DialogActions>
@@ -398,18 +594,19 @@ const ForumCard = ({
     }
   };
 
+  // Modern tag colors
   const tagColors = [
-    "#2196F3",
-    "#4CAF50",
-    "#FF9800",
-    "#9C27B0",
-    "#F44336",
-    "#00BCD4",
-    "#673AB7",
-    "#3F51B5",
-    "#009688",
-    "#CDDC39",
-    "#607D8B",
+    "#4776E6", // primary blue
+    "#8E54E9", // secondary purple
+    "#2D9CDB", // light blue
+    "#9B51E0", // lavender
+    "#F2994A", // orange
+    "#6FCF97", // green
+    "#EB5757", // red
+    "#56CCF2", // cyan
+    "#BB6BD9", // pink
+    "#219653", // forest green
+    "#607D8B", // blue-gray
   ];
 
   const getTagColor = (index) => {
@@ -420,22 +617,40 @@ const ForumCard = ({
     <Card
       sx={{
         width: 350,
-        boxShadow: "0px 2px 6px rgba(0,0,0,0.1)",
-        borderRadius: 2,
-        mb: 2,
+        borderRadius: 4,
+        overflow: "hidden",
+        boxShadow: "0 4px 12px rgba(95, 150, 230, 0.1)",
+        transition: "all 0.3s ease",
+        position: "relative",
+        "&:hover": {
+          transform: "translateY(-8px)",
+          boxShadow: "0 12px 20px rgba(95, 150, 230, 0.2)"
+        },
+        "&::before": {
+          content: '""',
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: "4px",
+          background: "linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)",
+          zIndex: 1
+        }
       }}
-
     >
       <CardMedia
         component="img"
         height="140"
         image={
-          `http://localhost:5000/uploads/${forum.image.filename}` ||
+          `http://localhost:5000/uploads/${forum.image?.filename}` ||
           "https://via.placeholder.com/350x140"
         }
         alt={forum.title}
+        sx={{
+          objectFit: "cover",
+        }}
       />
-      <Box p={2}>
+      <Box p={3}>
         <Box
           sx={{
             display: "flex",
@@ -444,48 +659,79 @@ const ForumCard = ({
             mb: 1,
           }}
         >
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              flexGrow: 1,
+              fontWeight: 600,
+              color: "#2A3B4F",
+              fontFamily: "'Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif"
+            }}
+          >
             {forum.title}
           </Typography>
-          {hasPermission && (
-            <Box>
-              <IconButton
-                onClick={() => handleEdit(forum._id)}
-                color="primary"
-                size="small"
-              >
-                <EditIcon fontSize="small" />
+          <Box sx={{ display: "flex" }}>
+            {hasPermission && (
+              <>
+                <IconButton
+                  onClick={() => handleEdit(forum._id)}
+                  sx={{
+                    color: "#4776E6",
+                    p: 1,
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      backgroundColor: "rgba(71, 118, 230, 0.1)",
+                      transform: "scale(1.05)",
+                    },
+                  }}
+                >
+                  <EditIcon fontSize="small" />
+                </IconButton>
+                <IconButton
+                  onClick={() => handleDelete(forum._id)}
+                  sx={{
+                    color: "#d32f2f",
+                    p: 1,
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      backgroundColor: "rgba(211, 47, 47, 0.1)",
+                      transform: "scale(1.05)",
+                    },
+                  }}
+                >
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              </>
+            )}
+            <Tooltip
+              title={forum.public_or_private === "private" ? "Private" : "Public"}
+            >
+              <IconButton size="small" sx={{ ml: 1, color: forum.public_or_private === "private" ? "#607080" : "#4776E6" }}>
+                {forum.public_or_private === "private" ? (
+                  <LockIcon fontSize="small" />
+                ) : (
+                  <PublicIcon fontSize="small" />
+                )}
               </IconButton>
-              <IconButton
-                onClick={() => handleDelete(forum._id)}
-                color="error"
-                size="small"
-              >
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </Box>
-          )}
-          <Tooltip
-            title={forum.public_or_private === "private" ? "Private" : "Public"}
-          >
-            <IconButton size="small" sx={{ ml: 1 }}>
-              {forum.public_or_private === "private" ? (
-                <LockIcon fontSize="small" />
-              ) : (
-                <PublicIcon fontSize="small" />
-              )}
-            </IconButton>
-          </Tooltip>
+            </Tooltip>
+          </Box>
         </Box>
 
-        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mb: 2 }}>
+        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.8, mb: 2 }}>
           {boardName && (
             <Chip
               label={boardName}
               size="small"
               sx={{
-                backgroundColor: "#4CAF50",
-                color: "white",
+                backgroundColor: "rgba(71, 118, 230, 0.1)",
+                color: "#4776E6",
+                fontWeight: 500,
+                fontSize: "0.65rem",
+                height: "22px",
+                borderRadius: "8px",
+                "& .MuiChip-label": {
+                  px: 1,
+                },
               }}
             />
           )}
@@ -494,8 +740,15 @@ const ForumCard = ({
               label={clubName}
               size="small"
               sx={{
-                backgroundColor: "#FF5722",
-                color: "white",
+                backgroundColor: "rgba(142, 84, 233, 0.1)",
+                color: "#8E54E9",
+                fontWeight: 500,
+                fontSize: "0.65rem",
+                height: "22px",
+                borderRadius: "8px",
+                "& .MuiChip-label": {
+                  px: 1,
+                },
               }}
             />
           )}
@@ -507,22 +760,37 @@ const ForumCard = ({
                 label={tag}
                 size="small"
                 sx={{
-                  backgroundColor: getTagColor(index),
-                  color: "white",
+                  backgroundColor: `${getTagColor(index)}15`, // 15% opacity
+                  color: getTagColor(index),
+                  fontWeight: 500,
+                  fontSize: "0.65rem",
+                  height: "22px",
+                  borderRadius: "8px",
+                  "& .MuiChip-label": {
+                    px: 1,
+                  },
                 }}
               />
             ))}
         </Box>
 
-        <Typography variant="body2" sx={{ mb: 2 }}>
-          {truncateText(forum.description)}
+        <Typography 
+          variant="body2" 
+          sx={{ 
+            mb: 2,
+            color: "#607080",
+            fontFamily: "'Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif",
+            lineHeight: 1.6
+          }}
+        >
+          {truncateText(forum.description, 120)}
         </Typography>
 
         <Box
           sx={{
             display: "flex",
             justifyContent: "space-between",
-            borderTop: "1px solid #eee",
+            borderTop: "1px solid rgba(95, 150, 230, 0.1)",
             pt: 2,
             mb: 2,
           }}
@@ -530,64 +798,69 @@ const ForumCard = ({
           <Box sx={{ display: "flex", alignItems: "center" }}>
             <VisibilityIcon
               fontSize="small"
-              sx={{ mr: 0.5, color: "text.secondary" }}
+              sx={{ mr: 0.5, color: "#607080", fontSize: "1rem" }}
             />
-            <Typography variant="body2" color="text.secondary">
-              {forum.number_of_views.trim()}
+            <Typography variant="body2" color="#607080">
+              {forum.number_of_views?.trim() || "0"}
             </Typography>
           </Box>
 
           <Box sx={{ display: "flex", alignItems: "center" }}>
             <CommentIcon
               fontSize="small"
-              sx={{ mr: 0.5, color: "text.secondary" }}
+              sx={{ mr: 0.5, color: "#607080", fontSize: "1rem" }}
             />
-            <Typography variant="body2" color="text.secondary">
-              {forum.number_of_replies.trim()}
+            <Typography variant="body2" color="#607080">
+              {forum.number_of_replies?.trim() || "0"}
             </Typography>
           </Box>
         </Box>
 
         <Box sx={{ display: "flex", gap: 1 }}>
           <Button
-            variant="outlined"
-            color="primary"
+            variant="contained"
             onClick={() => onViewForum(forum._id)}
             sx={{
               flexGrow: 1,
               borderRadius: 2,
               textTransform: "none",
               py: 1.5,
-              borderColor: "#1976d2",
-              color: "#1976d2",
+              fontWeight: 500,
+              background: "linear-gradient(135deg, #4776E6 0%, #8E54E9 100%)",
+              boxShadow: "0 4px 10px rgba(71, 118, 230, 0.3)",
+              fontFamily: "'Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif",
+              transition: "all 0.3s ease",
               "&:hover": {
-                backgroundColor: "transparent",
-                borderColor: "#1976d2",
-                opacity: 0.8,
+                boxShadow: "0 6px 15px rgba(71, 118, 230, 0.4)",
+                transform: "translateY(-2px)",
+                background: "linear-gradient(135deg, #3a5fc0 0%, #7b46cd 100%)",
               },
             }}
           >
-            VIEW DISCUSSION
+            View Discussion
           </Button>
 
           <Button
             variant="outlined"
-            color="secondary"
             onClick={() => onViewMembers(forum._id)}
             sx={{
               borderRadius: 2,
               textTransform: "none",
               py: 1.5,
-              borderColor: "#9c27b0",
-              color: "#9c27b0",
+              minWidth: "50px",
+              borderColor: "#8E54E9",
+              color: "#8E54E9",
+              fontFamily: "'Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif",
+              fontWeight: 500,
+              transition: "all 0.3s ease",
               "&:hover": {
-                backgroundColor: "transparent",
-                borderColor: "#9c27b0",
-                opacity: 0.8,
+                borderColor: "#7b46cd",
+                backgroundColor: "rgba(142, 84, 233, 0.05)",
+                transform: "translateY(-2px)",
               },
             }}
           >
-            <PeopleIcon sx={{ mr: 0.5 }} fontSize="small" />
+            <PeopleIcon sx={{ fontSize: "1.2rem" }} />
           </Button>
         </Box>
       </Box>

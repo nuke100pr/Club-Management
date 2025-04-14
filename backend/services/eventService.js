@@ -16,7 +16,7 @@ class EventService {
 
   async getAllEvents(query = {}) {
     try {
-      return await Event.find(query);
+      return await Event.find(query).populate("image");
     } catch (error) {
       throw error;
     }
@@ -24,7 +24,7 @@ class EventService {
 
   async getEventById(id) {
     try {
-      return await Event.findById(id);
+      return await Event.findById(id).populate("image");
     } catch (error) {
       throw error;
     }

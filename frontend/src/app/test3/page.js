@@ -38,6 +38,11 @@ import {
   CircularProgress,
   Alert,
   Snackbar,
+  Divider,
+  Card,
+  CardContent,
+  CardMedia,
+  Link,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -51,6 +56,15 @@ import {
   Search as SearchIcon,
   VpnKey as VpnKeyIcon,
   Badge as BadgeIcon,
+  Settings as SettingsIcon,
+  Facebook as FacebookIcon,
+  Instagram as InstagramIcon,
+  Twitter as TwitterIcon,
+  LinkedIn as LinkedInIcon,
+  YouTube as YouTubeIcon,
+  Language as LanguageIcon,
+  CalendarToday as CalendarIcon,
+  Description as DescriptionIcon,
 } from "@mui/icons-material";
 
 const PORManagement = () => {
@@ -100,9 +114,24 @@ const PORManagement = () => {
     blogs: false,
     forums: false,
   });
-  const [privilegeAnchorEl, setPrivilegeAnchorEl] = useState(null);
-  const [selectedPrivilegeType, setSelectedPrivilegeType] = useState(null);
-  const [isEditPrivilege, setIsEditPrivilege] = useState(false);
+
+  // Organization edit state
+  const [openOrgDialog, setOpenOrgDialog] = useState(false);
+  const [newOrgData, setNewOrgData] = useState({
+    name: "",
+    description: "",
+    established_year: "",
+    image: null,
+    social_media: {
+      facebook: "",
+      instagram: "",
+      twitter: "",
+      linkedin: "",
+      youtube: "",
+      website: "",
+    },
+  });
+  const [imagePreview, setImagePreview] = useState(null);
 
   // Helper function to format date
   const formatDate = (dateString) => {
@@ -117,7 +146,6 @@ const PORManagement = () => {
       try {
         const userData = await fetchUserData();
         setCurrentUser(userData.userData);
-        console.log(userData);
 
         if (userData.isClubAdmin) {
           setOrganizationType("club");
@@ -126,7 +154,6 @@ const PORManagement = () => {
           );
           const clubData = await clubRes.json();
           setManagedOrganization(clubData);
-          console.log(clubData);
         } else if (userData.isBoardAdmin) {
           setOrganizationType("board");
           const boardRes = await fetch(
@@ -154,16 +181,13 @@ const PORManagement = () => {
   useEffect(() => {
     if (!organizationType || !managedOrganization) return;
 
-    // Fetch data and then filter PORs in the frontend
-    // Fetch data and then filter PORs in the frontend
     const fetchAllData = async () => {
       setLoading(true);
       try {
-        // Fetch users, privilege types, and positions in parallel
         const [usersRes, privilegeTypesRes, positionsRes] = await Promise.all([
           fetch("http://localhost:5000/users/users"),
           fetch("http://localhost:5000/por2/privilege-types"),
-          fetch(`http://localhost:5000/por2/por`), // Fetch all PORs without filtering
+          fetch(`http://localhost:5000/por2/por`),
         ]);
 
         if (!usersRes.ok || !privilegeTypesRes.ok || !positionsRes.ok) {
@@ -174,17 +198,11 @@ const PORManagement = () => {
         const privilegeTypesData = await privilegeTypesRes.json();
         let positionsData = await positionsRes.json();
 
-        console.log(organizationType);
-        console.log(managedOrganization);
-        // Filter positions based on organization type
-        console.log(positionsData);
         if (organizationType === "board") {
-          // For board admins, show PORs with matching board_id
           positionsData = positionsData.filter(
             (position) => position?.board_id?._id === managedOrganization._id
           );
         } else if (organizationType === "club") {
-          // For club admins, show PORs with matching club_id
           positionsData = positionsData.filter(
             (position) => position?.club_id?._id === managedOrganization._id
           );
@@ -194,7 +212,6 @@ const PORManagement = () => {
         setPrivilegeTypes(privilegeTypesData);
         setFilteredPrivilegeTypes(privilegeTypesData);
 
-        // Format positions with user and privilege type info
         const formattedPositions = positionsData.map((position) => {
           const user =
             usersData.find((u) => u._id === position.user_id?._id) || {};
@@ -232,9 +249,112 @@ const PORManagement = () => {
     fetchAllData();
   }, [organizationType, managedOrganization]);
 
-  // Handle tab change
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
+  };
+
+  // Organization edit handlers
+  const handleOpenOrgDialog = () => {
+    setNewOrgData({
+      name: managedOrganization.name,
+      description: managedOrganization.description,
+      established_year: managedOrganization.established_year || "",
+      image: null,
+      social_media: {
+        facebook: managedOrganization.social_media?.facebook || "",
+        instagram: managedOrganization.social_media?.instagram || "",
+        twitter: managedOrganization.social_media?.twitter || "",
+        linkedin: managedOrganization.social_media?.linkedin || "",
+        youtube: managedOrganization.social_media?.youtube || "",
+        website: managedOrganization.social_media?.website || "",
+      },
+    });
+    setImagePreview(managedOrganization.image);
+    setOpenOrgDialog(true);
+  };
+
+  const handleOrgInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewOrgData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleOrgSocialMediaChange = (e) => {
+    const { name, value } = e.target;
+    setNewOrgData((prev) => ({
+      ...prev,
+      social_media: {
+        ...prev.social_media,
+        [name]: value,
+      },
+    }));
+  };
+
+  const handleOrgFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setNewOrgData((prev) => ({
+        ...prev,
+        image: file,
+      }));
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleOrgSubmit = async () => {
+    try {
+      const formData = new FormData();
+      formData.append("name", newOrgData.name);
+      formData.append("description", newOrgData.description);
+      formData.append("established_year", newOrgData.established_year);
+      
+      if (newOrgData.image) {
+        formData.append("image", newOrgData.image);
+      }
+      
+      Object.keys(newOrgData.social_media).forEach(key => {
+        if (newOrgData.social_media[key]) {
+          formData.append(`social_media[${key}]`, newOrgData.social_media[key]);
+        }
+      });
+
+      const endpoint = organizationType === "club" 
+        ? `http://localhost:5000/clubs/clubs/${managedOrganization._id}`
+        : `http://localhost:5000/boards/${managedOrganization._id}`;
+
+      const response = await fetch(endpoint, {
+        method: "PUT",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update organization");
+      }
+
+      const updatedOrg = await response.json();
+      setManagedOrganization(updatedOrg);
+      
+      setSnackbar({
+        open: true,
+        message: "Organization updated successfully",
+        severity: "success",
+      });
+      setOpenOrgDialog(false);
+    } catch (error) {
+      console.error("Error updating organization:", error);
+      setSnackbar({
+        open: true,
+        message: "Failed to update organization",
+        severity: "error",
+      });
+    }
   };
 
   // POR search functionality
@@ -320,7 +440,6 @@ const PORManagement = () => {
 
       const updatedPosition = await response.json();
 
-      // Update local state without refreshing
       if (isEdit) {
         setPositions((prev) =>
           prev.map((pos) =>
@@ -390,14 +509,8 @@ const PORManagement = () => {
   // Handle PrivilegeType form submission
   const handlePrivilegeSubmit = async () => {
     try {
-      const url = isEditPrivilege
-        ? `http://localhost:5000/por2/privilege-types/${selectedPrivilegeType._id}`
-        : "http://localhost:5000/por2/privilege-types";
-
-      const method = isEditPrivilege ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method,
+      const response = await fetch("http://localhost:5000/por2/privilege-types", {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
@@ -409,24 +522,12 @@ const PORManagement = () => {
         throw new Error(errorData.message || "Failed to save privilege type");
       }
 
-      const updatedPrivilege = await response.json();
-
-      // Update local state without refreshing
-      if (isEditPrivilege) {
-        setPrivilegeTypes((prev) =>
-          prev.map((priv) =>
-            priv._id === updatedPrivilege._id ? updatedPrivilege : priv
-          )
-        );
-      } else {
-        setPrivilegeTypes((prev) => [...prev, updatedPrivilege]);
-      }
+      const newPrivilege = await response.json();
+      setPrivilegeTypes((prev) => [...prev, newPrivilege]);
 
       setSnackbar({
         open: true,
-        message: `Privilege type ${
-          isEditPrivilege ? "updated" : "created"
-        } successfully`,
+        message: "Privilege type created successfully",
         severity: "success",
       });
       handleClosePrivilegeDialog();
@@ -482,7 +583,6 @@ const PORManagement = () => {
         throw new Error(errorData.message || "Failed to delete position");
       }
 
-      // Update local state without refreshing
       setPositions((prev) =>
         prev.filter((pos) => pos._id !== selectedPosition._id)
       );
@@ -498,70 +598,6 @@ const PORManagement = () => {
       setSnackbar({
         open: true,
         message: err.message || "Failed to delete position",
-        severity: "error",
-      });
-    }
-  };
-
-  // PrivilegeType menu handlers
-  const handlePrivilegeMenuClick = (event, privilege) => {
-    setPrivilegeAnchorEl(event.currentTarget);
-    setSelectedPrivilegeType(privilege);
-  };
-
-  const handlePrivilegeMenuClose = () => {
-    setPrivilegeAnchorEl(null);
-  };
-
-  // Open PrivilegeType edit dialog
-  const handleEditPrivilege = () => {
-    setIsEditPrivilege(true);
-    setNewPrivilegeType({
-      position: selectedPrivilegeType.position,
-      description: selectedPrivilegeType.description,
-      posts: selectedPrivilegeType.posts,
-      events: selectedPrivilegeType.events,
-      projects: selectedPrivilegeType.projects,
-      resources: selectedPrivilegeType.resources,
-      opportunities: selectedPrivilegeType.opportunities,
-      blogs: selectedPrivilegeType.blogs,
-      forums: selectedPrivilegeType.forums,
-    });
-    setOpenPrivilegeDialog(true);
-    handlePrivilegeMenuClose();
-  };
-
-  // Delete PrivilegeType
-  const handleDeletePrivilege = async () => {
-    try {
-      const response = await fetch(
-        `http://localhost:5000/por2/privilege-types/${selectedPrivilegeType._id}`,
-        {
-          method: "DELETE",
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to delete privilege type");
-      }
-
-      // Update local state without refreshing
-      setPrivilegeTypes((prev) =>
-        prev.filter((priv) => priv._id !== selectedPrivilegeType._id)
-      );
-
-      setSnackbar({
-        open: true,
-        message: "Privilege type deleted successfully",
-        severity: "success",
-      });
-      handlePrivilegeMenuClose();
-    } catch (err) {
-      console.error("Error deleting privilege type:", err);
-      setSnackbar({
-        open: true,
-        message: err.message || "Failed to delete privilege type",
         severity: "error",
       });
     }
@@ -587,7 +623,6 @@ const PORManagement = () => {
 
   // Open PrivilegeType dialog
   const handleOpenPrivilegeDialog = () => {
-    setIsEditPrivilege(false);
     setNewPrivilegeType({
       position: "",
       description: "",
@@ -605,7 +640,6 @@ const PORManagement = () => {
   // Close PrivilegeType dialog
   const handleClosePrivilegeDialog = () => {
     setOpenPrivilegeDialog(false);
-    setIsEditPrivilege(false);
   };
 
   const handleCloseSnackbar = () => {
@@ -628,9 +662,102 @@ const PORManagement = () => {
   return (
     <Container maxWidth="lg">
       <Box sx={{ my: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-        Welcome  {managedOrganization.name} Admin 😊
-        </Typography>
+        {/* Organization Details Card */}
+        <Card sx={{ mb: 4, boxShadow: 3 }}>
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' } }}>
+            {managedOrganization.image && (
+              <CardMedia
+                component="img"
+                sx={{ 
+                  width: { xs: '100%', md: 300 }, 
+                  height: { xs: 200, md: 'auto' },
+                  objectFit: 'cover'
+                }}
+                image={`http://localhost:5000/uploads/${managedOrganization.image.filename}`}
+                alt={`${managedOrganization.name} image`}
+              />
+            )}
+            <Box sx={{ flex: 1 }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="h4" component="h1" gutterBottom>
+                    {managedOrganization.name}
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    startIcon={<SettingsIcon />}
+                    onClick={handleOpenOrgDialog}
+                    sx={{ ml: 2 }}
+                  >
+                    Edit Details
+                  </Button>
+                </Box>
+                
+                <Typography variant="body1" paragraph sx={{ mt: 2 }}>
+                  <DescriptionIcon color="primary" sx={{ verticalAlign: 'middle', mr: 1 }} />
+                  {managedOrganization.description}
+                </Typography>
+                
+                {managedOrganization.established_year && (
+                  <Typography variant="body1" paragraph>
+                    <CalendarIcon color="primary" sx={{ verticalAlign: 'middle', mr: 1 }} />
+                    Established: {managedOrganization.established_year}
+                  </Typography>
+                )}
+                
+                <Divider sx={{ my: 2 }} />
+                
+                <Typography variant="h6" gutterBottom>
+                  Social Media Links
+                </Typography>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                  {managedOrganization.social_media?.facebook && (
+                    <Link href={managedOrganization.social_media.facebook} target="_blank" rel="noopener">
+                      <Button variant="outlined" startIcon={<FacebookIcon />}>
+                        Facebook
+                      </Button>
+                    </Link>
+                  )}
+                  {managedOrganization.social_media?.instagram && (
+                    <Link href={managedOrganization.social_media.instagram} target="_blank" rel="noopener">
+                      <Button variant="outlined" startIcon={<InstagramIcon />}>
+                        Instagram
+                      </Button>
+                    </Link>
+                  )}
+                  {managedOrganization.social_media?.twitter && (
+                    <Link href={managedOrganization.social_media.twitter} target="_blank" rel="noopener">
+                      <Button variant="outlined" startIcon={<TwitterIcon />}>
+                        Twitter
+                      </Button>
+                    </Link>
+                  )}
+                  {managedOrganization.social_media?.linkedin && (
+                    <Link href={managedOrganization.social_media.linkedin} target="_blank" rel="noopener">
+                      <Button variant="outlined" startIcon={<LinkedInIcon />}>
+                        LinkedIn
+                      </Button>
+                    </Link>
+                  )}
+                  {managedOrganization.social_media?.youtube && (
+                    <Link href={managedOrganization.social_media.youtube} target="_blank" rel="noopener">
+                      <Button variant="outlined" startIcon={<YouTubeIcon />}>
+                        YouTube
+                      </Button>
+                    </Link>
+                  )}
+                  {managedOrganization.social_media?.website && (
+                    <Link href={managedOrganization.social_media.website} target="_blank" rel="noopener">
+                      <Button variant="outlined" startIcon={<LanguageIcon />}>
+                        Website
+                      </Button>
+                    </Link>
+                  )}
+                </Box>
+              </CardContent>
+            </Box>
+          </Box>
+        </Card>
 
         <Tabs
           value={tabValue}
@@ -981,7 +1108,6 @@ const PORManagement = () => {
                       <TableCell>Position Title</TableCell>
                       <TableCell>Description</TableCell>
                       <TableCell>Permissions</TableCell>
-                      <TableCell>Actions</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -1029,20 +1155,11 @@ const PORManagement = () => {
                               )}
                             </Box>
                           </TableCell>
-                          <TableCell>
-                            <IconButton
-                              onClick={(e) =>
-                                handlePrivilegeMenuClick(e, privilege)
-                              }
-                            >
-                              <MoreVertIcon />
-                            </IconButton>
-                          </TableCell>
                         </TableRow>
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={4} align="center">
+                        <TableCell colSpan={3} align="center">
                           No privilege types found
                         </TableCell>
                       </TableRow>
@@ -1052,16 +1169,14 @@ const PORManagement = () => {
               </TableContainer>
             )}
 
-            {/* Add/Edit Privilege Dialog */}
+            {/* Add Privilege Dialog */}
             <Dialog
               open={openPrivilegeDialog}
               onClose={handleClosePrivilegeDialog}
               fullWidth
               maxWidth="sm"
             >
-              <DialogTitle>
-                {isEditPrivilege ? "Edit Privilege Type" : "New Privilege Type"}
-              </DialogTitle>
+              <DialogTitle>New Privilege Type</DialogTitle>
               <DialogContent>
                 <TextField
                   autoFocus
@@ -1128,32 +1243,178 @@ const PORManagement = () => {
                     "&:hover": { backgroundColor: "#4a148c" },
                   }}
                 >
-                  {isEditPrivilege ? "Update" : "Create"}
+                  Create
                 </Button>
               </DialogActions>
             </Dialog>
-
-            {/* Privilege Type Context Menu */}
-            <Menu
-              anchorEl={privilegeAnchorEl}
-              open={Boolean(privilegeAnchorEl)}
-              onClose={handlePrivilegeMenuClose}
-            >
-              <MenuItem onClick={handleEditPrivilege}>
-                <ListItemIcon>
-                  <EditIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>Edit</ListItemText>
-              </MenuItem>
-              <MenuItem onClick={handleDeletePrivilege}>
-                <ListItemIcon>
-                  <DeleteIcon fontSize="small" color="error" />
-                </ListItemIcon>
-                <ListItemText sx={{ color: "error.main" }}>Delete</ListItemText>
-              </MenuItem>
-            </Menu>
           </Box>
         )}
+
+        {/* Organization Edit Dialog */}
+        <Dialog
+          open={openOrgDialog}
+          onClose={() => setOpenOrgDialog(false)}
+          fullWidth
+          maxWidth="md"
+        >
+          <DialogTitle>
+            Edit {organizationType === "club" ? "Club" : "Board"} Details
+          </DialogTitle>
+          <DialogContent>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 3, mt: 2 }}>
+              <TextField
+                fullWidth
+                label="Name"
+                name="name"
+                value={newOrgData.name}
+                onChange={handleOrgInputChange}
+                variant="outlined"
+                required
+              />
+              
+              <TextField
+                fullWidth
+                label="Description"
+                name="description"
+                value={newOrgData.description}
+                onChange={handleOrgInputChange}
+                variant="outlined"
+                required
+                multiline
+                rows={4}
+              />
+              
+              <TextField
+                fullWidth
+                label="Established Year"
+                name="established_year"
+                value={newOrgData.established_year}
+                onChange={handleOrgInputChange}
+                variant="outlined"
+                placeholder="e.g. 2023"
+              />
+              
+              {/* Social Media Links Section */}
+              <Typography variant="subtitle1" fontWeight={500}>
+                Social Media Links
+              </Typography>
+              
+              <Grid container spacing={2}>
+                <Grid item xs={6}>
+                  <TextField
+                    fullWidth
+                    label="Facebook"
+                    name="facebook"
+                    value={newOrgData.social_media.facebook}
+                    onChange={handleOrgSocialMediaChange}
+                    variant="outlined"
+                    placeholder="Facebook profile URL"
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    fullWidth
+                    label="Instagram"
+                    name="instagram"
+                    value={newOrgData.social_media.instagram}
+                    onChange={handleOrgSocialMediaChange}
+                    variant="outlined"
+                    placeholder="Instagram profile URL"
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    fullWidth
+                    label="Twitter"
+                    name="twitter"
+                    value={newOrgData.social_media.twitter}
+                    onChange={handleOrgSocialMediaChange}
+                    variant="outlined"
+                    placeholder="Twitter profile URL"
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    fullWidth
+                    label="LinkedIn"
+                    name="linkedin"
+                    value={newOrgData.social_media.linkedin}
+                    onChange={handleOrgSocialMediaChange}
+                    variant="outlined"
+                    placeholder="LinkedIn profile URL"
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    fullWidth
+                    label="YouTube"
+                    name="youtube"
+                    value={newOrgData.social_media.youtube}
+                    onChange={handleOrgSocialMediaChange}
+                    variant="outlined"
+                    placeholder="YouTube channel URL"
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    fullWidth
+                    label="Website"
+                    name="website"
+                    value={newOrgData.social_media.website}
+                    onChange={handleOrgSocialMediaChange}
+                    variant="outlined"
+                    placeholder="Official website URL"
+                  />
+                </Grid>
+              </Grid>
+              
+              <Box>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  {organizationType === "club" ? "Club" : "Board"} Image
+                </Typography>
+                <Box sx={{ display: "flex", alignItems: "center" }}>
+                  <Button
+                    variant="outlined"
+                    component="label"
+                  >
+                    Upload New Image
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleOrgFileChange}
+                      hidden
+                    />
+                  </Button>
+                  {newOrgData.image instanceof File && (
+                    <Typography variant="body2" sx={{ ml: 2 }}>
+                      {newOrgData.image.name}
+                    </Typography>
+                  )}
+                </Box>
+                {!newOrgData.image && imagePreview && (
+                  <Box sx={{ mt: 2, textAlign: "center" }}>
+                    <Typography variant="caption">Current Image:</Typography>
+                    <img
+                      src={imagePreview}
+                      alt="Current"
+                      style={{ maxWidth: "100%", maxHeight: "200px", marginTop: "8px" }}
+                    />
+                  </Box>
+                )}
+              </Box>
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setOpenOrgDialog(false)}>Cancel</Button>
+            <Button
+              onClick={handleOrgSubmit}
+              variant="contained"
+              color="primary"
+            >
+              Save Changes
+            </Button>
+          </DialogActions>
+        </Dialog>
 
         {/* Snackbar for notifications */}
         <Snackbar

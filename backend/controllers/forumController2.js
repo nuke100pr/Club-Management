@@ -3,12 +3,12 @@ const forumService = require("../services/forumService2");
 const createForum = async (req, res) => {
   try {
     const forumData = req.body;
-    const imageFile = req.file; // Assuming you're using multer for file uploads
+    const imageFile = req.file;
 
     const newForum = await forumService.createForum(forumData, imageFile);
     res.status(201).json({
       success: true,
-      message: "Event created successfully",
+      message: "Forum created successfully",
       data: newForum,
     });
   } catch (error) {
@@ -22,39 +22,70 @@ const createForum = async (req, res) => {
 const getAllForums = async (req, res) => {
   try {
     const forums = await forumService.getAllForums(req.query);
-    res.json(forums);
+    res.json({
+      success: true,
+      data: forums
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ 
+      success: false,
+      error: error.message 
+    });
   }
 };
 
 const getForumById = async (req, res) => {
   try {
     const forum = await forumService.getForumById(req.params.id);
-    res.json(forum);
+    res.json({
+      success: true,
+      data: forum
+    });
   } catch (error) {
-    res.status(404).json({ error: error.message });
+    res.status(404).json({ 
+      success: false,
+      error: error.message 
+    });
   }
 };
 
 const updateForum = async (req, res) => {
   try {
-    const updatedForum = await forumService.updateForum(
-      req.params.id,
-      req.body
-    );
-    res.json(updatedForum);
+    const { id } = req.params;
+    const updateData = req.body;
+    const imageFile = req.file;
+
+    if (updateData.tags && typeof updateData.tags === "string") {
+      updateData.tags = updateData.tags.split(',').map(tag => tag.trim());
+    }
+
+    const updatedForum = await forumService.updateForum(id, updateData, imageFile);
+    res.json({
+      success: true,
+      message: "Forum updated successfully",
+      data: updatedForum,
+    });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error("Error updating forum:", error);
+    res.status(400).json({ 
+      success: false,
+      error: error.message 
+    });
   }
 };
 
 const deleteForum = async (req, res) => {
   try {
     await forumService.deleteForum(req.params.id);
-    res.json({ message: "Forum deleted successfully" });
+    res.json({ 
+      success: true,
+      message: "Forum deleted successfully" 
+    });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    res.status(400).json({ 
+      success: false,
+      error: error.message 
+    });
   }
 };
 
@@ -65,30 +96,47 @@ const addForumMember = async (req, res) => {
       ...req.body,
       forum_id: req.params.forumId,
     });
-    res.status(201).json(member);
+    res.status(201).json({
+      success: true,
+      data: member
+    });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    res.status(400).json({ 
+      success: false,
+      error: error.message 
+    });
   }
 };
 
 const getForumMembers = async (req, res) => {
   try {
     const members = await forumService.getForumMembers(req.params.forumId);
-    res.json(members);
+    res.json({
+      success: true,
+      data: members
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ 
+      success: false,
+      error: error.message 
+    });
   }
 };
 
 const removeForumMember = async (req, res) => {
   try {
     await forumService.removeForumMember(req.params.forumId, req.params.userId);
-    res.json({ message: "Member removed successfully" });
+    res.json({ 
+      success: true,
+      message: "Member removed successfully" 
+    });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    res.status(400).json({ 
+      success: false,
+      error: error.message 
+    });
   }
 };
-
 
 // Utility Controllers
 const checkForumMembership = async (req, res) => {
@@ -97,27 +145,26 @@ const checkForumMembership = async (req, res) => {
       req.params.forumId,
       req.params.userId
     );
-    res.json({ isMember });
+    res.json({ 
+      success: true,
+      data: { isMember } 
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ 
+      success: false,
+      error: error.message 
+    });
   }
 };
 
-
 module.exports = {
-  // Forum CRUD
   createForum,
   getAllForums,
   getForumById,
   updateForum,
   deleteForum,
-
-  // Member management
   addForumMember,
   getForumMembers,
   removeForumMember,
-
-
-  // Utility functions
   checkForumMembership,
 };

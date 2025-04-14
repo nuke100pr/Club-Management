@@ -1,31 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
-import {
-  Container,
-  Card,
-  CardContent,
-  Typography,
-  Button,
-  Box,
-  Grid,
-  Divider,
-  Chip,
-  IconButton,
-  Fab,
-  Paper,
-  TextField,
-  InputAdornment,
-} from "@mui/material";
 import { useRouter } from "next/navigation";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
-import AddIcon from "@mui/icons-material/Add";
-import SearchIcon from "@mui/icons-material/Search";
-import BlogCreateForm from "../../components/blogs/BlogCreateForm";
 import { fetchUserData } from "@/utils/auth";
 
+// Icons
+import { Search, Edit2, Trash2, Plus, Calendar, User } from "lucide-react";
+
 export default function BLOGS({ boardId: propBoardId = null }) {
-  console.log(propBoardId);
   const [blogs, setBlogs] = useState([]);
   const [filteredBlogs, setFilteredBlogs] = useState([]);
   const [selectedBlog, setSelectedBlog] = useState(null);
@@ -37,10 +18,8 @@ export default function BLOGS({ boardId: propBoardId = null }) {
   const [userData, setUserData] = useState(null);
   const [userId, setUserId] = useState(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-  const [userClubsWithBlogPermission, setUserClubsWithBlogPermission] =
-    useState([]);
-  const [userBoardsWithBlogPermission, setUserBoardsWithBlogPermission] =
-    useState([]);
+  const [userClubsWithBlogPermission, setUserClubsWithBlogPermission] = useState([]);
+  const [userBoardsWithBlogPermission, setUserBoardsWithBlogPermission] = useState([]);
   const [selectedClubId, setSelectedClubId] = useState(null);
   const [selectedBoardId, setSelectedBoardId] = useState(propBoardId);
 
@@ -90,7 +69,6 @@ export default function BLOGS({ boardId: propBoardId = null }) {
     loadUserData();
   }, [propBoardId]);
 
-  const hasAddPermission = () => {};
   // Check if user has permission to edit/delete a blog
   const hasBlogPermission = (blog) => {
     // Superadmins have all permissions
@@ -150,7 +128,7 @@ export default function BLOGS({ boardId: propBoardId = null }) {
           .map((blog) => ({
             id: blog._id,
             title: blog.title || "Untitled Blog",
-            publisher: "Unknown",
+            publisher: blog.publisher || "Unknown",
             introduction: blog.introduction || "",
             mainContent: blog.main_content || "",
             conclusion: blog.conclusion || "",
@@ -204,7 +182,8 @@ export default function BLOGS({ boardId: propBoardId = null }) {
     setFilteredBlogs(filtered);
   }, [searchQuery, blogs, propBoardId]);
 
-  const handleDelete = async (blogId) => {
+  const handleDelete = async (blogId, e) => {
+    e.stopPropagation();
     try {
       const response = await fetch(
         `http://localhost:5000/blogs/blogs/${blogId}`,
@@ -225,7 +204,8 @@ export default function BLOGS({ boardId: propBoardId = null }) {
     }
   };
 
-  const handleEdit = async (blog) => {
+  const handleEdit = async (blog, e) => {
+    e.stopPropagation();
     try {
       const response = await fetch(
         `http://localhost:5000/blogs/blogs/${blog.id}`
@@ -239,7 +219,7 @@ export default function BLOGS({ boardId: propBoardId = null }) {
 
       const formData = {
         title: blogDetails.title,
-        publisher: "Unknown",
+        publisher: blogDetails.publisher || "Unknown",
         introduction: blogDetails.introduction,
         mainContent: blogDetails.main_content,
         conclusion: blogDetails.conclusion,
@@ -351,233 +331,231 @@ export default function BLOGS({ boardId: propBoardId = null }) {
     }
   };
 
+  const navigateToBlog = (blogId) => {
+    router.push(`/current_blog/${blogId}`);
+  };
+
   if (isLoading) {
     return (
-      <Container maxWidth="lg" sx={{ py: 3, textAlign: "center" }}>
-        <Typography variant="h6">Loading blogs...</Typography>
-      </Container>
+      <div className="flex justify-center items-center min-h-screen bg-[#f8faff]">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-t-[#4776E6] border-r-[#6a98ff] border-b-[#8E54E9] border-l-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold text-[#2A3B4F]">Loading blogs...</h2>
+        </div>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Container maxWidth="lg" sx={{ py: 3, textAlign: "center" }}>
-        <Typography variant="h6" color="error">
-          Error loading blogs: {error}
-        </Typography>
-      </Container>
+      <div className="flex justify-center items-center min-h-screen bg-[#f8faff]">
+        <div className="text-center p-8 bg-white rounded-2xl shadow-lg max-w-md">
+          <div className="w-16 h-16 bg-red-100 flex items-center justify-center rounded-full mx-auto mb-4">
+            <span className="text-red-500 text-2xl">!</span>
+          </div>
+          <h2 className="text-xl font-semibold text-[#2A3B4F] mb-2">Error Loading Blogs</h2>
+          <p className="text-[#607080]">{error}</p>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Container
-      maxWidth="lg"
-      sx={{ py: 3, position: "relative", minHeight: "80vh" }}
-    >
-      <Grid container spacing={3}>
-        {/* Left Panel - Search Bar (Fixed, Sticky) */}
-        <Grid item xs={12} sm={3} md={3} lg={3}>
-          <Paper
-            sx={{
-              p: 3,
-              position: "sticky",
-              top: 80,
-              maxHeight: "90vh",
-              overflow: "auto",
-              boxShadow: 2,
-              borderRadius: 2,
-              width: "100%",
-            }}
-          >
-            <TextField
-              fullWidth
-              variant="outlined"
-              label="Search Blogs"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{ mb: 2 }}
-            />
-          </Paper>
-        </Grid>
+    <div className="min-h-screen bg-[#f8faff] pb-20">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-[#4776E6] to-[#8E54E9] py-6 px-8 mb-8">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-2xl md:text-3xl font-semibold text-white">
+            {propBoardId ? "Board Blogs" : "All Blogs"}
+          </h1>
+          <p className="text-white/80 mt-1">
+            {filteredBlogs.length} {filteredBlogs.length === 1 ? "article" : "articles"} available
+          </p>
+        </div>
+      </div>
 
-        {/* Main Content - Blog Cards */}
-        <Grid item xs={12} sm={9} md={9} lg={9}>
-          <Grid container spacing={3}>
+      <div className="max-w-7xl mx-auto px-4 md:px-6">
+        <div className="flex flex-col md:flex-row gap-8">
+          {/* Sidebar */}
+          <div className="md:w-1/4">
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-md p-6 sticky top-24">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search blogs..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-white py-3 px-4 pl-10 rounded-lg shadow-sm border border-[#e0e7ff] focus:outline-none focus:ring-2 focus:ring-[#4776E6]/30 focus:border-[#4776E6] transition-all duration-300"
+                />
+                <Search className="absolute left-3 top-3.5 h-4 w-4 text-[#607080]" />
+              </div>
+              
+              {filteredBlogs.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-sm uppercase text-[#607080] font-medium tracking-wider mb-3">Topics</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {Array.from(new Set(filteredBlogs.flatMap(blog => blog.tags))).slice(0, 8).map((tag, idx) => (
+                      <button 
+                        key={idx}
+                        onClick={() => setSearchQuery(tag)}
+                        className="text-xs px-3 py-1 rounded-md bg-[rgba(95,150,230,0.1)] text-[#4776E6] hover:bg-[rgba(95,150,230,0.2)] transition-all duration-300"
+                      >
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Main Content */}
+          <div className="md:w-3/4">
             {filteredBlogs.length > 0 ? (
-              filteredBlogs.map((blog) => (
-                <Grid item xs={12} sm={6} md={4} key={blog.id}>
-                  <Card 
-                    elevation={2} 
-                    sx={{ 
-                      height: "100%",
-                      borderRadius: 2,
-                      transition: "transform 0.2s ease-in-out",
-                      "&:hover": {
-                        transform: "translateY(-4px)",
-                      }
-                    }}
-                    onClick={(e) => {
-                      if (e.target.closest('button, a, [role="button"]')) return;
-                      router.push(`/current_blog/${blog._id}`);
-                    }}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredBlogs.map((blog) => (
+                  <div 
+                    key={blog.id}
+                    onClick={() => navigateToBlog(blog.id)}
+                    className="bg-white rounded-2xl shadow-md hover:shadow-lg border-t-4 border-[#4776E6] transition-all duration-300 hover:-translate-y-2 cursor-pointer overflow-hidden"
                   >
-                    <CardContent sx={{ p: 3 }}>
-                      {blog.image && (
-                        <Box
-                          component="img"
-                          sx={{
-                            width: "100%",
-                            height: 180,
-                            objectFit: "cover",
-                            mb: 2,
-                            borderRadius: 1,
-                          }}
+                    {blog.image && (
+                      <div className="h-48 overflow-hidden">
+                        <img
                           src={`http://localhost:5000/uploads/${blog.image.filename}`}
                           alt={blog.title}
+                          className="w-full h-full object-cover"
                         />
-                      )}
-                      <Box
-                        sx={{
-                          mb: 2,
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "flex-start",
-                        }}
-                      >
-                        <Typography variant="h6" sx={{ fontWeight: 600 }}>{blog.title}</Typography>
-                        {hasBlogPermission(blog) && (
-                          <Box>
-                            <IconButton
-                              onClick={() => handleEdit(blog)}
-                              color="primary"
-                              size="small"
-                              sx={{ mr: 0.5 }}
-                            >
-                              <EditIcon fontSize="small" />
-                            </IconButton>
-                            <IconButton
-                              onClick={() => handleDelete(blog.id)}
-                              color="error"
-                              size="small"
-                            >
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
-                          </Box>
-                        )}
-                      </Box>
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ mb: 2 }}
-                      >
-                        <strong>By:</strong> {blog.publisher}
-                      </Typography>
-                      <Box sx={{ mb: 2 }}>
-                        {blog.tags && blog.tags.length > 0 && (
-                          <Box
-                            sx={{
-                              display: "flex",
-                              flexWrap: "wrap",
-                              gap: 1,
-                              mb: 2,
-                            }}
-                          >
-                            {blog.tags.map((tag, index) => (
-                              <Chip
+                      </div>
+                    )}
+                    <div className="p-6">
+                      {blog.tags && blog.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mb-3">
+                          {blog.tags.slice(0, 3).map((tag, index) => {
+                            // Rotate between several colors for visual variety
+                            const colors = [
+                              "bg-blue-100 text-blue-700", 
+                              "bg-green-100 text-green-700",
+                              "bg-purple-100 text-purple-700", 
+                              "bg-amber-100 text-amber-700",
+                              "bg-pink-100 text-pink-700"
+                            ];
+                            const colorClass = colors[index % colors.length];
+                            
+                            return (
+                              <span 
                                 key={index}
-                                label={tag}
-                                size="small"
-                                color="primary"
-                                variant="outlined"
-                                sx={{ borderRadius: 1 }}
-                              />
-                            ))}
-                          </Box>
+                                className={`text-xs px-2 py-0.5 rounded ${colorClass}`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSearchQuery(tag);
+                                }}
+                              >
+                                {tag}
+                              </span>
+                            );
+                          })}
+                          {blog.tags.length > 3 && (
+                            <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-700">
+                              +{blog.tags.length - 3}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      
+                      <h3 className="text-lg font-semibold text-[#2A3B4F] mb-2 line-clamp-2">{blog.title}</h3>
+                      
+                      <p className="text-[#607080] text-sm mb-4 line-clamp-2">
+                        {blog.introduction}
+                      </p>
+                      
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center text-xs text-[#607080]">
+                          <User className="h-3 w-3 mr-1" />
+                          <span>{blog.publisher}</span>
+                          <span className="mx-2">•</span>
+                          <Calendar className="h-3 w-3 mr-1" />
+                          <span>{blog.createdAt}</span>
+                        </div>
+                        
+                        {hasBlogPermission(blog) && (
+                          <div className="flex space-x-1">
+                            <button
+                              onClick={(e) => handleEdit(blog, e)}
+                              className="p-1.5 rounded-md text-[#4776E6] hover:bg-blue-50 transition-colors"
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={(e) => handleDelete(blog.id, e)}
+                              className="p-1.5 rounded-md text-red-500 hover:bg-red-50 transition-colors"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
                         )}
-                        <Typography variant="body2" color="text.secondary">
-                          <strong>Published:</strong> {blog.createdAt}
-                        </Typography>
-                      </Box>
-                      <Button 
-                        variant="outlined" 
-                        fullWidth 
-                        color="primary"
-                        sx={{ 
-                          borderRadius: 1,
-                          textTransform: "none",
-                          fontWeight: 500
-                        }}
-                      >
-                        Read More
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : (
-              <Grid item xs={12}>
-                <Paper elevation={1} sx={{ p: 4, borderRadius: 2, textAlign: "center" }}>
-                  <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
-                    No blogs found{propBoardId ? " for this board" : ""}
-                  </Typography>
-                  {filteredBlogs.length === 0 && searchQuery && (
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                      Try a different search term
-                    </Typography>
-                  )}
-                </Paper>
-              </Grid>
+              <div className="bg-white rounded-2xl shadow-md p-8 text-center">
+                <div className="mx-auto w-16 h-16 bg-[#f8faff] rounded-full flex items-center justify-center mb-4">
+                  <Search className="h-8 w-8 text-[#607080]/50" />
+                </div>
+                <h3 className="text-xl font-semibold text-[#2A3B4F] mb-2">
+                  No blogs found{propBoardId ? " for this board" : ""}
+                </h3>
+                {searchQuery && (
+                  <p className="text-[#607080]">
+                    No results for "{searchQuery}". Try a different search term.
+                  </p>
+                )}
+              </div>
             )}
-          </Grid>
-        </Grid>
-      </Grid>
+          </div>
+        </div>
+      </div>
 
+      {/* Floating Action Button */}
       {canCreateBlogs() && (
-        <Fab
-          color="primary"
-          aria-label="add"
+        <button
           onClick={handleAddNew}
-          sx={{
-            position: "fixed",
-            bottom: 24,
-            right: 24,
-            boxShadow: 3,
-          }}
+          className="fixed bottom-8 right-8 w-14 h-14 rounded-full bg-gradient-to-r from-[#4776E6] to-[#8E54E9] text-white shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center"
+          style={{ boxShadow: "0 4px 10px rgba(71, 118, 230, 0.3)" }}
         >
-          <AddIcon />
-        </Fab>
+          <Plus className="h-6 w-6" />
+        </button>
       )}
 
-      <BlogCreateForm
-        open={openDialog}
-        onClose={() => {
-          setOpenDialog(false);
-          setIsEditing(false);
-        }}
-        onSubmit={handleFormSubmit}
-        initialData={
-          selectedBlog
-            ? {
-                title: selectedBlog.title,
-                publisher: selectedBlog.publisher,
-                introduction: selectedBlog.introduction,
-                mainContent: selectedBlog.mainContent,
-                conclusion: selectedBlog.conclusion,
-                tags: selectedBlog.tags,
-                image: selectedBlog.image,
-              }
-            : null
-        }
-        club_id={selectedClubId}
-        board_id={propBoardId} // Prefer the prop board_id if provided
-      />
-    </Container>
+      {/* The form component would go here - keeping the logic but it would need to be restyled */}
+      {openDialog && (
+        <BlogCreateForm
+          open={openDialog}
+          onClose={() => {
+            setOpenDialog(false);
+            setIsEditing(false);
+          }}
+          onSubmit={handleFormSubmit}
+          initialData={
+            selectedBlog
+              ? {
+                  title: selectedBlog.title,
+                  publisher: selectedBlog.publisher,
+                  introduction: selectedBlog.introduction,
+                  mainContent: selectedBlog.mainContent,
+                  conclusion: selectedBlog.conclusion,
+                  tags: selectedBlog.tags,
+                  image: selectedBlog.image,
+                }
+              : null
+          }
+          club_id={selectedClubId}
+          board_id={propBoardId} 
+        />
+      )}
+    </div>
   );
 }
+

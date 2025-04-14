@@ -25,7 +25,18 @@ const createProject = async (req, res) => {
 
 const getAllProjects = async (req, res) => {
   try {
-    const projects = await projectService.getAllProjects();
+    // Extract query parameters for filtering
+    const filters = {};
+    
+    if (req.query.board_id) {
+      filters.board_id = req.query.board_id;
+    }
+    
+    if (req.query.club_id) {
+      filters.club_id = req.query.club_id;
+    }
+    
+    const projects = await projectService.getAllProjects(filters);
     res.status(200).json(projects);
   } catch (error) {
     res.status(500).json({ error: error.message });

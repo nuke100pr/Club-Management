@@ -22,7 +22,6 @@ import {
   Menu,
   MenuItem,
   ListItemIcon,
-  Divider,
   Grid,
   ListItemText,
   InputAdornment,
@@ -33,8 +32,7 @@ import {
   Tabs,
   FormControlLabel,
   Checkbox,
-  useMediaQuery,
-  useTheme
+  useTheme,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -44,7 +42,6 @@ import {
   Person as PersonIcon,
   Groups as GroupsIcon,
   School as SchoolIcon,
-  Event as EventIcon,
   Email as EmailIcon,
   Search as SearchIcon,
   VpnKey as VpnKeyIcon,
@@ -85,8 +82,6 @@ const fetchData = async (url, options = {}) => {
 const SearchableUserSelect = ({ users, value, onChange }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [open, setOpen] = useState(false);
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const filteredUsers = users.filter(
     (user) =>
@@ -128,7 +123,7 @@ const SearchableUserSelect = ({ users, value, onChange }) => {
               ),
             }}
             onClick={(e) => e.stopPropagation()}
-            size={isMobile ? "small" : "medium"}
+            size="small"
           />
         </Box>
         {filteredUsers.length > 0 ? (
@@ -159,7 +154,7 @@ const SearchableUserSelect = ({ users, value, onChange }) => {
   );
 };
 
-const POR = () => {
+const POR = ({ colorMode }) => {
   const [tabValue, setTabValue] = useState(0);
   const [positions, setPositions] = useState([]);
   const [filteredPositions, setFilteredPositions] = useState([]);
@@ -179,6 +174,7 @@ const POR = () => {
     start_date: new Date().toISOString().split("T")[0],
     end_date: "",
   });
+  const theme = useTheme();
   const [loading, setLoading] = useState(true);
   const [isEdit, setIsEdit] = useState(false);
   const [openPrivilegeDialog, setOpenPrivilegeDialog] = useState(false);
@@ -198,8 +194,6 @@ const POR = () => {
   const [privilegeAnchorEl, setPrivilegeAnchorEl] = useState(null);
   const [selectedPrivilegeType, setSelectedPrivilegeType] = useState(null);
   const [isEditPrivilege, setIsEditPrivilege] = useState(false);
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   useEffect(() => {
     fetchAllData();
@@ -260,19 +254,21 @@ const POR = () => {
     privilegeTypes
   ) => {
     return positions.map((position) => {
-      let userDetails = users.find((user) => user._id === position.user_id._id) || {};
-      
+      let userDetails =
+        users.find((user) => user._id === position.user_id._id) || {};
+
       let clubDetails = position.club_id
         ? clubs.find((club) => club._id === position.club_id._id)
         : null;
-        
+
       let boardDetails = position.board_id
         ? boards.find((board) => board._id === position.board_id._id)
         : null;
-        
+
       let privilegeDetails =
-        privilegeTypes.find((priv) => priv._id === position.privilegeTypeId?._id) ||
-        {};
+        privilegeTypes.find(
+          (priv) => priv._id === position.privilegeTypeId?._id
+        ) || {};
 
       return {
         ...position,
@@ -292,7 +288,7 @@ const POR = () => {
       };
     });
   };
-  
+
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
   };
@@ -436,8 +432,12 @@ const POR = () => {
       privilegeTypeId: selectedPosition.privilegeTypeId._id || "",
       club_id: selectedPosition.club_id ? selectedPosition.club_id._id : "",
       board_id: selectedPosition.board_id ? selectedPosition.board_id._id : "",
-      start_date: selectedPosition.start_date ? formatDate(selectedPosition.start_date) : "",
-      end_date: selectedPosition.end_date ? formatDate(selectedPosition.end_date) : "",
+      start_date: selectedPosition.start_date
+        ? formatDate(selectedPosition.start_date)
+        : "",
+      end_date: selectedPosition.end_date
+        ? formatDate(selectedPosition.end_date)
+        : "",
     });
     setOpenDialog(true);
     handleMenuClose();
@@ -536,138 +536,213 @@ const POR = () => {
   };
 
   return (
-    <Box sx={{ p: isMobile ? 1 : 3 }}>
-      <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 3 }}>
-        <Tabs
-          value={tabValue}
-          onChange={handleTabChange}
-          textColor="secondary"
-          indicatorColor="secondary"
-          variant={isMobile ? "scrollable" : "standard"}
-          scrollButtons="auto"
-        >
-          <Tab
-            icon={<PersonIcon />}
-            iconPosition="start"
-            label={isMobile ? "POR" : "Positions of Responsibility"}
-            sx={{ fontWeight: "bold", minWidth: 'auto' }}
-          />
-          <Tab
-            icon={<VpnKeyIcon />}
-            iconPosition="start"
-            label={isMobile ? "Privileges" : "Privilege Types"}
-            sx={{ fontWeight: "bold", minWidth: 'auto' }}
-          />
-        </Tabs>
-      </Box>
-
-      {tabValue === 0 && (
-        <Box>
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: isMobile ? "column" : "row",
-              justifyContent: "space-between",
-              alignItems: isMobile ? "flex-start" : "center",
-              mb: 3,
-              gap: isMobile ? 2 : 0
-            }}
+    <Box
+      sx={{
+        p: { xs: 1, sm: 3 },
+        backgroundColor: theme.palette.mode === "dark" ? "#121212" : "#f5f6fa",
+        minHeight: "100vh",
+        width: "100%",
+      }}
+    >
+      <Box sx={{ p: { xs: 1, sm: 3 } }}>
+        <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 3 }}>
+          <Tabs
+            value={tabValue}
+            onChange={handleTabChange}
+            textColor="secondary"
+            indicatorColor="secondary"
+            variant="scrollable"
+            scrollButtons="auto"
           >
-            <Typography
-              variant={isMobile ? "h5" : "h4"}
-              sx={{ fontWeight: "bold", color: "#6a1b9a" }}
-            >
-              Positions of Responsibility
-            </Typography>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={handleOpenDialog}
-              sx={{
-                backgroundColor: "#6a1b9a",
-                "&:hover": { backgroundColor: "#4a148c" },
-              }}
-              fullWidth={isMobile}
-            >
-              Add New Position
-            </Button>
-          </Box>
-
-          <Box sx={{ display: "flex", flexDirection: isMobile ? "column" : "row", mb: 3, gap: isMobile ? 2 : 0 }}>
-            <TextField
-              fullWidth
-              variant="outlined"
-              placeholder="Search by name, email, position, organization or status"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{ mr: isMobile ? 0 : 2 }}
-              size={isMobile ? "small" : "medium"}
+            <Tab
+              icon={<PersonIcon />}
+              iconPosition="start"
+              label={
+                <Box
+                  component="span"
+                  sx={{ display: { xs: "none", sm: "inline" } }}
+                >
+                  Positions of Responsibility
+                </Box>
+              }
+              sx={{ fontWeight: "bold", minWidth: "auto" }}
             />
-            <Button
-              variant="contained"
-              onClick={handleSearch}
+            <Tab
+              icon={<VpnKeyIcon />}
+              iconPosition="start"
+              label={
+                <Box
+                  component="span"
+                  sx={{ display: { xs: "none", sm: "inline" } }}
+                >
+                  Privilege Types
+                </Box>
+              }
+              sx={{ fontWeight: "bold", minWidth: "auto" }}
+            />
+          </Tabs>
+        </Box>
+
+        {tabValue === 0 && (
+          <Box>
+            <Box
               sx={{
-                backgroundColor: "#6a1b9a",
-                "&:hover": { backgroundColor: "#4a148c" },
-                minWidth: isMobile ? "100%" : "100px",
+                display: "flex",
+                flexDirection: { xs: "column", sm: "row" },
+                justifyContent: "space-between",
+                alignItems: { xs: "flex-start", sm: "center" },
+                mb: 3,
+                gap: { xs: 2, sm: 0 },
               }}
             >
-              Search
-            </Button>
-          </Box>
-
-          {loading ? (
-            <Box display="flex" justifyContent="center" py={4}>
-              <CircularProgress />
+              <Typography
+                variant="h4"
+                sx={{
+                  fontWeight: "bold",
+                  background: "linear-gradient(to right, #4776E6, #8E54E9)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  fontSize: { xs: "1.5rem", sm: "2.125rem" },
+                }}
+              >
+                Positions of Responsibility
+              </Typography>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={handleOpenDialog}
+                sx={{
+                  background: "linear-gradient(to right, #4776E6, #8E54E9)",
+                  "&:hover": {
+                    background: "linear-gradient(to right, #3a5fc0, #7d4bc9)",
+                  },
+                  width: { xs: "100%", sm: "auto" },
+                }}
+              >
+                Add New Position
+              </Button>
             </Box>
-          ) : (
-            <Paper elevation={2} sx={{ borderRadius: 2 }}>
-              <TableContainer>
-                <Table>
-                  <TableHead sx={{ backgroundColor: "#f3e5f5" }}>
-                    <TableRow>
-                      <TableCell width="50px">#</TableCell>
-                      <TableCell>User</TableCell>
-                      {!isMobile && <TableCell>Email</TableCell>}
-                      <TableCell>Position</TableCell>
-                      {!isMobile && <TableCell>Organization</TableCell>}
-                      {!isMobile && <TableCell>Type</TableCell>}
-                      <TableCell>Duration</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell>Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {filteredPositions.length > 0 ? (
-                      filteredPositions.map((position, index) => (
-                        <TableRow key={position._id}>
-                          <TableCell>{index + 1}</TableCell>
-                          <TableCell>
-                            <Box sx={{ display: "flex", alignItems: "center" }}>
-                              <Avatar sx={{ bgcolor: "#6a1b9a", mr: 2 }}>
-                                {position.user ? position.user.charAt(0) : "U"}
-                              </Avatar>
-                              {isMobile ? (
-                                <Box>
-                                  <Typography>{position.user || "Unknown User"}</Typography>
-                                  <Typography variant="caption" color="text.secondary">
+
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: { xs: "column", sm: "row" },
+                mb: 3,
+                gap: { xs: 2, sm: 0 },
+              }}
+            >
+              <TextField
+                fullWidth
+                variant="outlined"
+                placeholder="Search by name, email, position, organization or status"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{ mr: { xs: 0, sm: 2 } }}
+                size="small"
+              />
+              <Button
+                variant="contained"
+                onClick={handleSearch}
+                sx={{
+                  background: "linear-gradient(to right, #4776E6, #8E54E9)",
+                  "&:hover": {
+                    background: "linear-gradient(to right, #3a5fc0, #7d4bc9)",
+                  },
+                  width: { xs: "100%", sm: "100px" },
+                }}
+              >
+                Search
+              </Button>
+            </Box>
+
+            {loading ? (
+              <Box display="flex" justifyContent="center" py={4}>
+                <CircularProgress />
+              </Box>
+            ) : (
+              <Paper elevation={2} sx={{ borderRadius: 2 }}>
+                <TableContainer>
+                  <Table>
+                    <TableHead
+                      sx={{
+                        backgroundColor:
+                          theme.palette.mode === "light"
+                            ? "#f3e5f5"
+                            : "#2d2d2d",
+                      }}
+                    >
+                      <TableRow>
+                        <TableCell width="50px">#</TableCell>
+                        <TableCell>User</TableCell>
+                        <TableCell
+                          sx={{ display: { xs: "none", sm: "table-cell" } }}
+                        >
+                          Email
+                        </TableCell>
+                        <TableCell
+                          sx={{ display: { xs: "none", sm: "table-cell" } }}
+                        >
+                          Position
+                        </TableCell>
+                        <TableCell
+                          sx={{ display: { xs: "none", sm: "table-cell" } }}
+                        >
+                          Organization
+                        </TableCell>
+                        <TableCell
+                          sx={{ display: { xs: "none", sm: "table-cell" } }}
+                        >
+                          Type
+                        </TableCell>
+                        <TableCell>Duration</TableCell>
+                        <TableCell>Status</TableCell>
+                        <TableCell>Actions</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {filteredPositions.length > 0 ? (
+                        filteredPositions.map((position, index) => (
+                          <TableRow key={position._id}>
+                            <TableCell>{index + 1}</TableCell>
+                            <TableCell>
+                              <Box
+                                sx={{ display: "flex", alignItems: "center" }}
+                              >
+                                <Avatar sx={{ bgcolor: "#8E54E9", mr: 2 }}>
+                                  {position.user
+                                    ? position.user.charAt(0)
+                                    : "U"}
+                                </Avatar>
+                                <Box
+                                  sx={{ display: { xs: "block", sm: "none" } }}
+                                >
+                                  <Typography>
+                                    {position.user || "Unknown User"}
+                                  </Typography>
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                  >
                                     {position.position || "Unknown Position"}
                                   </Typography>
                                 </Box>
-                              ) : (
-                                position.user || "Unknown User"
-                              )}
-                            </Box>
-                          </TableCell>
-                          {!isMobile && (
-                            <TableCell>
+                                <Box
+                                  sx={{ display: { xs: "none", sm: "block" } }}
+                                >
+                                  {position.user || "Unknown User"}
+                                </Box>
+                              </Box>
+                            </TableCell>
+                            <TableCell
+                              sx={{ display: { xs: "none", sm: "table-cell" } }}
+                            >
                               {position.email && (
                                 <Box
                                   sx={{
@@ -676,39 +751,47 @@ const POR = () => {
                                     cursor: "pointer",
                                     "&:hover": {
                                       textDecoration: "underline",
-                                      color: "#6a1b9a",
+                                      color: "#8E54E9",
                                     },
                                   }}
-                                  onClick={() => handleEmailClick(position.email)}
+                                  onClick={() =>
+                                    handleEmailClick(position.email)
+                                  }
                                 >
                                   <EmailIcon
-                                    sx={{ mr: 1, color: "#6a1b9a" }}
+                                    sx={{ mr: 1, color: "#8E54E9" }}
                                     fontSize="small"
                                   />
                                   {position.email}
                                 </Box>
                               )}
                             </TableCell>
-                          )}
-                          {!isMobile && (
-                            <TableCell>
+                            <TableCell
+                              sx={{ display: { xs: "none", sm: "table-cell" } }}
+                            >
                               {position.position || "Unknown Position"}
                             </TableCell>
-                          )}
-                          {!isMobile && (
-                            <TableCell>
+                            <TableCell
+                              sx={{ display: { xs: "none", sm: "table-cell" } }}
+                            >
                               <Chip
                                 label={position.organization || "N/A"}
                                 size="small"
                                 sx={{
-                                  backgroundColor: "#e1bee7",
-                                  color: "#4a148c",
+                                  backgroundColor:
+                                    theme.palette.mode === "light"
+                                      ? "#e1bee7"
+                                      : "#4a148c",
+                                  color:
+                                    theme.palette.mode === "light"
+                                      ? "#4a148c"
+                                      : "#e1bee7",
                                 }}
                               />
                             </TableCell>
-                          )}
-                          {!isMobile && (
-                            <TableCell>
+                            <TableCell
+                              sx={{ display: { xs: "none", sm: "table-cell" } }}
+                            >
                               <Chip
                                 icon={
                                   position.organizationType === "Club" ? (
@@ -722,594 +805,654 @@ const POR = () => {
                                 sx={{
                                   backgroundColor:
                                     position.organizationType === "Club"
-                                      ? "#bbdefb"
-                                      : "#c8e6c9",
+                                      ? theme.palette.mode === "light"
+                                        ? "#bbdefb"
+                                        : "#0d47a1"
+                                      : theme.palette.mode === "light"
+                                      ? "#c8e6c9"
+                                      : "#1b5e20",
                                   color:
                                     position.organizationType === "Club"
-                                      ? "#0d47a1"
-                                      : "#1b5e20",
+                                      ? theme.palette.mode === "light"
+                                        ? "#0d47a1"
+                                        : "#bbdefb"
+                                      : theme.palette.mode === "light"
+                                      ? "#1b5e20"
+                                      : "#c8e6c9",
                                 }}
                               />
                             </TableCell>
-                          )}
-                          <TableCell>
-                            {formatDate(position.start_date)} to{" "}
-                            {formatDate(position.end_date)}
-                          </TableCell>
-                          <TableCell>
-                            <Chip
-                              label={position.status}
-                              size="small"
-                              sx={{
-                                backgroundColor:
-                                  position.status === "Active"
-                                    ? "#c8e6c9"
-                                    : "#ffcdd2",
-                                color:
-                                  position.status === "Active"
-                                    ? "#2e7d32"
-                                    : "#c62828",
-                              }}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <IconButton
-                              onClick={(e) => handleMenuClick(e, position)}
-                            >
-                              <MoreVertIcon />
-                            </IconButton>
+                            <TableCell>
+                              {formatDate(position.start_date)} to{" "}
+                              {formatDate(position.end_date)}
+                            </TableCell>
+                            <TableCell>
+                              <Chip
+                                label={position.status}
+                                size="small"
+                                sx={{
+                                  backgroundColor:
+                                    position.status === "Active"
+                                      ? theme.palette.mode === "light"
+                                        ? "#c8e6c9"
+                                        : "#2e7d32"
+                                      : theme.palette.mode === "light"
+                                      ? "#ffcdd2"
+                                      : "#c62828",
+                                  color:
+                                    position.status === "Active"
+                                      ? theme.palette.mode === "light"
+                                        ? "#2e7d32"
+                                        : "#c8e6c9"
+                                      : theme.palette.mode === "light"
+                                      ? "#c62828"
+                                      : "#ffcdd2",
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <IconButton
+                                onClick={(e) => handleMenuClick(e, position)}
+                              >
+                                <MoreVertIcon />
+                              </IconButton>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={9} align="center">
+                            No positions found
                           </TableCell>
                         </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={isMobile ? 6 : 9} align="center">
-                          No positions found
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
 
-              <Box
-                sx={{
-                  p: 2,
-                  borderTop: "1px solid #e0e0e0",
-                  backgroundColor: "#f9f9f9",
-                }}
-              >
-                <Typography variant="body2" color="text.secondary">
-                  Showing {filteredPositions.length}{" "}
-                  {filteredPositions.length === 1 ? "result" : "results"}
-                  {filteredPositions.length !== positions.length &&
-                    ` (filtered from ${positions.length} total)`}
-                </Typography>
-              </Box>
-            </Paper>
-          )}
-
-          <Dialog
-            open={openDialog}
-            onClose={handleCloseDialog}
-            fullWidth
-            maxWidth="sm"
-            fullScreen={isMobile}
-          >
-            <DialogTitle>
-              {isEdit ? "Edit Position" : "Add New Position"}
-            </DialogTitle>
-            <DialogContent>
-              <Box sx={{ mb: 2 }}>
-                <SearchableUserSelect
-                  users={users}
-                  value={newPosition.user_id}
-                  onChange={(e) =>
-                    handleInputChange({
-                      target: {
-                        name: "user_id",
-                        value: e.target.value,
-                      },
-                    })
-                  }
-                />
-              </Box>
-
-              <FormControl fullWidth margin="dense" sx={{ mb: 2 }}>
-                <InputLabel id="privilege-select-label">Position</InputLabel>
-                <Select
-                  labelId="privilege-select-label"
-                  name="privilegeTypeId"
-                  value={newPosition.privilegeTypeId}
-                  label="Position"
-                  onChange={handleInputChange}
-                >
-                  {privilegeTypes.map((privilege) => (
-                    <MenuItem key={privilege._id} value={privilege._id}>
-                      {privilege.position}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
-              <FormControl fullWidth margin="dense" sx={{ mb: 2 }}>
-                <InputLabel id="club-select-label">Club</InputLabel>
-                <Select
-                  labelId="club-select-label"
-                  name="club_id"
-                  value={newPosition.club_id}
-                  label="Club"
-                  onChange={(e) => {
-                    setNewPosition((prev) => ({
-                      ...prev,
-                      club_id: e.target.value,
-                      board_id: e.target.value ? "" : prev.board_id,
-                    }));
+                <Box
+                  sx={{
+                    p: 2,
+                    borderTop: "1px solid",
+                    borderColor: "divider",
+                    backgroundColor:
+                      theme.palette.mode === "light" ? "#f9f9f9" : "#2d2d2d",
                   }}
                 >
-                  <MenuItem value="">None</MenuItem>
-                  {clubs.map((club) => (
-                    <MenuItem key={club._id} value={club._id}>
-                      {club.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+                  <Typography variant="body2" color="text.secondary">
+                    Showing {filteredPositions.length}{" "}
+                    {filteredPositions.length === 1 ? "result" : "results"}
+                    {filteredPositions.length !== positions.length &&
+                      ` (filtered from ${positions.length} total)`}
+                  </Typography>
+                </Box>
+              </Paper>
+            )}
 
-              <FormControl fullWidth margin="dense" sx={{ mb: 2 }}>
-                <InputLabel id="board-select-label">Board</InputLabel>
-                <Select
-                  labelId="board-select-label"
-                  name="board_id"
-                  value={newPosition.board_id}
-                  label="Board"
-                  onChange={(e) => {
-                    setNewPosition((prev) => ({
-                      ...prev,
-                      board_id: e.target.value,
-                      club_id: e.target.value ? "" : prev.club_id,
-                    }));
-                  }}
-                  disabled={Boolean(newPosition.club_id)}
-                >
-                  <MenuItem value="">None</MenuItem>
-                  {boards.map((board) => (
-                    <MenuItem key={board._id} value={board._id}>
-                      {board.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
-              <Grid container spacing={2}>
-                <Grid item xs={6}>
-                  <TextField
-                    margin="dense"
-                    name="start_date"
-                    label="Start Date"
-                    type="date"
-                    fullWidth
-                    variant="outlined"
-                    InputLabelProps={{ shrink: true }}
-                    value={newPosition.start_date}
-                    onChange={handleInputChange}
-                    size={isMobile ? "small" : "medium"}
-                  />
-                </Grid>
-                <Grid item xs={6}>
-                  <TextField
-                    margin="dense"
-                    name="end_date"
-                    label="End Date"
-                    type="date"
-                    fullWidth
-                    variant="outlined"
-                    InputLabelProps={{ shrink: true }}
-                    value={newPosition.end_date}
-                    onChange={handleInputChange}
-                    size={isMobile ? "small" : "medium"}
-                  />
-                </Grid>
-              </Grid>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={handleCloseDialog} sx={{ color: "#6a1b9a" }}>
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSubmit}
-                variant="contained"
-                sx={{
-                  backgroundColor: "#6a1b9a",
-                  "&:hover": { backgroundColor: "#4a148c" },
-                }}
-              >
-                {isEdit ? "Update Position" : "Add Position"}
-              </Button>
-            </DialogActions>
-          </Dialog>
-
-          <Menu
-            anchorEl={anchorEl}
-            open={Boolean(anchorEl)}
-            onClose={handleMenuClose}
-          >
-            <MenuItem onClick={handleEdit}>
-              <ListItemIcon>
-                <EditIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>Edit</ListItemText>
-            </MenuItem>
-            <MenuItem onClick={handleDelete}>
-              <ListItemIcon>
-                <DeleteIcon fontSize="small" color="error" />
-              </ListItemIcon>
-              <ListItemText sx={{ color: "error.main" }}>Delete</ListItemText>
-            </MenuItem>
-          </Menu>
-        </Box>
-      )}
-
-      {tabValue === 1 && (
-        <Box>
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: isMobile ? "column" : "row",
-              justifyContent: "space-between",
-              alignItems: isMobile ? "flex-start" : "center",
-              mb: 3,
-              gap: isMobile ? 2 : 0
-            }}
-          >
-            <Typography
-              variant={isMobile ? "h5" : "h4"}
-              sx={{ fontWeight: "bold", color: "#6a1b9a" }}
-            >
-              Privilege Types
-            </Typography>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={handleOpenPrivilegeDialog}
-              sx={{
-                backgroundColor: "#6a1b9a",
-                "&:hover": { backgroundColor: "#4a148c" },
-              }}
-              fullWidth={isMobile}
-            >
-              Add New Privilege
-            </Button>
-          </Box>
-
-          <Box sx={{ display: "flex", flexDirection: isMobile ? "column" : "row", mb: 3, gap: isMobile ? 2 : 0 }}>
-            <TextField
+            <Dialog
+              open={openDialog}
+              onClose={handleCloseDialog}
               fullWidth
-              variant="outlined"
-              placeholder="Search by position or description"
-              value={privilegeSearchTerm}
-              onChange={(e) => setPrivilegeSearchTerm(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{ mr: isMobile ? 0 : 2 }}
-              size={isMobile ? "small" : "medium"}
-            />
-            <Button
-              variant="contained"
-              onClick={handlePrivilegeSearch}
+              maxWidth="sm"
+              fullScreen={false}
+            >
+              <DialogTitle>
+                {isEdit ? "Edit Position" : "Add New Position"}
+              </DialogTitle>
+              <DialogContent>
+                <Box sx={{ mb: 2 }}>
+                  <SearchableUserSelect
+                    users={users}
+                    value={newPosition.user_id}
+                    onChange={(e) =>
+                      handleInputChange({
+                        target: {
+                          name: "user_id",
+                          value: e.target.value,
+                        },
+                      })
+                    }
+                  />
+                </Box>
+
+                <FormControl fullWidth margin="dense" sx={{ mb: 2 }}>
+                  <InputLabel id="privilege-select-label">Position</InputLabel>
+                  <Select
+                    labelId="privilege-select-label"
+                    name="privilegeTypeId"
+                    value={newPosition.privilegeTypeId}
+                    label="Position"
+                    onChange={handleInputChange}
+                  >
+                    {privilegeTypes.map((privilege) => (
+                      <MenuItem key={privilege._id} value={privilege._id}>
+                        {privilege.position}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+
+                <FormControl fullWidth margin="dense" sx={{ mb: 2 }}>
+                  <InputLabel id="club-select-label">Club</InputLabel>
+                  <Select
+                    labelId="club-select-label"
+                    name="club_id"
+                    value={newPosition.club_id}
+                    label="Club"
+                    onChange={(e) => {
+                      setNewPosition((prev) => ({
+                        ...prev,
+                        club_id: e.target.value,
+                        board_id: e.target.value ? "" : prev.board_id,
+                      }));
+                    }}
+                  >
+                    <MenuItem value="">None</MenuItem>
+                    {clubs.map((club) => (
+                      <MenuItem key={club._id} value={club._id}>
+                        {club.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+
+                <FormControl fullWidth margin="dense" sx={{ mb: 2 }}>
+                  <InputLabel id="board-select-label">Board</InputLabel>
+                  <Select
+                    labelId="board-select-label"
+                    name="board_id"
+                    value={newPosition.board_id}
+                    label="Board"
+                    onChange={(e) => {
+                      setNewPosition((prev) => ({
+                        ...prev,
+                        board_id: e.target.value,
+                        club_id: e.target.value ? "" : prev.club_id,
+                      }));
+                    }}
+                    disabled={Boolean(newPosition.club_id)}
+                  >
+                    <MenuItem value="">None</MenuItem>
+                    {boards.map((board) => (
+                      <MenuItem key={board._id} value={board._id}>
+                        {board.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      margin="dense"
+                      name="start_date"
+                      label="Start Date"
+                      type="date"
+                      fullWidth
+                      variant="outlined"
+                      InputLabelProps={{ shrink: true }}
+                      value={newPosition.start_date}
+                      onChange={handleInputChange}
+                      size="small"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      margin="dense"
+                      name="end_date"
+                      label="End Date"
+                      type="date"
+                      fullWidth
+                      variant="outlined"
+                      InputLabelProps={{ shrink: true }}
+                      value={newPosition.end_date}
+                      onChange={handleInputChange}
+                      size="small"
+                    />
+                  </Grid>
+                </Grid>
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={handleCloseDialog} sx={{ color: "#8E54E9" }}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSubmit}
+                  variant="contained"
+                  sx={{
+                    background: "linear-gradient(to right, #4776E6, #8E54E9)",
+                    "&:hover": {
+                      background: "linear-gradient(to right, #3a5fc0, #7d4bc9)",
+                    },
+                  }}
+                >
+                  {isEdit ? "Update Position" : "Add Position"}
+                </Button>
+              </DialogActions>
+            </Dialog>
+
+            <Menu
+              anchorEl={anchorEl}
+              open={Boolean(anchorEl)}
+              onClose={handleMenuClose}
+            >
+              <MenuItem onClick={handleEdit}>
+                <ListItemIcon>
+                  <EditIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Edit</ListItemText>
+              </MenuItem>
+              <MenuItem onClick={handleDelete}>
+                <ListItemIcon>
+                  <DeleteIcon fontSize="small" color="error" />
+                </ListItemIcon>
+                <ListItemText sx={{ color: "error.main" }}>Delete</ListItemText>
+              </MenuItem>
+            </Menu>
+          </Box>
+        )}
+
+        {tabValue === 1 && (
+          <Box>
+            <Box
               sx={{
-                backgroundColor: "#6a1b9a",
-                "&:hover": { backgroundColor: "#4a148c" },
-                minWidth: isMobile ? "100%" : "100px",
+                display: "flex",
+                flexDirection: { xs: "column", sm: "row" },
+                justifyContent: "space-between",
+                alignItems: { xs: "flex-start", sm: "center" },
+                mb: 3,
+                gap: { xs: 2, sm: 0 },
               }}
             >
-              Search
-            </Button>
-          </Box>
-
-          {loading ? (
-            <Box display="flex" justifyContent="center" py={4}>
-              <CircularProgress />
+              <Typography
+                variant="h4"
+                sx={{
+                  fontWeight: "bold",
+                  background: "linear-gradient(to right, #4776E6, #8E54E9)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  fontSize: { xs: "1.5rem", sm: "2.125rem" },
+                }}
+              >
+                Privilege Types
+              </Typography>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={handleOpenPrivilegeDialog}
+                sx={{
+                  background: "linear-gradient(to right, #4776E6, #8E54E9)",
+                  "&:hover": {
+                    background: "linear-gradient(to right, #3a5fc0, #7d4bc9)",
+                  },
+                  width: { xs: "100%", sm: "auto" },
+                }}
+              >
+                Add New Privilege
+              </Button>
             </Box>
-          ) : (
-            <Paper elevation={2} sx={{ borderRadius: 2 }}>
-              <TableContainer>
-                <Table>
-                  <TableHead sx={{ backgroundColor: "#f3e5f5" }}>
-                    <TableRow>
-                      <TableCell width="50px">#</TableCell>
-                      <TableCell>Position</TableCell>
-                      {!isMobile && <TableCell>Description</TableCell>}
-                      <TableCell>Permissions</TableCell>
-                      <TableCell>Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {filteredPrivilegeTypes.length > 0 ? (
-                      filteredPrivilegeTypes.map((privilege, index) => (
-                        <TableRow key={privilege._id}>
-                          <TableCell>{index + 1}</TableCell>
-                          <TableCell>
-                            <Box sx={{ display: "flex", alignItems: "center" }}>
-                              <Avatar sx={{ bgcolor: "#6a1b9a", mr: 2 }}>
-                                <BadgeIcon />
-                              </Avatar>
-                              {privilege.position}
-                            </Box>
-                          </TableCell>
-                          {!isMobile && (
-                            <TableCell>{privilege.description}</TableCell>
-                          )}
-                          <TableCell>
-                            <Box
-                              sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}
+
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: { xs: "column", sm: "row" },
+                mb: 3,
+                gap: { xs: 2, sm: 0 },
+              }}
+            >
+              <TextField
+                fullWidth
+                variant="outlined"
+                placeholder="Search by position or description"
+                value={privilegeSearchTerm}
+                onChange={(e) => setPrivilegeSearchTerm(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{ mr: { xs: 0, sm: 2 } }}
+                size="small"
+              />
+              <Button
+                variant="contained"
+                onClick={handlePrivilegeSearch}
+                sx={{
+                  background: "linear-gradient(to right, #4776E6, #8E54E9)",
+                  "&:hover": {
+                    background: "linear-gradient(to right, #3a5fc0, #7d4bc9)",
+                  },
+                  width: { xs: "100%", sm: "100px" },
+                }}
+              >
+                Search
+              </Button>
+            </Box>
+
+            {loading ? (
+              <Box display="flex" justifyContent="center" py={4}>
+                <CircularProgress />
+              </Box>
+            ) : (
+              <Paper elevation={2} sx={{ borderRadius: 2 }}>
+                <TableContainer>
+                  <Table>
+                    <TableHead
+                      sx={{
+                        backgroundColor:
+                          theme.palette.mode === "light"
+                            ? "#f3e5f5"
+                            : "#2d2d2d",
+                      }}
+                    >
+                      <TableRow>
+                        <TableCell width="50px">#</TableCell>
+                        <TableCell>Position</TableCell>
+                        <TableCell
+                          sx={{ display: { xs: "none", sm: "table-cell" } }}
+                        >
+                          Description
+                        </TableCell>
+                        <TableCell>Permissions</TableCell>
+                        <TableCell>Actions</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {filteredPrivilegeTypes.length > 0 ? (
+                        filteredPrivilegeTypes.map((privilege, index) => (
+                          <TableRow key={privilege._id}>
+                            <TableCell>{index + 1}</TableCell>
+                            <TableCell>
+                              <Box
+                                sx={{ display: "flex", alignItems: "center" }}
+                              >
+                                <Avatar sx={{ bgcolor: "#8E54E9", mr: 2 }}>
+                                  <BadgeIcon />
+                                </Avatar>
+                                {privilege.position}
+                              </Box>
+                            </TableCell>
+                            <TableCell
+                              sx={{ display: { xs: "none", sm: "table-cell" } }}
                             >
-                              {privilege.posts && (
-                                <Chip
-                                  label="Posts"
-                                  size="small"
-                                  color="primary"
-                                />
-                              )}
-                              {privilege.events && (
-                                <Chip
-                                  label="Events"
-                                  size="small"
-                                  color="secondary"
-                                />
-                              )}
-                              {privilege.projects && (
-                                <Chip
-                                  label="Projects"
-                                  size="small"
-                                  color="success"
-                                />
-                              )}
-                              {privilege.resources && (
-                                <Chip
-                                  label="Resources"
-                                  size="small"
-                                  color="info"
-                                />
-                              )}
-                              {privilege.opportunities && (
-                                <Chip
-                                  label="Opportunities"
-                                  size="small"
-                                  color="warning"
-                                />
-                              )}
-                              {privilege.blogs && (
-                                <Chip
-                                  label="Blogs"
-                                  size="small"
-                                  color="error"
-                                />
-                              )}
-                              {privilege.forums && (
-                                <Chip
-                                  label="Forums"
-                                  size="small"
-                                  sx={{ bgcolor: "#9c27b0", color: "white" }}
-                                />
-                              )}
-                            </Box>
-                          </TableCell>
-                          <TableCell>
-                            <IconButton
-                              onClick={(e) =>
-                                handlePrivilegeMenuClick(e, privilege)
-                              }
-                            >
-                              <MoreVertIcon />
-                            </IconButton>
+                              {privilege.description}
+                            </TableCell>
+                            <TableCell>
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  flexWrap: "wrap",
+                                  gap: 1,
+                                }}
+                              >
+                                {privilege.posts && (
+                                  <Chip
+                                    label="Posts"
+                                    size="small"
+                                    color="primary"
+                                  />
+                                )}
+                                {privilege.events && (
+                                  <Chip
+                                    label="Events"
+                                    size="small"
+                                    color="secondary"
+                                  />
+                                )}
+                                {privilege.projects && (
+                                  <Chip
+                                    label="Projects"
+                                    size="small"
+                                    color="success"
+                                  />
+                                )}
+                                {privilege.resources && (
+                                  <Chip
+                                    label="Resources"
+                                    size="small"
+                                    color="info"
+                                  />
+                                )}
+                                {privilege.opportunities && (
+                                  <Chip
+                                    label="Opportunities"
+                                    size="small"
+                                    color="warning"
+                                  />
+                                )}
+                                {privilege.blogs && (
+                                  <Chip
+                                    label="Blogs"
+                                    size="small"
+                                    color="error"
+                                  />
+                                )}
+                                {privilege.forums && (
+                                  <Chip
+                                    label="Forums"
+                                    size="small"
+                                    sx={{ bgcolor: "#9c27b0", color: "white" }}
+                                  />
+                                )}
+                              </Box>
+                            </TableCell>
+                            <TableCell>
+                              <IconButton
+                                onClick={(e) =>
+                                  handlePrivilegeMenuClick(e, privilege)
+                                }
+                              >
+                                <MoreVertIcon />
+                              </IconButton>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={5} align="center">
+                            No privilege types found
                           </TableCell>
                         </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={isMobile ? 4 : 5} align="center">
-                          No privilege types found
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
 
-              <Box
-                sx={{
-                  p: 2,
-                  borderTop: "1px solid #e0e0e0",
-                  backgroundColor: "#f9f9f9",
-                }}
-              >
-                <Typography variant="body2" color="text.secondary">
-                  Showing {filteredPrivilegeTypes.length}{" "}
-                  {filteredPrivilegeTypes.length === 1 ? "result" : "results"}
-                  {filteredPrivilegeTypes.length !== privilegeTypes.length &&
-                    ` (filtered from ${privilegeTypes.length} total)`}
-                </Typography>
-              </Box>
-            </Paper>
-          )}
+                <Box
+                  sx={{
+                    p: 2,
+                    borderTop: "1px solid",
+                    borderColor: "divider",
+                    backgroundColor:
+                      theme.palette.mode === "light" ? "#f9f9f9" : "#2d2d2d",
+                  }}
+                >
+                  <Typography variant="body2" color="text.secondary">
+                    Showing {filteredPrivilegeTypes.length}{" "}
+                    {filteredPrivilegeTypes.length === 1 ? "result" : "results"}
+                    {filteredPrivilegeTypes.length !== privilegeTypes.length &&
+                      ` (filtered from ${privilegeTypes.length} total)`}
+                  </Typography>
+                </Box>
+              </Paper>
+            )}
 
-          <Dialog
-            open={openPrivilegeDialog}
-            onClose={handleClosePrivilegeDialog}
-            fullWidth
-            maxWidth="sm"
-            fullScreen={isMobile}
-          >
-            <DialogTitle>
-              {isEditPrivilege
-                ? "Edit Privilege Type"
-                : "Add New Privilege Type"}
-            </DialogTitle>
-            <DialogContent>
-              <TextField
-                autoFocus
-                margin="dense"
-                name="position"
-                label="Position Title"
-                type="text"
-                fullWidth
-                variant="outlined"
-                value={newPrivilegeType.position}
-                onChange={handlePrivilegeInputChange}
-                size={isMobile ? "small" : "medium"}
-              />
-
-              <TextField
-                margin="dense"
-                name="description"
-                label="Description"
-                type="text"
-                fullWidth
-                variant="outlined"
-                value={newPrivilegeType.description}
-                onChange={handlePrivilegeInputChange}
-                size={isMobile ? "small" : "medium"}
-              />
-
-              <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>
-                Permissions
-              </Typography>
-
-              <Grid container spacing={2}>
-                <Grid item xs={6}>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={newPrivilegeType.posts}
-                        onChange={handlePrivilegeInputChange}
-                        name="posts"
-                      />
-                    }
-                    label="Posts"
-                  />
-                </Grid>
-                <Grid item xs={6}>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={newPrivilegeType.events}
-                        onChange={handlePrivilegeInputChange}
-                        name="events"
-                      />
-                    }
-                    label="Events"
-                  />
-                </Grid>
-                <Grid item xs={6}>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={newPrivilegeType.projects}
-                        onChange={handlePrivilegeInputChange}
-                        name="projects"
-                      />
-                    }
-                    label="Projects"
-                  />
-                </Grid>
-                <Grid item xs={6}>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={newPrivilegeType.resources}
-                        onChange={handlePrivilegeInputChange}
-                        name="resources"
-                      />
-                    }
-                    label="Resources"
-                  />
-                </Grid>
-                <Grid item xs={6}>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={newPrivilegeType.opportunities}
-                        onChange={handlePrivilegeInputChange}
-                        name="opportunities"
-                      />
-                    }
-                    label="Opportunities"
-                  />
-                </Grid>
-                <Grid item xs={6}>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={newPrivilegeType.blogs}
-                        onChange={handlePrivilegeInputChange}
-                        name="blogs"
-                      />
-                    }
-                    label="Blogs"
-                  />
-                </Grid>
-                <Grid item xs={6}>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={newPrivilegeType.forums}
-                        onChange={handlePrivilegeInputChange}
-                        name="forums"
-                      />
-                    }
-                    label="Forums"
-                  />
-                </Grid>
-              </Grid>
-            </DialogContent>
-            <DialogActions>
-              <Button
-                onClick={handleClosePrivilegeDialog}
-                sx={{ color: "#6a1b9a" }}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handlePrivilegeSubmit}
-                variant="contained"
-                sx={{
-                  backgroundColor: "#6a1b9a",
-                  "&:hover": { backgroundColor: "#4a148c" },
-                }}
-              >
+            <Dialog
+              open={openPrivilegeDialog}
+              onClose={handleClosePrivilegeDialog}
+              fullWidth
+              maxWidth="sm"
+              fullScreen={false}
+            >
+              <DialogTitle>
                 {isEditPrivilege
-                  ? "Update Privilege Type"
-                  : "Add Privilege Type"}
-              </Button>
-            </DialogActions>
-          </Dialog>
+                  ? "Edit Privilege Type"
+                  : "Add New Privilege Type"}
+              </DialogTitle>
+              <DialogContent>
+                <TextField
+                  autoFocus
+                  margin="dense"
+                  name="position"
+                  label="Position Title"
+                  type="text"
+                  fullWidth
+                  variant="outlined"
+                  value={newPrivilegeType.position}
+                  onChange={handlePrivilegeInputChange}
+                  size="small"
+                />
 
-          <Menu
-            anchorEl={privilegeAnchorEl}
-            open={Boolean(privilegeAnchorEl)}
-            onClose={handlePrivilegeMenuClose}
-          >
-            <MenuItem onClick={handleEditPrivilege}>
-              <ListItemIcon>
-                <EditIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>Edit</ListItemText>
-            </MenuItem>
-            <MenuItem onClick={handleDeletePrivilege}>
-              <ListItemIcon>
-                <DeleteIcon fontSize="small" color="error" />
-              </ListItemIcon>
-              <ListItemText sx={{ color: "error.main" }}>Delete</ListItemText>
-            </MenuItem>
-          </Menu>
-        </Box>
-      )}
+                <TextField
+                  margin="dense"
+                  name="description"
+                  label="Description"
+                  type="text"
+                  fullWidth
+                  variant="outlined"
+                  value={newPrivilegeType.description}
+                  onChange={handlePrivilegeInputChange}
+                  size="small"
+                />
+
+                <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>
+                  Permissions
+                </Typography>
+
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={newPrivilegeType.posts}
+                          onChange={handlePrivilegeInputChange}
+                          name="posts"
+                        />
+                      }
+                      label="Posts"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={newPrivilegeType.events}
+                          onChange={handlePrivilegeInputChange}
+                          name="events"
+                        />
+                      }
+                      label="Events"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={newPrivilegeType.projects}
+                          onChange={handlePrivilegeInputChange}
+                          name="projects"
+                        />
+                      }
+                      label="Projects"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={newPrivilegeType.resources}
+                          onChange={handlePrivilegeInputChange}
+                          name="resources"
+                        />
+                      }
+                      label="Resources"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={newPrivilegeType.opportunities}
+                          onChange={handlePrivilegeInputChange}
+                          name="opportunities"
+                        />
+                      }
+                      label="Opportunities"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={newPrivilegeType.blogs}
+                          onChange={handlePrivilegeInputChange}
+                          name="blogs"
+                        />
+                      }
+                      label="Blogs"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={newPrivilegeType.forums}
+                          onChange={handlePrivilegeInputChange}
+                          name="forums"
+                        />
+                      }
+                      label="Forums"
+                    />
+                  </Grid>
+                </Grid>
+              </DialogContent>
+              <DialogActions>
+                <Button
+                  onClick={handleClosePrivilegeDialog}
+                  sx={{ color: "#8E54E9" }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handlePrivilegeSubmit}
+                  variant="contained"
+                  sx={{
+                    background: "linear-gradient(to right, #4776E6, #8E54E9)",
+                    "&:hover": {
+                      background: "linear-gradient(to right, #3a5fc0, #7d4bc9)",
+                    },
+                  }}
+                >
+                  {isEditPrivilege
+                    ? "Update Privilege Type"
+                    : "Add Privilege Type"}
+                </Button>
+              </DialogActions>
+            </Dialog>
+
+            <Menu
+              anchorEl={privilegeAnchorEl}
+              open={Boolean(privilegeAnchorEl)}
+              onClose={handlePrivilegeMenuClose}
+            >
+              <MenuItem onClick={handleEditPrivilege}>
+                <ListItemIcon>
+                  <EditIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Edit</ListItemText>
+              </MenuItem>
+              <MenuItem onClick={handleDeletePrivilege}>
+                <ListItemIcon>
+                  <DeleteIcon fontSize="small" color="error" />
+                </ListItemIcon>
+                <ListItemText sx={{ color: "error.main" }}>Delete</ListItemText>
+              </MenuItem>
+            </Menu>
+          </Box>
+        )}
+      </Box>
     </Box>
   );
 };

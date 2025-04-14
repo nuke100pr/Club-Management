@@ -59,7 +59,7 @@ async function saveFile(file) {
 
 // Fetch all clubs with follow status
 exports.fetchAllClubs = async (userId) => {
-  const clubs = await Club.find({});
+  const clubs = await Club.find({}).populate("image");
   
   if (!userId) {
     return clubs.map(club => ({ ...club.toObject(), isFollowing: false, isBoardFollowing: false }));
@@ -77,7 +77,7 @@ exports.fetchAllClubs = async (userId) => {
 
 // Fetch clubs by board ID with follow status
 exports.fetchClubsByBoardId = async (boardId, userId) => {
-  const clubs = await Club.find({ board_id: boardId });
+  const clubs = await Club.find({ board_id: boardId }).populate("image");
   
   if (!userId) {
     return clubs.map(club => ({ ...club.toObject(), isFollowing: false, isBoardFollowing: false }));
@@ -95,7 +95,8 @@ exports.fetchClubsByBoardId = async (boardId, userId) => {
 
 // Fetch club by club ID with follow status
 exports.fetchClubById = async (clubId, userId) => {
-  const club = await Club.findById(clubId);
+  const club = await Club.findById(clubId).populate("image");
+  console.log(club);
   if (!club) return null;
 
   let isFollowing = false;

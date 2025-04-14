@@ -17,29 +17,34 @@ import {
   Block as BlockIcon,
   EventNote as EventNoteIcon,
 } from "@mui/icons-material";
+import { motion } from "framer-motion";
 
 const Dashboard = () => {
   const [statsData, setStatsData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const darkMode = theme.palette.mode === 'dark';
 
   useEffect(() => {
-    fetch("http://localhost:5000/stats")
-      .then((response) => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch("http://localhost:5000/stats");
         if (!response.ok) {
           throw new Error("Network response was not ok");
         }
-        return response.json();
-      })
-      .then((data) => {
+        const data = await response.json();
         setStatsData(data);
-        setLoading(false);
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error("Error fetching stats:", error);
+        setError("Failed to load dashboard data");
+      } finally {
         setLoading(false);
-      });
+      }
+    };
+
+    fetchStats();
   }, []);
 
   const getStats = () => {
@@ -51,32 +56,40 @@ const Dashboard = () => {
         title: "Total Boards",
         value: statsData.totalBoards.toString(),
         icon: <GroupsIcon fontSize="large" />,
+        color: theme.palette.primary.main,
+        darkColor: theme.palette.primary.light
       },
       {
         id: 2,
         title: "Active Clubs",
         value: statsData.totalClubs.toString(),
         icon: <EventIcon fontSize="large" />,
+        color: theme.palette.success.main,
+        darkColor: theme.palette.success.light
       },
       {
         id: 3,
         title: "Total Events",
         value: statsData.totalEvents.toString(),
         icon: <EventNoteIcon fontSize="large" />,
-        change: null,
+        color: "#8E54E9",
+        darkColor: "#B794F6"
       },
       {
         id: 4,
         title: "Upcoming Events",
         value: statsData.upcomingEvents.toString(),
         icon: <NotificationsActiveIcon fontSize="large" />,
-        change: null,
+        color: theme.palette.warning.main,
+        darkColor: theme.palette.warning.light
       },
       {
         id: 5,
         title: "Active Users",
         value: statsData.activeUsers.toString(),
         icon: <TrendingUpIcon fontSize="large" />,
+        color: "#4776E6",
+        darkColor: "#90CAF9",
         change: `+${statsData.usersRegisteredThisMonth} this month`,
       },
       {
@@ -84,62 +97,171 @@ const Dashboard = () => {
         title: "Banned Users",
         value: statsData.bannedUsers.toString(),
         icon: <BlockIcon fontSize="large" />,
-        change: null,
+        color: theme.palette.error.main,
+        darkColor: theme.palette.error.light
       },
     ];
   };
 
+  const GradientText = ({ children, variant }) => (
+    <Typography
+      variant={variant || "h5"}
+      sx={{
+        fontWeight: 600,
+        background: 'linear-gradient(45deg, #4776E6, #8E54E9)',
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        backgroundClip: 'text',
+        mb: 2,
+      }}
+    >
+      {children}
+    </Typography>
+  );
+
   if (loading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
-        <CircularProgress sx={{ color: "#6a1b9a" }} />
+      <Box 
+        sx={{ 
+          display: "flex", 
+          justifyContent: "center", 
+          alignItems: "center", 
+          minHeight: "50vh",
+          bgcolor: darkMode ? 'background.default' : '#f8faff'
+        }}
+      >
+        <CircularProgress sx={{ color: "#4776E6" }} />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box 
+        sx={{ 
+          display: "flex", 
+          flexDirection: "column", 
+          justifyContent: "center", 
+          alignItems: "center", 
+          minHeight: "50vh",
+          p: 4,
+          bgcolor: darkMode ? 'background.default' : '#f8faff'
+        }}
+      >
+        <Typography color="error" variant="h6" gutterBottom>
+          {error}
+        </Typography>
+        <Button
+          variant="contained"
+          onClick={() => window.location.reload()}
+          sx={{
+            mt: 2,
+            background: 'linear-gradient(45deg, #4776E6, #8E54E9)',
+            boxShadow: '0 4px 10px rgba(71, 118, 230, 0.25)',
+          }}
+        >
+          Retry
+        </Button>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: isMobile ? 1 : 3 }}>
+    <Box 
+      sx={{ 
+        p: isMobile ? 2 : 4, 
+        minHeight: "100vh",
+        fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+        bgcolor: darkMode ? 'background.default' : '#f8faff'
+      }}
+    >
+      <GradientText variant={isMobile ? "h5" : "h4"}>Dashboard Overview</GradientText>
 
-      <Grid container spacing={isMobile ? 1 : 3} sx={{ mb: 4 }}>
+      <Grid container spacing={isMobile ? 2 : 3} sx={{ mb: 4 }}>
         {getStats().map((stat) => (
-          <Grid item xs={12} sm={6} md={4} lg={4} key={stat.id}>
-            <Paper
-              elevation={2}
-              sx={{ p: 2, borderRadius: 3, backgroundColor: "white" }}
+          <Grid item xs={12} sm={6} md={4} key={stat.id}>
+            <motion.div
+              whileHover={{ y: -8 }}
+              transition={{ duration: 0.3 }}
             >
-              <Box sx={{ display: "flex", alignItems: "center" }}>
-                <Box
-                  sx={{
-                    backgroundColor: "#f3e5f5",
-                    borderRadius: "50%",
-                    width: 60,
-                    height: 60,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    mr: 2,
-                    color: "#6a1b9a",
-                  }}
-                >
-                  {stat.icon}
+              <Paper
+                elevation={0}
+                sx={{ 
+                  p: 3, 
+                  borderRadius: "16px", 
+                  borderTop: `4px solid ${darkMode ? stat.darkColor : stat.color}`,
+                  boxShadow: darkMode ? '0 4px 12px rgba(0, 0, 0, 0.1)' : '0 4px 12px rgba(95, 150, 230, 0.1)',
+                  transition: 'all 0.3s ease',
+                  height: '100%',
+                  bgcolor: darkMode ? 'grey.800' : 'background.paper',
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
+              >
+                <Box sx={{ display: "flex", alignItems: "center" }}>
+                  <Box
+                    sx={{
+                      borderRadius: "12px",
+                      width: 60,
+                      height: 60,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      mr: 2,
+                      background: darkMode 
+                        ? `linear-gradient(45deg, ${stat.darkColor}, ${stat.darkColor}cc)`
+                        : `linear-gradient(45deg, ${stat.color}, ${stat.color}cc)`,
+                      boxShadow: darkMode 
+                        ? `0 4px 10px ${stat.darkColor}40`
+                        : `0 4px 10px ${stat.color}40`,
+                    }}
+                  >
+                    {React.cloneElement(stat.icon, {
+                      sx: { color: darkMode ? 'common.white' : 'common.white' }
+                    })}
+                  </Box>
+                  <Box>
+                    <Typography 
+                      variant="subtitle2" 
+                      sx={{ 
+                        fontSize: '0.85rem',
+                        fontWeight: 500,
+                        mb: 0.5,
+                        color: darkMode ? 'text.secondary' : 'text.primary'
+                      }}
+                    >
+                      {stat.title}
+                    </Typography>
+                    <Typography 
+                      variant={isMobile ? "h5" : "h4"} 
+                      sx={{ 
+                        fontWeight: 600,
+                        lineHeight: 1,
+                        color: darkMode ? 'common.white' : 'text.primary'
+                      }}
+                    >
+                      {stat.value}
+                    </Typography>
+                    {stat.change && (
+                      <Chip
+                        label={stat.change}
+                        size="small"
+                        sx={{ 
+                          mt: 1,
+                          backgroundColor: darkMode 
+                            ? `${stat.darkColor}20` 
+                            : `${stat.color}15`,
+                          color: darkMode ? stat.darkColor : stat.color,
+                          fontSize: '0.65rem',
+                          height: '22px',
+                          fontWeight: 500
+                        }}
+                      />
+                    )}
+                  </Box>
                 </Box>
-                <Box>
-                  <Typography variant="subtitle2" color="textSecondary">
-                    {stat.title}
-                  </Typography>
-                  <Typography variant={isMobile ? "h5" : "h4"} sx={{ color: "#6a1b9a" }}>
-                    {stat.value}
-                  </Typography>
-                  {stat.change && (
-                    <Chip
-                      label={stat.change}
-                      size="small"
-                      sx={{ backgroundColor: "#e1bee7", color: "#4a148c" }}
-                    />
-                  )}
-                </Box>
-              </Box>
-            </Paper>
+              </Paper>
+            </motion.div>
           </Grid>
         ))}
       </Grid>

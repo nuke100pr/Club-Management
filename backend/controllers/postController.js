@@ -1,4 +1,5 @@
 const postService = require('../services/postService');
+const Posts = require('../models/Posts');
 
 const createPost = async (req, res) => {
 
@@ -196,10 +197,11 @@ const addVote = async (req, res) => {
     }
     
     const result = await postService.addVote(id, user_id, vote);
+    const value = await postService.getVotes(id);
     
     res.status(200).json({
       success: true,
-      data: result
+      data: value
     });
   } catch (error) {
     console.error('Error adding vote:', error);

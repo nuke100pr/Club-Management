@@ -2,29 +2,40 @@ import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
+  Button,
   Grid,
   Card,
   CardContent,
-  Button,
-  Avatar,
-  Chip,
-  Divider,
+  CardMedia,
+  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   TextField,
+  Chip,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+  Select,
+  Fade,
+  InputLabel,
+  FormControl,
   CircularProgress,
   useMediaQuery,
-  useTheme
+  useTheme,
 } from "@mui/material";
 import {
   Add as AddIcon,
-  Group as GroupIcon,
+  MoreVert as MoreVertIcon,
   School as SchoolIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
+  Group as GroupIcon,
+  Event as CalendarIcon,
 } from "@mui/icons-material";
+import { motion } from "framer-motion";
 
 const ClubManagement = () => {
   const [clubs, setClubs] = useState([]);
@@ -38,11 +49,23 @@ const ClubManagement = () => {
     name: "",
     description: "",
     board: "",
+    established_year: "",
     image: null,
+    social_media: {
+      instagram: "",
+      twitter: "",
+      whatsapp: "",
+      facebook: "",
+      linkedin: "",
+      youtube: "",
+    },
   });
   const [imagePreview, setImagePreview] = useState(null);
+  const [anchorEl, setAnchorEl] = useState(null);
+
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const darkMode = theme.palette.mode === "dark";
 
   useEffect(() => {
     fetchBoards()
@@ -94,6 +117,17 @@ const ClubManagement = () => {
     }));
   };
 
+  const handleSocialMediaChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      social_media: {
+        ...prev.social_media,
+        [name]: value,
+      },
+    }));
+  };
+
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -110,13 +144,31 @@ const ClubManagement = () => {
     }
   };
 
+  const handleMenuOpen = (event, club) => {
+    setAnchorEl(event.currentTarget);
+    setSelectedClub(club);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
   const handleOpenAddDialog = () => {
     setIsEditing(false);
     setFormData({
       name: "",
       description: "",
       board: "",
+      established_year: "",
       image: null,
+      social_media: {
+        instagram: "",
+        twitter: "",
+        whatsapp: "",
+        facebook: "",
+        linkedin: "",
+        youtube: "",
+      },
     });
     setImagePreview(null);
     setOpenDialog(true);
@@ -129,10 +181,20 @@ const ClubManagement = () => {
       name: club.name,
       description: club.description,
       board: club.board_id.toString(),
+      established_year: club.established_year || "",
       image: null,
+      social_media: {
+        instagram: club.social_media?.instagram || "",
+        twitter: club.social_media?.twitter || "",
+        whatsapp: club.social_media?.whatsapp || "",
+        facebook: club.social_media?.facebook || "",
+        linkedin: club.social_media?.linkedin || "",
+        youtube: club.social_media?.youtube || "",
+      },
     });
     setImagePreview(club.image);
     setOpenDialog(true);
+    handleMenuClose();
   };
 
   const createClub = async (clubData) => {
@@ -140,7 +202,35 @@ const ClubManagement = () => {
       const formDataObj = new FormData();
       formDataObj.append("name", clubData.name);
       formDataObj.append("description", clubData.description);
-      formDataObj.append("board_id", clubData.board_id);
+      formDataObj.append("board_id", clubData.board);
+      formDataObj.append("established_year", clubData.established_year);
+
+      // Append social media links
+      formDataObj.append(
+        "social_media[instagram]",
+        clubData.social_media.instagram
+      );
+      formDataObj.append(
+        "social_media[twitter]",
+        clubData.social_media.twitter
+      );
+      formDataObj.append(
+        "social_media[whatsapp]",
+        clubData.social_media.whatsapp
+      );
+      formDataObj.append(
+        "social_media[facebook]",
+        clubData.social_media.facebook
+      );
+      formDataObj.append(
+        "social_media[linkedin]",
+        clubData.social_media.linkedin
+      );
+      formDataObj.append(
+        "social_media[youtube]",
+        clubData.social_media.youtube
+      );
+
       if (clubData.image) {
         formDataObj.append("image", clubData.image);
       }
@@ -169,7 +259,35 @@ const ClubManagement = () => {
       const formDataObj = new FormData();
       formDataObj.append("name", clubData.name);
       formDataObj.append("description", clubData.description);
-      formDataObj.append("board_id", clubData.board_id);
+      formDataObj.append("board_id", clubData.board);
+      formDataObj.append("established_year", clubData.established_year);
+
+      // Append social media links
+      formDataObj.append(
+        "social_media[instagram]",
+        clubData.social_media.instagram
+      );
+      formDataObj.append(
+        "social_media[twitter]",
+        clubData.social_media.twitter
+      );
+      formDataObj.append(
+        "social_media[whatsapp]",
+        clubData.social_media.whatsapp
+      );
+      formDataObj.append(
+        "social_media[facebook]",
+        clubData.social_media.facebook
+      );
+      formDataObj.append(
+        "social_media[linkedin]",
+        clubData.social_media.linkedin
+      );
+      formDataObj.append(
+        "social_media[youtube]",
+        clubData.social_media.youtube
+      );
+
       if (clubData.image instanceof File) {
         formDataObj.append("image", clubData.image);
       }
@@ -188,7 +306,7 @@ const ClubManagement = () => {
 
       const updatedClub = await response.json();
       setClubs((prev) =>
-        prev.map((club) => (club.id === clubId ? updatedClub : club))
+        prev.map((club) => (club._id === clubId ? updatedClub : club))
       );
       return updatedClub;
     } catch (error) {
@@ -211,7 +329,7 @@ const ClubManagement = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      setClubs((prev) => prev.filter((club) => club.id !== clubId));
+      setClubs((prev) => prev.filter((club) => club._id !== clubId));
       return true;
     } catch (error) {
       console.error("Error deleting club:", error);
@@ -221,7 +339,12 @@ const ClubManagement = () => {
   };
 
   const handleSubmit = async () => {
-    if (!formData.name || !formData.description || !formData.board) {
+    if (
+      !formData.name ||
+      !formData.description ||
+      !formData.board ||
+      !formData.established_year
+    ) {
       alert("Please fill all required fields");
       return;
     }
@@ -232,8 +355,10 @@ const ClubManagement = () => {
       const clubData = {
         name: formData.name,
         description: formData.description,
-        board_id: formData.board,
+        board: formData.board,
+        established_year: formData.established_year,
         image: formData.image,
+        social_media: formData.social_media,
       };
 
       if (isEditing && selectedClub) {
@@ -247,7 +372,16 @@ const ClubManagement = () => {
         name: "",
         description: "",
         board: "",
+        established_year: "",
         image: null,
+        social_media: {
+          instagram: "",
+          twitter: "",
+          whatsapp: "",
+          facebook: "",
+          linkedin: "",
+          youtube: "",
+        },
       });
       setImagePreview(null);
     } catch (error) {
@@ -278,28 +412,31 @@ const ClubManagement = () => {
   if (loading && clubs.length === 0) {
     return (
       <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "50vh",
-        }}
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        height="400px"
       >
-        <CircularProgress sx={{ color: "#6a1b9a" }} />
+        <CircularProgress color="primary" />
       </Box>
     );
   }
 
   if (error && clubs.length === 0) {
     return (
-      <Box sx={{ textAlign: "center", mt: 4 }}>
-        <Typography variant="h6" color="error">
+      <Box textAlign="center" mt={8}>
+        <Typography variant="h6" color="error" gutterBottom>
           {error}
         </Typography>
         <Button
           variant="contained"
+          color="primary"
           onClick={() => window.location.reload()}
-          sx={{ mt: 2, backgroundColor: "#6a1b9a" }}
+          sx={{
+            mt: 2,
+            background: "linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)",
+            boxShadow: "0 4px 10px rgba(71, 118, 230, 0.25)",
+          }}
         >
           Retry
         </Button>
@@ -308,7 +445,13 @@ const ClubManagement = () => {
   }
 
   return (
-    <Box sx={{ maxWidth: 1200, mx: "auto", p: isMobile ? 1 : 3 }}>
+    <Box
+      sx={{
+        p: { xs: 2, sm: 4, md: 8 },
+        minHeight: "100vh",
+        bgcolor: darkMode ? "background.default" : "#f8faff",
+      }}
+    >
       <Box
         sx={{
           display: "flex",
@@ -316,264 +459,566 @@ const ClubManagement = () => {
           justifyContent: "space-between",
           alignItems: isMobile ? "flex-start" : "center",
           mb: 4,
-          gap: isMobile ? 2 : 0
+          gap: isMobile ? 2 : 0,
         }}
       >
-        <Typography variant={isMobile ? "h5" : "h4"} sx={{ fontWeight: "bold", color: "#6a1b9a" }}>
+        <Typography
+          variant="h5"
+          fontWeight={600}
+          sx={{
+            background: "linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            mb: isMobile ? 2 : 0,
+          }}
+        >
           Club Management
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleOpenAddDialog}
-          disabled={loading}
-          sx={{
-            backgroundColor: "#6a1b9a",
-            "&:hover": { backgroundColor: "#4a148c" },
+        <motion.div
+          whileHover={{
+            y: -2,
+            boxShadow: "0 6px 15px rgba(71, 118, 230, 0.4)",
           }}
-          fullWidth={isMobile}
         >
-          Add New Club
-        </Button>
-      </Box>
-
-      {clubs.length === 0 ? (
-        <Box sx={{ textAlign: "center", my: 4 }}>
-          <Typography variant="h6" color="text.secondary">
-            No clubs found
-          </Typography>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
             onClick={handleOpenAddDialog}
+            disabled={loading}
             sx={{
-              mt: 2,
-              backgroundColor: "#6a1b9a",
-              "&:hover": { backgroundColor: "#4a148c" },
+              background: "linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)",
+              boxShadow: "0 4px 10px rgba(71, 118, 230, 0.25)",
+              "&:hover": {
+                boxShadow: "0 6px 15px rgba(71, 118, 230, 0.4)",
+              },
             }}
           >
-            Add Your First Club
+            Add New Club
           </Button>
+        </motion.div>
+      </Box>
+
+      {clubs.length === 0 ? (
+        <Box textAlign="center" my={8}>
+          <Typography variant="body1" color="textSecondary" gutterBottom>
+            No clubs found
+          </Typography>
+          <motion.div
+            whileHover={{
+              y: -2,
+              boxShadow: "0 6px 15px rgba(71, 118, 230, 0.4)",
+            }}
+          >
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleOpenAddDialog}
+              sx={{
+                mt: 2,
+                background: "linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)",
+                boxShadow: "0 4px 10px rgba(71, 118, 230, 0.25)",
+              }}
+            >
+              Add Your First Club
+            </Button>
+          </motion.div>
         </Box>
       ) : (
-        <Grid container spacing={isMobile ? 1 : 3}>
+        <Grid container spacing={3}>
           {clubs.map((club) => (
-            <Grid item xs={12} sm={6} md={4} key={club.id}>
-              <Card
-                sx={{
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
+            <Grid item xs={12} sm={6} md={4} key={club._id}>
+              <motion.div
+                whileHover={{
+                  y: -8,
+                  boxShadow: "0 12px 20px rgba(95, 150, 230, 0.2)",
                 }}
               >
-                <CardContent sx={{ flexGrow: 1 }}>
-                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                    <Avatar
-                      src={club.image}
-                      sx={{ bgcolor: "#6a1b9a", mr: 2, width: 56, height: 56 }}
-                    >
-                      <SchoolIcon />
-                    </Avatar>
+                <Card
+                  sx={{
+                    borderRadius: "16px",
+                    overflow: "hidden",
+                    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
+                    transition: "all 0.3s ease-in-out",
+                    borderTop: "3px solid #4776E6",
+                    height: "100%",
+                  }}
+                >
+                  <CardContent sx={{ p: 3 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                      <Box
+                        sx={{
+                          width: 56,
+                          height: 56,
+                          borderRadius: "50%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          mr: 2,
+                          background:
+                            "linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)",
+                          color: "white",
+                        }}
+                      >
+                        {club.image ? (
+                          <Fade in={true} timeout={1000}>
+                            <CardMedia
+                              component="img"
+                              image={`http://localhost:5000/uploads/${club.image.filename}`}
+                              alt={club.name}
+                              sx={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                                borderRadius: "50%",
+                              }}
+                            />
+                          </Fade>
+                        ) : (
+                          <SchoolIcon />
+                        )}
+                      </Box>
+                      <Box>
+                        <Typography
+                          variant="h6"
+                          fontWeight={600}
+                          color={darkMode ? "white" : "text.primary"}
+                        >
+                          {club.name}
+                        </Typography>
+                        {club.established_year && (
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              mt: 0.5,
+                            }}
+                          >
+                            <CalendarIcon sx={{ fontSize: 16, mr: 0.5 }} />
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
+                              Est. {club.established_year}
+                            </Typography>
+                          </Box>
+                        )}
+                      </Box>
+                      <IconButton
+                        sx={{ ml: "auto" }}
+                        onClick={(e) => handleMenuOpen(e, club)}
+                      >
+                        <MoreVertIcon />
+                      </IconButton>
+                    </Box>
+
                     <Typography
-                      gutterBottom
-                      variant={isMobile ? "h6" : "h5"}
-                      component="h2"
-                      sx={{ color: "#6a1b9a" }}
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ mb: 3 }}
                     >
-                      {club.name}
+                      {club.description}
                     </Typography>
-                  </Box>
 
-                  <Typography variant="body2" color="text.secondary" mb={2}>
-                    {club.description}
-                  </Typography>
-
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      mb: 1,
-                    }}
-                  >
-                    <Typography variant="body2">Board:</Typography>
-                    <Chip
-                      label={getBoardName(club.board_id)}
-                      size="small"
-                      sx={{ backgroundColor: "#e1bee7" }}
-                    />
-                  </Box>
-
-                  <Divider sx={{ my: 2 }} />
-
-                  <Box sx={{ display: "flex", justifyContent: "flex-start" }}>
-                    <Chip
-                      icon={<GroupIcon />}
-                      label={`${club.members || 0} Members`}
-                      variant="outlined"
-                      size="small"
-                      sx={{ borderColor: "#6a1b9a" }}
-                    />
-                  </Box>
-
-                  <Box
-                    sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}
-                  >
-                    <Button
-                      startIcon={<EditIcon />}
-                      size="small"
-                      sx={{ color: "#6a1b9a", mr: 1 }}
-                      onClick={() => handleOpenEditDialog(club)}
-                      disabled={loading}
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        mb: 2,
+                      }}
                     >
-                      Edit
-                    </Button>
-                    <Button
-                      startIcon={<DeleteIcon />}
-                      size="small"
-                      sx={{ color: "#d32f2f" }}
-                      onClick={() => handleDeleteClub(club._id)}
-                      disabled={loading}
+                      <Typography variant="caption" color="text.secondary">
+                        Board:
+                      </Typography>
+                      <Chip
+                        label={getBoardName(club.board_id)}
+                        size="small"
+                        sx={{
+                          color: "#4776E6",
+                          backgroundColor: darkMode
+                            ? "rgba(144, 202, 249, 0.16)"
+                            : "rgba(95, 150, 230, 0.1)",
+                          borderRadius: "6px",
+                        }}
+                      />
+                    </Box>
+
+                    <Box
+                      sx={{
+                        height: "1px",
+                        width: "100%",
+                        bgcolor: "divider",
+                        my: 2,
+                      }}
+                    />
+
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
                     >
-                      Delete
-                    </Button>
-                  </Box>
-                </CardContent>
-              </Card>
+                      <Chip
+                        icon={<GroupIcon />}
+                        label={`${club.members || 0} Members`}
+                        variant="outlined"
+                        size="small"
+                        sx={{
+                          color: "#4776E6",
+                          borderColor: "#4776E6",
+                          borderRadius: "8px",
+                        }}
+                      />
+
+                      <Box>
+                        <IconButton
+                          onClick={() => handleOpenEditDialog(club)}
+                          disabled={loading}
+                          sx={{ color: "#4776E6" }}
+                        >
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton
+                          onClick={() => handleDeleteClub(club._id)}
+                          disabled={loading}
+                          sx={{ color: "#d32f2f" }}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Box>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </motion.div>
             </Grid>
           ))}
         </Grid>
       )}
 
+      {/* Context Menu */}
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+        transformOrigin={{ horizontal: "right", vertical: "top" }}
+        anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+        PaperProps={{
+          sx: {
+            borderRadius: "8px",
+            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.15)",
+            minWidth: 180,
+          },
+        }}
+      >
+        <MenuItem onClick={() => handleOpenEditDialog(selectedClub)}>
+          <ListItemIcon>
+            <EditIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Edit</ListItemText>
+        </MenuItem>
+        <MenuItem
+          onClick={() => handleDeleteClub(selectedClub?._id)}
+          sx={{ color: "#d32f2f" }}
+        >
+          <ListItemIcon>
+            <DeleteIcon fontSize="small" sx={{ color: "#d32f2f" }} />
+          </ListItemIcon>
+          <ListItemText>Delete</ListItemText>
+        </MenuItem>
+      </Menu>
+
+      {/* Add/Edit Dialog */}
       <Dialog
         open={openDialog}
-        onClose={() => !loading && setOpenDialog(false)}
+        onClose={() => setOpenDialog(false)}
         fullWidth
         maxWidth="sm"
-        fullScreen={isMobile}
+        PaperProps={{
+          sx: {
+            borderRadius: "16px",
+            boxShadow: "0 24px 38px rgba(0, 0, 0, 0.14)",
+          },
+        }}
       >
-        <DialogTitle>{isEditing ? "Edit Club" : "Add New Club"}</DialogTitle>
-        <DialogContent>
-          <Box component="form" sx={{ mt: 1 }}>
+        <DialogTitle
+          sx={{ px: 3, py: 2, borderBottom: "1px solid rgba(0, 0, 0, 0.06)" }}
+        >
+          <Typography variant="h6" fontWeight={600}>
+            {isEditing ? "Edit Club" : "Add New Club"}
+          </Typography>
+        </DialogTitle>
+
+        <DialogContent sx={{ px: 3, py: 3 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
             <TextField
-              margin="dense"
-              name="name"
-              label="Club Name"
-              type="text"
               fullWidth
-              variant="outlined"
+              label="Club Name"
+              name="name"
               value={formData.name}
               onChange={handleInputChange}
+              variant="outlined"
               required
-              disabled={loading}
-              sx={{ mb: 2 }}
+              placeholder="Enter club name"
+              InputProps={{
+                sx: { borderRadius: "8px" },
+              }}
             />
 
             <TextField
-              margin="dense"
-              name="description"
-              label="Description"
-              type="text"
               fullWidth
-              multiline
-              rows={isMobile ? 2 : 3}
-              variant="outlined"
+              label="Description"
+              name="description"
               value={formData.description}
               onChange={handleInputChange}
+              variant="outlined"
               required
-              disabled={loading}
-              sx={{ mb: 2 }}
+              multiline
+              rows={isMobile ? 3 : 4}
+              placeholder="Enter club description"
+              InputProps={{
+                sx: { borderRadius: "8px" },
+              }}
             />
 
-            <TextField
-              select
-              margin="dense"
-              name="board"
-              label="Parent Board"
-              fullWidth
-              variant="outlined"
-              value={formData.board}
-              onChange={handleInputChange}
-              required
-              disabled={loading}
-              sx={{ mb: 3 }}
-              SelectProps={{
-                native: true,
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: isMobile ? "column" : "row",
+                gap: 2,
               }}
             >
-              <option value="">Select a board</option>
-              {boards.map((board) => (
-                <option key={board._id} value={board._id}>
-                  {board.name}
-                </option>
-              ))}
-            </TextField>
+              <FormControl fullWidth>
+                <InputLabel>Parent Board *</InputLabel>
+                <Select
+                  name="board"
+                  value={formData.board}
+                  onChange={handleInputChange}
+                  label="Parent Board *"
+                  required
+                  sx={{ borderRadius: "8px" }}
+                >
+                  {boards.map((board) => (
+                    <MenuItem key={board._id} value={board._id}>
+                      {board.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
 
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="body2" sx={{ mb: 1 }}>
+              <TextField
+                fullWidth
+                label="Established Year *"
+                name="established_year"
+                value={formData.established_year}
+                onChange={handleInputChange}
+                variant="outlined"
+                type="number"
+                inputProps={{
+                  min: 1900,
+                  max: new Date().getFullYear(),
+                }}
+                placeholder="e.g. 2020"
+                required
+                InputProps={{
+                  sx: { borderRadius: "8px" },
+                }}
+              />
+            </Box>
+
+            <Box>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                 Club Image
               </Typography>
-              <input
-                accept="image/*"
-                id="club-image"
-                type="file"
-                style={{ display: "none" }}
-                onChange={handleImageChange}
-                disabled={loading}
-              />
-              <label htmlFor="club-image">
+              <Box sx={{ display: "flex", alignItems: "center" }}>
                 <Button
                   variant="outlined"
-                  component="span"
-                  disabled={loading}
-                  sx={{ borderColor: "#6a1b9a", color: "#6a1b9a" }}
-                  fullWidth={isMobile}
+                  component="label"
+                  sx={{
+                    borderRadius: "8px",
+                    color: "#4776E6",
+                    borderColor: "#4776E6",
+                    "&:hover": {
+                      backgroundColor: "rgba(95, 150, 230, 0.1)",
+                      borderColor: "#4776E6",
+                    },
+                  }}
                 >
-                  Upload Image
+                  {isEditing ? "Change Image" : "Upload Image"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    hidden
+                  />
                 </Button>
-              </label>
+                {formData.image && (
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ ml: 2 }}
+                  >
+                    {formData.image.name}
+                  </Typography>
+                )}
+              </Box>
             </Box>
 
             {imagePreview && (
-              <Box sx={{ mt: 2, mb: 2, textAlign: "center" }}>
-                <img
-                  src={imagePreview}
+              <Box sx={{ display: "flex", justifyContent: "center" }}>
+                <CardMedia
+                  component="img"
+                  image={imagePreview}
                   alt="Preview"
-                  style={{
-                    maxWidth: "100%",
-                    maxHeight: "200px",
-                    objectFit: "contain",
-                  }}
+                  sx={{ maxWidth: "100%", maxHeight: 160, borderRadius: "8px" }}
                 />
               </Box>
             )}
+
+            {/* Social Media Links */}
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="subtitle2" fontWeight={500} sx={{ mb: 1 }}>
+                Social Media Links
+              </Typography>
+
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Instagram"
+                    name="instagram"
+                    value={formData.social_media.instagram}
+                    onChange={handleSocialMediaChange}
+                    variant="outlined"
+                    placeholder="Instagram profile URL"
+                    size="small"
+                    InputProps={{
+                      sx: { borderRadius: "8px" },
+                    }}
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Twitter"
+                    name="twitter"
+                    value={formData.social_media.twitter}
+                    onChange={handleSocialMediaChange}
+                    variant="outlined"
+                    placeholder="Twitter profile URL"
+                    size="small"
+                    InputProps={{
+                      sx: { borderRadius: "8px" },
+                    }}
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="WhatsApp"
+                    name="whatsapp"
+                    value={formData.social_media.whatsapp}
+                    onChange={handleSocialMediaChange}
+                    variant="outlined"
+                    placeholder="WhatsApp contact or group link"
+                    size="small"
+                    InputProps={{
+                      sx: { borderRadius: "8px" },
+                    }}
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Facebook"
+                    name="facebook"
+                    value={formData.social_media.facebook}
+                    onChange={handleSocialMediaChange}
+                    variant="outlined"
+                    placeholder="Facebook page URL"
+                    size="small"
+                    InputProps={{
+                      sx: { borderRadius: "8px" },
+                    }}
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="LinkedIn"
+                    name="linkedin"
+                    value={formData.social_media.linkedin}
+                    onChange={handleSocialMediaChange}
+                    variant="outlined"
+                    placeholder="LinkedIn page URL"
+                    size="small"
+                    InputProps={{
+                      sx: { borderRadius: "8px" },
+                    }}
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="YouTube"
+                    name="youtube"
+                    value={formData.social_media.youtube}
+                    onChange={handleSocialMediaChange}
+                    variant="outlined"
+                    placeholder="YouTube channel URL"
+                    size="small"
+                    InputProps={{
+                      sx: { borderRadius: "8px" },
+                    }}
+                  />
+                </Grid>
+              </Grid>
+            </Box>
           </Box>
         </DialogContent>
-        <DialogActions>
+
+        <DialogActions
+          sx={{ px: 3, py: 2, borderTop: "1px solid rgba(0, 0, 0, 0.06)" }}
+        >
           <Button
             onClick={() => setOpenDialog(false)}
-            sx={{ color: "#6a1b9a" }}
-            disabled={loading}
+            sx={{
+              color: "#4776E6",
+              "&:hover": {
+                backgroundColor: "rgba(95, 150, 230, 0.1)",
+              },
+            }}
           >
             Cancel
           </Button>
-          <Button
-            onClick={handleSubmit}
-            variant="contained"
-            disabled={loading}
-            sx={{
-              backgroundColor: "#6a1b9a",
-              "&:hover": { backgroundColor: "#4a148c" },
-            }}
-          >
-            {loading ? (
-              <CircularProgress size={24} sx={{ color: "white" }} />
-            ) : isEditing ? (
-              "Update"
-            ) : (
-              "Add"
-            )}{" "}
-            Club
-          </Button>
+          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+            <Button
+              variant="contained"
+              onClick={handleSubmit}
+              disabled={loading}
+              sx={{
+                background: "linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)",
+                boxShadow: "0 4px 10px rgba(71, 118, 230, 0.25)",
+                borderRadius: "8px",
+                "&:hover": {
+                  boxShadow: "0 6px 15px rgba(71, 118, 230, 0.4)",
+                },
+              }}
+            >
+              {loading ? (
+                <CircularProgress size={24} color="inherit" />
+              ) : isEditing ? (
+                "Update Club"
+              ) : (
+                "Create Club"
+              )}
+            </Button>
+          </motion.div>
         </DialogActions>
       </Dialog>
     </Box>

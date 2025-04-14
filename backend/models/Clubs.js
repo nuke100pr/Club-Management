@@ -7,6 +7,7 @@ const clubsSchema = new mongoose.Schema({
   image: { type: String, ref: 'File' },
   created_at: { type: Date, required: false, default: Date.now },
   created_by: { type: String, required: false, ref: 'User' },
+  established_year: { type: String, required: false },
   social_media: {
     instagram: { type: String, required: false },
     twitter: { type: String, required: false },

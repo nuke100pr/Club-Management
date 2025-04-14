@@ -5,10 +5,6 @@ import {
   Button,
   Card,
   CardContent,
-  CardHeader,
-  Checkbox,
-  Chip,
-  Container,
   Dialog,
   DialogActions,
   DialogContent,
@@ -16,31 +12,158 @@ import {
   Divider,
   FormControl,
   FormControlLabel,
-  FormGroup,
   Grid,
   IconButton,
   Paper,
   Stack,
   Typography,
-  ToggleButtonGroup,
-  ToggleButton,
-  useMediaQuery,
-  useTheme,
   TextField,
   Radio,
   RadioGroup,
+  alpha,
+  styled,
+  Chip,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import {
   ChevronLeft,
   ChevronRight,
   AccessTime,
   LocationOn,
-  People,
   Close,
   FilterList,
+  CalendarMonth,
+  ViewWeek,
+  Today,
+  Search as SearchIcon,
 } from "@mui/icons-material";
 
-// Event Modal Component
+// Color definitions
+const mainColor = "#4776E6";
+const lightColor = "#6a98ff";
+const darkColor = "#3a5fc0";
+
+// Custom styled components
+const GradientButton = styled(Button)(({ theme }) => ({
+  background: `linear-gradient(45deg, ${mainColor} 30%, ${lightColor} 90%)`,
+  color: "white",
+  borderRadius: 8,
+  transition: "all 0.3s ease",
+  boxShadow: `0 4px 10px ${alpha(mainColor, 0.3)}`,
+  fontWeight: 500,
+  textTransform: "none",
+  "&:hover": {
+    background: `linear-gradient(45deg, ${darkColor} 30%, ${mainColor} 90%)`,
+    boxShadow: `0 6px 15px ${alpha(mainColor, 0.4)}`,
+    transform: "translateY(-2px)",
+  },
+}));
+
+const StyledCard = styled(Card)(({ theme }) => ({
+  borderRadius: 12,
+  background: "white",
+  boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
+  height: "100%",
+  display: "flex",
+  flexDirection: "column",
+  transition: "all 0.3s ease",
+  overflow: "hidden",
+  border: "1px solid rgba(0, 0, 0, 0.08)",
+  "&:hover": {
+    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+  },
+}));
+
+const StyledHeader = styled(Box)(({ theme }) => ({
+  background: "white",
+  padding: "16px 24px",
+  color: "#2A3B4F",
+  borderRadius: 12,
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  borderBottom: `1px solid rgba(0, 0, 0, 0.08)`,
+  marginBottom: theme.spacing(2),
+}));
+
+const StyledIconButton = styled(IconButton)(({ theme }) => ({
+  color: mainColor,
+  background: alpha(mainColor, 0.1),
+  "&:hover": {
+    background: alpha(mainColor, 0.2),
+  },
+  margin: "0 4px",
+}));
+
+const ViewButton = styled(Button)(({ active, theme }) => ({
+  color: active ? mainColor : "#607080",
+  borderRadius: 8,
+  background: active ? alpha(mainColor, 0.1) : "transparent",
+  "&:hover": {
+    background: active ? alpha(mainColor, 0.15) : alpha(mainColor, 0.05),
+  },
+  padding: "6px 12px",
+  minWidth: "auto",
+  marginLeft: 8,
+  textTransform: "none",
+  fontWeight: 500,
+  border: active ? `1px solid ${alpha(mainColor, 0.3)}` : "1px solid rgba(0, 0, 0, 0.08)",
+}));
+
+const DayCell = styled(Paper)(({ selected, isToday, theme }) => ({
+  height: "100%",
+  padding: 8,
+  cursor: "pointer",
+  overflow: "hidden",
+  borderRadius: 8,
+  background: "white",
+  border: isToday 
+    ? `2px solid ${mainColor}`
+    : selected
+    ? `1px solid ${alpha(mainColor, 0.5)}`
+    : "1px solid rgba(0, 0, 0, 0.08)",
+  boxShadow: "none",
+  transition: "all 0.2s ease",
+  "&:hover": {
+    boxShadow: `0 4px 8px ${alpha(mainColor, 0.1)}`,
+    borderColor: alpha(mainColor, 0.5),
+  },
+}));
+
+const EventChip = styled(Chip)(({ color, theme }) => ({
+  height: "auto",
+  padding: "4px 0",
+  borderRadius: 6,
+  fontWeight: 500,
+  fontSize: "0.7rem",
+  background: alpha(mainColor, 0.05),
+  color: mainColor,
+  border: `1px solid ${alpha(mainColor, 0.1)}`,
+  "& .MuiChip-label": {
+    padding: "0 8px",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+}));
+
+const SearchField = styled(TextField)(({ theme }) => ({
+  "& .MuiOutlinedInput-root": {
+    borderRadius: 8,
+    boxShadow: "0 1px 4px rgba(0, 0, 0, 0.05)",
+    transition: "all 0.3s ease",
+    background: "white",
+    "&:hover": {
+      boxShadow: `0 2px 8px ${alpha(mainColor, 0.1)}`,
+    },
+    "&.Mui-focused": {
+      boxShadow: `0 2px 10px ${alpha(mainColor, 0.15)}`,
+      borderColor: mainColor,
+    },
+  },
+}));
+
 const EventModal = ({ open, onClose, selectedDate, events }) => {
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
@@ -52,45 +175,74 @@ const EventModal = ({ open, onClose, selectedDate, events }) => {
       maxWidth="sm"
       fullWidth
       fullScreen={fullScreen}
+      PaperProps={{
+        sx: {
+          borderRadius: 2,
+          overflow: "hidden",
+          border: `1px solid rgba(0, 0, 0, 0.08)`,
+        },
+      }}
     >
-      <DialogTitle
-        sx={{
+      <DialogTitle sx={{ 
+        p: 0, 
+        position: "relative",
+        overflow: "hidden",
+      }}>
+        <Box sx={{ 
+          background: "white",
+          p: 2,
+          color: "#2A3B4F",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-        }}
-      >
-        <Typography variant="h6">
-          Events for {selectedDate?.month} {selectedDate?.day},{" "}
-          {selectedDate?.year}
-        </Typography>
-        <IconButton edge="end" onClick={onClose} aria-label="close">
-          <Close />
-        </IconButton>
+          borderBottom: `1px solid rgba(0, 0, 0, 0.08)`,
+        }}>
+          <Typography variant="h6" fontWeight={600}>
+            {selectedDate?.month} {selectedDate?.day}, {selectedDate?.year}
+          </Typography>
+          <IconButton 
+            edge="end" 
+            onClick={onClose} 
+            aria-label="close"
+            sx={{ 
+              color: "#607080",
+              "&:hover": {
+                background: alpha(mainColor, 0.1),
+              }
+            }}
+          >
+            <Close />
+          </IconButton>
+        </Box>
       </DialogTitle>
-      <DialogContent dividers>
+      <DialogContent dividers sx={{ p: 2, background: "#f9fafc" }}>
         {events.length > 0 ? (
           <Stack spacing={2}>
             {events.map((event) => (
               <Paper
                 key={event._id}
+                elevation={0}
                 sx={{
                   p: 2,
-                  bgcolor:
-                    event.event_type_id === "Workshop"
-                      ? "primary.lighter"
-                      : event.event_type_id === "Meeting"
-                      ? "success.lighter"
-                      : "secondary.lighter",
+                  borderRadius: 2,
+                  background: "white",
+                  borderLeft: `3px solid ${mainColor}`,
+                  transition: "all 0.2s ease",
+                  "&:hover": {
+                    boxShadow: `0 4px 12px ${alpha(mainColor, 0.1)}`,
+                  }
                 }}
               >
-                <Typography variant="subtitle1" fontWeight="medium">
+                <Typography variant="subtitle1" fontWeight={600} color="#2A3B4F">
                   {event.name}
                 </Typography>
-                <Stack spacing={1} mt={1}>
+                <Stack spacing={1.5} mt={1.5}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <AccessTime fontSize="small" color="action" />
-                    <Typography variant="body2" color="text.secondary">
+                    <AccessTime 
+                      fontSize="small" 
+                      sx={{ color: mainColor }}
+                    />
+                    <Typography variant="body2" color="#607080">
                       {new Date(event.timestamp).toLocaleTimeString([], { 
                         hour: '2-digit', 
                         minute: '2-digit' 
@@ -98,32 +250,38 @@ const EventModal = ({ open, onClose, selectedDate, events }) => {
                     </Typography>
                   </Box>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <LocationOn fontSize="small" color="action" />
-                    <Typography variant="body2" color="text.secondary">
+                    <LocationOn 
+                      fontSize="small" 
+                      sx={{ color: mainColor }}
+                    />
+                    <Typography variant="body2" color="#607080">
                       {event.venue}
                     </Typography>
                   </Box>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      {event.description}
-                    </Typography>
-                  </Box>
+                  <Divider sx={{ my: 1 }} />
+                  <Typography 
+                    variant="body2" 
+                    color="#607080"
+                    sx={{ mt: 1, lineHeight: 1.6 }}
+                  >
+                    {event.description}
+                  </Typography>
                 </Stack>
               </Paper>
             ))}
           </Stack>
         ) : (
           <Box sx={{ py: 4, textAlign: "center" }}>
-            <Typography color="text.secondary">
+            <Typography color="#607080">
               No events scheduled for this day
             </Typography>
           </Box>
         )}
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} fullWidth variant="outlined">
+      <DialogActions sx={{ p: 2, background: "white", justifyContent: "center" }}>
+        <GradientButton onClick={onClose} sx={{ px: 4 }}>
           Close
-        </Button>
+        </GradientButton>
       </DialogActions>
     </Dialog>
   );
@@ -152,13 +310,21 @@ const CalendarView = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const isSmall = useMediaQuery(theme.breakpoints.down("sm"));
+  
+  // Today's date for highlighting
+  const today = new Date();
+  const isToday = (day) => {
+    return day === today.getDate() && 
+           currentMonth === today.getMonth() && 
+           currentYear === today.getFullYear();
+  };
 
   // Fetch events from API
   useEffect(() => {
     const fetchEvents = async () => {
       setLoading(true);
       try {
-        const response = await fetch("http://localhost:5000/events");
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/events`);
         const result = await response.json();
         
         if (result.success) {
@@ -262,8 +428,8 @@ const CalendarView = () => {
   // Filter events based on selected criteria
   const filteredEvents = transformedEvents.filter(
     (event) =>
-      (event.name.toLowerCase().includes(search.toLowerCase()) ||
-        event.description.toLowerCase().includes(search.toLowerCase()) ||
+      (event.name?.toLowerCase().includes(search.toLowerCase()) ||
+        event.description?.toLowerCase().includes(search.toLowerCase()) ||
         search === "") &&
       (!selectedClub || event.club_id === selectedClub) &&
       (!selectedBoard || event.board_id === selectedBoard) &&
@@ -343,7 +509,7 @@ const CalendarView = () => {
     }
   };
 
-  const handleViewChange = (_, newView) => {
+  const handleViewChange = (newView) => {
     if (newView !== null) {
       setCurrentView(newView);
     }
@@ -380,11 +546,11 @@ const CalendarView = () => {
   // Calculate appropriate cell height based on available space and number of weeks
   const calculateDayCellHeight = () => {
     if (currentView === "day") return "auto";
-    if (isSmall) return 60;
-    if (isMobile) return 70;
+    if (isSmall) return 80;
+    if (isMobile) return 90;
 
     // Adjust height based on weeks needed
-    return weeksNeeded <= 5 ? 100 : 80;
+    return weeksNeeded <= 5 ? 120 : 100;
   };
 
   const dayCellHeight = calculateDayCellHeight();
@@ -412,64 +578,59 @@ const CalendarView = () => {
   };
 
   const renderMonthView = () => (
-    <Grid container spacing={0.5}>
+    <Grid container spacing={1}>
       {calendarDays.map((day, index) => (
-        <Grid item xs={12 / 7} key={index}>
+        <Grid item xs={12 / 7} key={index} sx={{ height: dayCellHeight }}>
           {day ? (
-            <Paper
-              elevation={0}
-              variant="outlined"
-              sx={{
-                height: dayCellHeight,
-                p: 0.5,
-                cursor: "pointer",
-                "&:hover": { bgcolor: "action.hover" },
-                overflow: "hidden",
-                bgcolor:
-                  day === selectedDay ? "action.selected" : "background.paper",
-              }}
+            <DayCell
+              selected={day === selectedDay}
+              isToday={isToday(day)}
               onClick={() => handleDayClick(day)}
+              sx={{ height: "100%" }}
             >
               <Typography
                 variant={isSmall ? "caption" : "body2"}
-                fontWeight="medium"
-                mb={0.5}
+                fontWeight={500}
+                mb={1}
+                color={isToday(day) ? mainColor : "#2A3B4F"}
+                sx={{
+                  display: "inline-block",
+                  width: 24,
+                  height: 24,
+                  textAlign: "center",
+                  lineHeight: "24px",
+                  borderRadius: "50%",
+                  background: isToday(day) ? alpha(mainColor, 0.1) : "transparent",
+                }}
               >
                 {day}
               </Typography>
-              <Stack spacing={0.5}>
+              <Stack spacing={0.7}>
                 {getEventsForDay(day)
                   .slice(0, isSmall ? 1 : isMobile ? 2 : 3)
                   .map((event) => (
-                    <Chip
+                    <EventChip
                       key={event._id}
                       label={isSmall ? "" : event.name}
                       size="small"
                       color={getEventTypeColor(event.event_type_id)}
-                      variant="outlined"
-                      sx={{
-                        height: "auto",
-                        py: 0.2,
-                        px: isSmall ? 0.5 : 1,
-                        maxWidth: "100%",
-                        "& .MuiChip-label": {
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                          padding: isSmall ? 0 : undefined,
-                          fontSize: isSmall
-                            ? "0.6rem"
-                            : isMobile
-                            ? "0.7rem"
-                            : "0.75rem",
-                        },
-                      }}
-                      icon={isSmall ? null : <AccessTime fontSize="small" />}
+                      icon={isSmall ? <AccessTime fontSize="small" /> : null}
                     />
                   ))}
                 {getEventsForDay(day).length >
                   (isSmall ? 1 : isMobile ? 2 : 3) && (
-                  <Typography variant="caption" color="text.secondary">
+                  <Typography 
+                    variant="caption" 
+                    color="#607080"
+                    sx={{ 
+                      display: "inline-block", 
+                      background: alpha(mainColor, 0.05), 
+                      px: 1, 
+                      py: 0.5, 
+                      borderRadius: 1,
+                      fontSize: "0.65rem",
+                    }}
+                  >
                     +
                     {getEventsForDay(day).length -
                       (isSmall ? 1 : isMobile ? 2 : 3)}{" "}
@@ -477,15 +638,14 @@ const CalendarView = () => {
                   </Typography>
                 )}
               </Stack>
-            </Paper>
+            </DayCell>
           ) : (
-            <Paper
-              elevation={0}
-              variant="outlined"
+            <Box
               sx={{
-                height: dayCellHeight,
-                p: 0.5,
-                bgcolor: "action.disabledBackground",
+                height: "100%",
+                borderRadius: 2,
+                background: "#f9fafc",
+                border: "1px solid rgba(0, 0, 0, 0.04)",
               }}
             />
           )}
@@ -495,26 +655,26 @@ const CalendarView = () => {
   );
 
   const renderWeekView = () => (
-    <Grid container spacing={0.5}>
+    <Grid container spacing={1}>
       {weekDays.map((dayInfo, index) => (
         <Grid item xs={12 / 7} key={index}>
           <Paper
             elevation={0}
-            variant="outlined"
             sx={{
-              height: isMobile ? 120 : 150,
-              p: 1,
+              height: isMobile ? 150 : 180,
+              p: 2,
               cursor: "pointer",
-              "&:hover": { bgcolor: "action.hover" },
+              borderRadius: 2,
               overflow: "hidden",
-              bgcolor:
-                dayInfo.day === selectedDay && dayInfo.month === currentMonth
-                  ? "action.selected"
-                  : dayInfo.isCurrentMonth
-                  ? "background.paper"
-                  : "action.disabledBackground",
-              borderLeft: index === 0 ? 2 : 1,
-              borderColor: index === 0 ? "primary.main" : "divider",
+              background: "white",
+              border: index === 0 
+                ? `2px solid ${mainColor}`
+                : "1px solid rgba(0, 0, 0, 0.08)",
+              transition: "transform 0.2s ease, box-shadow 0.2s ease",
+              "&:hover": {
+                transform: "translateY(-3px)",
+                boxShadow: `0 4px 12px ${alpha(mainColor, 0.1)}`,
+              },
             }}
             onClick={() => {
               setSelectedDay(dayInfo.day);
@@ -525,47 +685,82 @@ const CalendarView = () => {
               setIsModalOpen(true);
             }}
           >
-            <Box
-              sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}
-            >
-              <Typography
-                variant="body2"
-                fontWeight={dayInfo.isCurrentMonth ? "medium" : "normal"}
-                color={
-                  dayInfo.isCurrentMonth ? "text.primary" : "text.secondary"
-                }
-              >
-                {dayInfo.day}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][index]}
-              </Typography>
+            <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+              <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <Typography 
+                  variant="caption" 
+                  color="#607080"
+                  fontWeight={500}
+                >
+                  {["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"][index]}
+                </Typography>
+                <Typography
+                  variant="h6"
+                  fontWeight={600}
+                  color={
+                    dayInfo.day === today.getDate() && 
+                    dayInfo.month === today.getMonth() && 
+                    dayInfo.year === today.getFullYear() 
+                      ? mainColor 
+                      : dayInfo.isCurrentMonth ? "#2A3B4F" : "#607080"
+                  }
+                  sx={{
+                    mt: 0.5,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: 32,
+                    height: 32,
+                    borderRadius: "50%",
+                    background: 
+                      dayInfo.day === today.getDate() && 
+                      dayInfo.month === today.getMonth() && 
+                      dayInfo.year === today.getFullYear() 
+                        ? alpha(mainColor, 0.1) 
+                        : "transparent"
+                  }}
+                >
+                  {dayInfo.day}
+                </Typography>
+              </Box>
             </Box>
-            <Divider sx={{ my: 0.5 }} />
-            <Stack spacing={1} sx={{ mt: 1 }}>
-              {getEventsForDay(dayInfo.day, dayInfo.month, dayInfo.year).map(
-                (event) => (
-                  <Box
-                    key={event._id}
-                    sx={{
-                      p: 0.5,
-                      fontSize: "0.75rem",
-                      bgcolor:
-                        event.event_type_id === "Workshop"
-                          ? "primary.lighter"
-                          : event.event_type_id === "Meeting"
-                          ? "success.lighter"
-                          : "secondary.lighter",
-                      borderRadius: 0.5,
-                      color: "text.primary",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                  >
-                    {event.name}
-                  </Box>
-                )
+            <Divider sx={{ my: 1 }} />
+            <Stack spacing={1} sx={{ mt: 2 }}>
+              {getEventsForDay(dayInfo.day, dayInfo.month, dayInfo.year)
+                .slice(0, 3)
+                .map((event) => (
+                <Box
+                  key={event._id}
+                  sx={{
+                    p: 1,
+                    fontSize: "0.75rem",
+                    borderRadius: 2,
+                    background: alpha(mainColor, 0.05),
+                    color: mainColor,
+                    borderLeft: `3px solid ${mainColor}`,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    fontWeight: 500,
+                  }}
+                >
+                  {event.name}
+                </Box>
+              ))}
+              {getEventsForDay(dayInfo.day, dayInfo.month, dayInfo.year).length > 3 && (
+                <Typography 
+                  variant="caption" 
+                  color="#607080"
+                  sx={{ 
+                    textAlign: "center", 
+                    display: "block", 
+                    background: alpha(mainColor, 0.05), 
+                    p: 0.5, 
+                    borderRadius: 1 
+                  }}
+                >
+                  + {getEventsForDay(dayInfo.day, dayInfo.month, dayInfo.year).length - 3} more
+                </Typography>
               )}
             </Stack>
           </Paper>
@@ -578,46 +773,93 @@ const CalendarView = () => {
     const dayEvents = getEventsForDay(selectedDay);
 
     return (
-      <Box sx={{ p: 2 }}>
-        <Typography variant="h6" sx={{ mb: 2 }}>
-          {months[currentMonth]} {selectedDay}, {currentYear}
-        </Typography>
+      <Box sx={{ p: { xs: 2, md: 3 } }}>
+        <Paper
+          sx={{
+            p: 3,
+            borderRadius: 2,
+            mb: 3,
+            background: "white",
+            borderLeft: `4px solid ${mainColor}`,
+            boxShadow: `0 2px 8px ${alpha(mainColor, 0.05)}`,
+          }}
+        >
+          <Typography 
+            variant="h5" 
+            sx={{ 
+              fontWeight: 600,
+              color: "#2A3B4F",
+              mb: 1,
+            }}
+          >
+            {months[currentMonth]} {selectedDay}, {currentYear}
+          </Typography>
+          <Typography variant="body2" color="#607080">
+            {dayEvents.length} {dayEvents.length === 1 ? "event" : "events"} scheduled
+          </Typography>
+        </Paper>
 
         {dayEvents.length > 0 ? (
           <Stack spacing={2}>
             {dayEvents.map((event) => (
               <Paper
                 key={event._id}
+                elevation={0}
                 sx={{
-                  p: 2,
-                  bgcolor:
-                    event.event_type_id === "Workshop"
-                      ? "primary.lighter"
-                      : event.event_type_id === "Meeting"
-                      ? "success.lighter"
-                      : "secondary.lighter",
+                  p: 3,
+                  borderRadius: 2,
+                  background: "white",
+                  boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
+                  borderLeft: `4px solid ${mainColor}`,
+                  transition: "all 0.2s ease",
+                  "&:hover": {
+                    boxShadow: `0 4px 12px ${alpha(mainColor, 0.1)}`,
+                  }
                 }}
               >
-                <Typography variant="subtitle1" fontWeight="medium">
-                  {event.name}
-                </Typography>
-                <Stack spacing={1} mt={1}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <Typography variant="h6" fontWeight={600} color="#2A3B4F">
+                    {event.name}
+                  </Typography>
+                  <Chip 
+                    label={event.event_type_id} 
+                    size="small"
+                    sx={{
+                      borderRadius: 6,
+                      background: alpha(mainColor, 0.1),
+                      color: mainColor,
+                      fontWeight: 500,
+                      fontSize: "0.65rem",
+                      textTransform: "uppercase",
+                      py: 0.5,
+                    }}
+                  />
+                </Box>
+                <Stack spacing={1.5} mt={2}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <AccessTime fontSize="small" color="action" />
-                    <Typography variant="body2" color="text.secondary">
-                      {new Date(event.timestamp).toLocaleTimeString([], { 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
-                      })} - Duration: {event.duration}
+                    <AccessTime 
+                      fontSize="small" 
+                      sx={{ color: mainColor }}
+                    />
+                    <Typography variant="body2" color="#607080">
+                      {event.time} - Duration: {event.duration}
                     </Typography>
                   </Box>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <LocationOn fontSize="small" color="action" />
-                    <Typography variant="body2" color="text.secondary">
+                    <LocationOn 
+                      fontSize="small" 
+                      sx={{ color: mainColor }}
+                    />
+                    <Typography variant="body2" color="#607080">
                       {event.venue}
                     </Typography>
                   </Box>
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                  <Divider sx={{ my: 1 }} />
+                  <Typography 
+                    variant="body2" 
+                    color="#607080"
+                    sx={{ mt: 1, lineHeight: 1.6 }}
+                  >
                     {event.description}
                   </Typography>
                 </Stack>
@@ -625,9 +867,12 @@ const CalendarView = () => {
             ))}
           </Stack>
         ) : (
-          <Box sx={{ py: 4, textAlign: "center" }}>
-            <Typography color="text.secondary">
+          <Box sx={{ py: 8, textAlign: "center" }}>
+            <Typography color="#607080" variant="h6">
               No events scheduled for this day
+            </Typography>
+            <Typography color="#607080" variant="body2" sx={{ mt: 1 }}>
+              Select a different day or create a new event
             </Typography>
           </Box>
         )}
@@ -635,412 +880,337 @@ const CalendarView = () => {
     );
   };
 
-  const renderCalendarContent = () => {
-    if (loading) {
-      return (
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-          <Typography>Loading events...</Typography>
-        </Box>
-      );
-    }
-    
-    if (error) {
-      return (
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-          <Typography color="error">{error}</Typography>
-        </Box>
-      );
-    }
-
-    switch (currentView) {
-      case "week":
-        return renderWeekView();
-      case "day":
-        return renderDayView();
-      case "month":
-      default:
-        return renderMonthView();
-    }
-  };
-
-  // Extract unique clubs and boards for filters
-  const clubs = [...new Set(events.map(event => event.club_id))];
-  const boards = [...new Set(events.map(event => event.board_id))];
-  const eventTypes = [...new Set(events.map(event => event.event_type_id))];
-
-  return (
-    <Box
+  const renderFilterPanel = () => (
+    <Paper
       sx={{
-        height: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden", // Prevent outer scrollbar
+        p: 3,
+        borderRadius: 2,
+        mb: 3,
+        background: "white",
+        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
+        border: "1px solid rgba(0, 0, 0, 0.08)",
       }}
     >
-      <Box sx={{ flexGrow: 1 }}>
-        <Container maxWidth="xl" sx={{ py: 2, height: "100%" }}>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              mb: 2,
-              flexWrap: "wrap",
-              gap: 1,
-            }}
-          >
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                mb: 2,
-                flexWrap: "nowrap",
-                gap: 1,
-                position: "sticky",
-                top: 0,
-                zIndex: 10,
-                bgcolor: "background.default",
-                py: 1,
-              }}
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+        <Typography variant="h6" fontWeight={600} color="#2A3B4F">
+          Filters
+        </Typography>
+        <Button 
+          variant="text" 
+          color="primary" 
+          onClick={handleResetFilters}
+          sx={{ textTransform: "none", color: mainColor }}
+        >
+          Reset
+        </Button>
+      </Box>
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={4}>
+          <FormControl fullWidth>
+            <Typography variant="body2" fontWeight={500} color="#607080" gutterBottom>
+              Club
+            </Typography>
+            <RadioGroup
+              value={selectedClub || ""}
+              onChange={(e) => setSelectedClub(e.target.value !== "" ? e.target.value : null)}
             >
-              {/* Search field with filter button inside */}
-              <Box
-                sx={{
-                  position: "relative",
-                  width: "100%",
-                }}
-              >
-                <TextField
-                  fullWidth
-                  label="Search Events"
+              <FormControlLabel 
+                value="IEEE" 
+                control={<Radio sx={{ color: mainColor }} />} 
+                label="IEEE" 
+              />
+              <FormControlLabel 
+                value="ACM" 
+                control={<Radio sx={{ color: mainColor }} />} 
+                label="ACM" 
+              />
+              <FormControlLabel 
+                value="GDSC" 
+                control={<Radio sx={{ color: mainColor }} />} 
+                label="GDSC" 
+              />
+            </RadioGroup>
+          </FormControl>
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <FormControl fullWidth>
+            <Typography variant="body2" fontWeight={500} color="#607080" gutterBottom>
+              Board
+            </Typography>
+            <RadioGroup
+              value={selectedBoard || ""}
+              onChange={(e) => setSelectedBoard(e.target.value !== "" ? e.target.value : null)}
+            >
+              <FormControlLabel 
+                value="PR" 
+                control={<Radio sx={{ color: mainColor }} />} 
+                label="PR Board" 
+              />
+              <FormControlLabel 
+                value="Technical" 
+                control={<Radio sx={{ color: mainColor }} />} 
+                label="Technical Board" 
+              />
+              <FormControlLabel 
+                value="HR" 
+                control={<Radio sx={{ color: mainColor }} />} 
+                label="HR Board" 
+              />
+            </RadioGroup>
+          </FormControl>
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <FormControl fullWidth>
+            <Typography variant="body2" fontWeight={500} color="#607080" gutterBottom>
+              Event Type
+            </Typography>
+            <RadioGroup
+              value={eventType || ""}
+              onChange={(e) => setEventType(e.target.value !== "" ? e.target.value : null)}
+            >
+              <FormControlLabel 
+                value="Workshop" 
+                control={<Radio sx={{ color: mainColor }} />} 
+                label="Workshop" 
+              />
+              <FormControlLabel 
+                value="Meeting" 
+                control={<Radio sx={{ color: mainColor }} />} 
+                label="Meeting" 
+              />
+              <FormControlLabel 
+                value="Competition" 
+                control={<Radio sx={{ color: mainColor }} />} 
+                label="Competition" 
+              />
+            </RadioGroup>
+          </FormControl>
+        </Grid>
+      </Grid>
+    </Paper>
+  );
+
+  return (
+    <Box sx={{ p: { xs: 2, md: 3 }, background: "#f9fafc", minHeight: "100vh" }}>
+      <StyledHeader>
+        <Box>
+          <Typography variant="h5" fontWeight={600}>
+            Event Calendar
+          </Typography>
+          <Typography variant="body2" color="#607080" sx={{ mt: 0.5 }}>
+            {getViewTitle()}
+          </Typography>
+        </Box>
+        <Box sx={{ display: "flex", alignItems: "center" }}>
+          <Box sx={{ display: { xs: 'none', md: 'flex' }}}>
+            <ViewButton
+              active={currentView === "month"}
+              onClick={() => handleViewChange("month")}
+              startIcon={<ViewWeek />}
+            >
+              Month
+            </ViewButton>
+            <ViewButton
+              active={currentView === "week"}
+              onClick={() => handleViewChange("week")}
+              startIcon={<CalendarMonth />}
+            >
+              Week
+            </ViewButton>
+            <ViewButton
+              active={currentView === "day"}
+              onClick={() => handleViewChange("day")}
+              startIcon={<Today />}
+            >
+              Day
+            </ViewButton>
+          </Box>
+          <StyledIconButton onClick={handlePrev} size="small">
+            <ChevronLeft />
+          </StyledIconButton>
+          <StyledIconButton onClick={handleNext} size="small">
+            <ChevronRight />
+          </StyledIconButton>
+        </Box>
+      </StyledHeader>
+
+      <Grid container spacing={3}>
+        <Grid item xs={12} lg={currentView === "day" ? 8 : 9}>
+          <Box sx={{ mb: 3 }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+              <Box sx={{ display: { xs: 'flex', md: 'none' }, mb: 2 }}>
+                <ViewButton
+                  active={currentView === "month"}
+                  onClick={() => handleViewChange("month")}
+                  startIcon={<ViewWeek />}
+                >
+                  Month
+                </ViewButton>
+                <ViewButton
+                  active={currentView === "week"}
+                  onClick={() => handleViewChange("week")}
+                  startIcon={<CalendarMonth />}
+                >
+                  Week
+                </ViewButton>
+                <ViewButton
+                  active={currentView === "day"}
+                  onClick={() => handleViewChange("day")}
+                  startIcon={<Today />}
+                >
+                  Day
+                </ViewButton>
+              </Box>
+              <Box sx={{ display: "flex", gap: 2, width: "100%" }}>
+                <SearchField
+                  placeholder="Search events..."
                   variant="outlined"
+                  fullWidth
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  size="small"
                   InputProps={{
-                    endAdornment: (
-                      <IconButton
-                        onClick={handleFilterToggle}
-                        edge="end"
-                        sx={{ position: "absolute", right: 8 }}
-                      >
-                        <FilterList />
-                      </IconButton>
-                    ),
+                    startAdornment: <SearchIcon sx={{ mr: 1, color: mainColor }} />,
                   }}
-                />
+                  size="small"
+                  />
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    onClick={handleFilterToggle}
+                    startIcon={<FilterList />}
+                    sx={{
+                      borderRadius: 2,
+                      whiteSpace: "nowrap",
+                      display: { xs: "none", md: "flex" },
+                      borderColor: alpha(mainColor, 0.3),
+                      color: mainColor,
+                      "&:hover": {
+                        borderColor: mainColor,
+                        background: alpha(mainColor, 0.05),
+                      }
+                    }}
+                  >
+                    Filters
+                  </Button>
+                  <IconButton 
+                    onClick={handleFilterToggle}
+                    sx={{ 
+                      display: { xs: "flex", md: "none" },
+                      background: alpha(mainColor, 0.1),
+                      color: mainColor,
+                      "&:hover": {
+                        background: alpha(mainColor, 0.2),
+                      }
+                    }}
+                  >
+                    <FilterList />
+                  </IconButton>
+                </Box>
               </Box>
+  
+              {filterOpen && renderFilterPanel()}
+  
+              {currentView === "month" && renderMonthView()}
+              {currentView === "week" && renderWeekView()}
+              {currentView === "day" && renderDayView()}
             </Box>
-
-            {/* Filter dialog */}
-            <Dialog open={filterOpen} onClose={handleFilterToggle}>
-              <DialogTitle>Filters</DialogTitle>
-              <DialogContent>
-                <FormControl component="fieldset">
-                  <Typography variant="subtitle1">Clubs</Typography>
-                  <RadioGroup
-                    value={selectedClub || ""}
-                    onChange={(e) => setSelectedClub(e.target.value)}
-                  >
-                    {clubs.map(club => (
-                      <FormControlLabel
-                        key={club}
-                        value={club}
-                        control={<Radio />}
-                        label={club}
-                      />
-                    ))}
-                  </RadioGroup>
-                </FormControl>
-                <FormControl component="fieldset" style={{ marginTop: "10px" }}>
-                  <Typography variant="subtitle1">Boards</Typography>
-                  <RadioGroup
-                    value={selectedBoard || ""}
-                    onChange={(e) => setSelectedBoard(e.target.value)}
-                  >
-                    {boards.map(board => (
-                      <FormControlLabel
-                        key={board}
-                        value={board}
-                        control={<Radio />}
-                        label={board}
-                      />
-                    ))}
-                  </RadioGroup>
-                </FormControl>
-                <FormControl component="fieldset" style={{ marginTop: "10px" }}>
-                  <Typography variant="subtitle1">Event Type</Typography>
-                  <RadioGroup
-                    value={eventType || ""}
-                    onChange={(e) => setEventType(e.target.value)}
-                  >
-                    {eventTypes.map(type => (
-                      <FormControlLabel
-                        key={type}
-                        value={type}
-                        control={<Radio />}
-                        label={type}
-                      />
-                    ))}
-                  </RadioGroup>
-                </FormControl>
-                <Button
-                  onClick={handleResetFilters}
-                  style={{ marginTop: "10px" }}
-                >
-                  Reset Filters
-                </Button>
-              </DialogContent>
-            </Dialog>
-          </Box>
-
-          <Grid container spacing={2} sx={{ height: "calc(100% - 60px)" }}>
-            <Grid
-              item
-              xs={12}
-              lg={9}
-              sx={{ height: isMobile ? "auto" : "100%" }}
-            >
-              <Card
-                sx={{
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                }}
-              >
-                <CardHeader
-                  sx={{ py: 1 }}
-                  title={
-                    <Box sx={{ display: "flex", alignItems: "center" }}>
-                      <IconButton
-                        onClick={handlePrev}
-                        size={isMobile ? "small" : "medium"}
-                      >
-                        <ChevronLeft />
-                      </IconButton>
-                      <Typography
-                        variant={isMobile ? "subtitle1" : "h6"}
-                        sx={{ mx: 1 }}
-                      >
-                        {getViewTitle()}
-                      </Typography>
-                      <IconButton
-                        onClick={handleNext}
-                        size={isMobile ? "small" : "medium"}
-                      >
-                        <ChevronRight />
-                      </IconButton>
-                    </Box>
-                  }
-                  action={
-                    <ToggleButtonGroup
-                      value={currentView}
-                      exclusive
-                      onChange={handleViewChange}
-                      size="small"
-                    >
-                      <ToggleButton value="month">Month</ToggleButton>
-                      <ToggleButton value="week">Week</ToggleButton>
-                      <ToggleButton value="day">Day</ToggleButton>
-                    </ToggleButtonGroup>
-                  }
-                />
-                <Divider />
-                <CardContent
-                  sx={{
-                    p: 1,
-                    flexGrow: 1,
-                    display: "flex",
-                    flexDirection: "column",
-                  }}
-                >
-                  {currentView === "month" && (
-                    <Grid container spacing={0.5} sx={{ mb: 1 }}>
-                      {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
-                        (day) => (
-                          <Grid item xs={12 / 7} key={day}>
-                            <Typography
-                              align="center"
-                              variant={isSmall ? "caption" : "body2"}
-                              color="text.secondary"
-                            >
-                              {isSmall ? day.charAt(0) : day}
-                            </Typography>
-                          </Grid>
-                        )
-                      )}
-                    </Grid>
-                  )}
-                  <Box sx={{ flexGrow: 1 }}>{renderCalendarContent()}</Box>
-                </CardContent>
-                {currentView !== "day" && (
-                  <>
-                    <Divider />
-                    <Box
-                      sx={{ p: 1, display: "flex", flexWrap: "wrap", gap: 1 }}
-                    >
-                      <Box
-                        sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
-                      >
-                        <Box
-                          sx={{
-                            width: 8,
-                            height: 8,
-                            borderRadius: 1,
-                            bgcolor: "primary.light",
-                          }}
-                        />
-                        <Typography variant="caption" color="text.secondary">
-                          Workshop
-                        </Typography>
-                      </Box>
-                      <Box
-                        sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
-                      >
-                        <Box
-                          sx={{
-                            width: 8,
-                            height: 8,
-                            borderRadius: 1,
-                            bgcolor: "success.light",
-                          }}
-                        />
-                        <Typography variant="caption" color="text.secondary">
-                          Meeting
-                        </Typography>
-                      </Box>
-                      <Box
-                        sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
-                      >
-                        <Box
-                          sx={{
-                            width: 8,
-                            height: 8,
-                            borderRadius: 1,
-                            bgcolor: "secondary.light",
-                          }}
-                        />
-                        <Typography variant="caption" color="text.secondary">
-                          Event
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </>
-                )}
-              </Card>
-            </Grid>
-
-            <Grid
-              item
-              xs={12}
-              lg={3}
-              sx={{ height: isMobile ? "auto" : "100%" }}
-            >
-              <Card
-                sx={{
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                }}
-              >
-                <CardHeader
-                  title="Upcoming Events"
-                  titleTypographyProps={{
-                    variant: isMobile ? "subtitle1" : "h6",
-                  }}
-                  sx={{ py: 1 }}
-                />
-                <Divider />
-                <CardContent
-                  sx={{
-                    p: 1,
-                    flexGrow: 1,
-                    display: "flex",
-                    flexDirection: "column",
-                    overflow: "auto",
-                  }}
-                >
-                  {getUpcomingEvents().length > 0 ? (
-                    <Stack spacing={1.5}>
-                      {getUpcomingEvents().map((event) => (
-                        <Box key={event.id} sx={{ display: "flex", gap: 1 }}>
-                          <Paper
-                            elevation={0}
-                            sx={{
-                              width: 35,
-                              height: 35,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              bgcolor: "primary.lighter",
-                              color: "primary.main",
-                              fontWeight: "bold",
-                              fontSize: "0.875rem",
-                            }}
-                          >
-                            {event.day}
-                          </Paper>
-                          <Box sx={{ minWidth: 0 }}>
-                            <Typography variant="body2" noWrap>
-                              {event.title}
-                            </Typography>
-                            <Box
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 0.5,
-                              }}
-                            >
-                              <AccessTime fontSize="small" color="action" />
-                              <Typography
-                                variant="caption"
-                                color="text.secondary"
-                                noWrap
-                              >
-                                {event.time}
-                              </Typography>
-                            </Box>
-                            <Box
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 0.5,
-                              }}
-                            >
-                              <LocationOn fontSize="small" color="action" />
-                              <Typography
-                                variant="caption"
-                                color="text.secondary"
-                                noWrap
-                              >
-                                {event.location}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </Box>
-                      ))}
-                    </Stack>
-                  ) : (
-                    <Box sx={{ py: 4, textAlign: "center" }}>
-                      <Typography color="text.secondary">
-                        No upcoming events match your filters
-                      </Typography>
-                    </Box>
-                  )}
-                </CardContent>
-              </Card>
-            </Grid>
           </Grid>
-        </Container>
+  
+          <Grid item xs={12} lg={currentView === "day" ? 4 : 3}>
+            <StyledCard>
+              <Box
+                sx={{
+                  p: 3,
+                  background: "white",
+                  color: "#2A3B4F",
+                  borderRadius: "12px 12px 0 0",
+                  borderBottom: `1px solid rgba(0, 0, 0, 0.08)`,
+                }}
+              >
+                <Typography variant="h6" fontWeight={600}>
+                  Upcoming Events
+                </Typography>
+                <Typography variant="body2" color="#607080" sx={{ mt: 0.5 }}>
+                  Next 5 events on your calendar
+                </Typography>
+              </Box>
+              <CardContent sx={{ p: 0 }}>
+                {getUpcomingEvents().length > 0 ? (
+                  <Stack divider={<Divider sx={{ borderColor: 'rgba(0, 0, 0, 0.05)' }} />}>
+                    {getUpcomingEvents().map((event) => (
+                      <Box 
+                        key={event._id} 
+                        sx={{ 
+                          p: 2,
+                          transition: "all 0.2s ease",
+                          "&:hover": {
+                            background: alpha(mainColor, 0.03),
+                          }
+                        }}
+                      >
+                        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <Typography variant="subtitle2" fontWeight={600} color="#2A3B4F">
+                            {event.name}
+                          </Typography>
+                          <Chip
+                            label={event.event_type_id}
+                            size="small"
+                            sx={{ 
+                              height: 20, 
+                              fontSize: "0.6rem",
+                              fontWeight: 500,
+                              background: alpha(mainColor, 0.1),
+                              color: mainColor,
+                            }}
+                          />
+                        </Box>
+                        <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
+                          <CalendarMonth 
+                            fontSize="small" 
+                            sx={{ color: mainColor, mr: 1, fontSize: 16 }}
+                          />
+                          <Typography variant="caption" color="#607080">
+                            {months[event.month]} {event.day}, {event.year}
+                          </Typography>
+                          <Box sx={{ mx: 1, color: "#C0C8D0" }}>•</Box>
+                          <AccessTime 
+                            fontSize="small" 
+                            sx={{ color: mainColor, mr: 1, fontSize: 16 }}
+                          />
+                          <Typography variant="caption" color="#607080">
+                            {event.time}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    ))}
+                  </Stack>
+                ) : (
+                  <Box sx={{ p: 3, textAlign: "center" }}>
+                    <Typography color="#607080">
+                      No upcoming events
+                    </Typography>
+                  </Box>
+                )}
+              </CardContent>
+              <Box sx={{ p: 3, mt: "auto" }}>
+                <GradientButton fullWidth>
+                  Create New Event
+                </GradientButton>
+              </Box>
+            </StyledCard>
+          </Grid>
+        </Grid>
+  
+        {isModalOpen && (
+          <EventModal
+            open={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            selectedDate={selectedDate}
+            events={getEventsForDay(selectedDay)}
+          />
+        )}
       </Box>
-
-      <EventModal
-        open={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        selectedDate={selectedDate}
-        events={selectedDate ? getEventsForDay(selectedDate.day) : []}
-      />
-    </Box>
-  );
-};
-
-export default CalendarView;
+    );
+  };
+  
+  export default CalendarView;

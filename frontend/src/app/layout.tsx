@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import PremiumNavbar from "@/components/Navbar";
+import Navbar from "@/components/Navbar";
 import BanChecker from "@/components/BanChecker";
+import { ThemeProvider } from '@/context/ThemeContext';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,7 +42,13 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <BanChecker />
-        {children}
+        <ThemeProvider>
+        {/* <Navbar /> */}
+        <main className="pt-0">
+          {/* pt-16 adds padding-top that matches navbar height */}
+          {children}
+        </main>
+        </ThemeProvider>
       </body>
     </html>
   );

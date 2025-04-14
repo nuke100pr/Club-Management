@@ -26,11 +26,65 @@ import ThumbUpIcon from "@mui/icons-material/ThumbUp";
 import ThumbDownIcon from "@mui/icons-material/ThumbDown";
 import { Carousel } from "react-responsive-carousel";
 import "react-responsive-carousel/lib/styles/carousel.min.css";
-import { colors } from "@/color";
+
+// Modern UI Design System
+const theme = {
+  colors: {
+    primary: {
+      main: "#4776E6",
+      light: "#6a98ff",
+      dark: "#3a5fc0",
+      gradient: "linear-gradient(45deg, #4776E6 0%, #8E54E9 100%)",
+    },
+    secondary: "#8E54E9",
+    background: {
+      default: "#f8faff",
+      card: "#ffffff",
+      sidebar: "rgba(245, 247, 250, 0.7)",
+    },
+    text: {
+      primary: "#2A3B4F",
+      secondary: "#607080",
+    },
+    accent: {
+      blue: "#1976d2",
+      green: "#388e3c",
+      red: "#d32f2f",
+      purple: "#7b1fa2",
+    },
+    borders: {
+      light: "rgba(95, 150, 230, 0.15)",
+    },
+    action: {
+      selected: "rgba(95, 150, 230, 0.2)",
+      hover: "rgba(95, 150, 230, 0.1)",
+    },
+  },
+  shadows: {
+    card: "0 4px 12px rgba(95, 150, 230, 0.1)",
+    cardHover: "0 12px 20px rgba(95, 150, 230, 0.2)",
+    button: "0 4px 10px rgba(71, 118, 230, 0.3)",
+    buttonHover: "0 6px 15px rgba(71, 118, 230, 0.4)",
+    input: "0 2px 8px rgba(95, 150, 230, 0.1)",
+    inputFocus: "0 4px 15px rgba(95, 150, 230, 0.2)",
+  },
+  typography: {
+    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+  },
+  shape: {
+    borderRadius: 8,
+    cardBorderRadius: 16,
+    buttonBorderRadius: 8,
+  },
+  spacing: {
+    cardPadding: 24,
+    pagePadding: 32,
+  },
+};
 
 const EMOJIS = ["👍", "❤️", "😂", "🔥", "😢", "👏"];
-const API_URL = "http://localhost:5000/api";
-const API_URL2 = "http://localhost:5000/uploads";
+const API_URL = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api`;
+const API_URL2 = `${process.env.NEXT_PUBLIC_BACKEND_URL}/uploads`;
 
 export default function PostPage() {
   const params = useParams();
@@ -274,23 +328,75 @@ export default function PostPage() {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-        <CircularProgress />
-        <Typography variant="h6" sx={{ mt: 2, ml: 2 }}>Loading post...</Typography>
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: 'column',
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        mt: 8,
+        height: '50vh'
+      }}>
+        <CircularProgress 
+          size={60}
+          sx={{ 
+            color: theme.colors.primary.main
+          }} 
+        />
+        <Typography 
+          variant="h6" 
+          sx={{ 
+            mt: 3, 
+            fontFamily: theme.typography.fontFamily,
+            color: theme.colors.text.primary,
+            fontWeight: 500 
+          }}
+        >
+          Loading post...
+        </Typography>
       </Box>
     );
   }
 
   if (error) {
     return (
-      <Box sx={{ p: 3 }}>
-        <Alert severity="error" sx={{ mb: 2 }}>
+      <Box sx={{ 
+        p: 4, 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center',
+        bgcolor: theme.colors.background.default,
+        minHeight: '100vh'
+      }}>
+        <Alert 
+          severity="error" 
+          sx={{ 
+            mb: 3, 
+            width: '100%', 
+            maxWidth: 700,
+            borderRadius: theme.shape.borderRadius,
+            boxShadow: theme.shadows.card
+          }}
+        >
           {error}
         </Alert>
         <Button 
           variant="contained" 
           onClick={() => router.push('/posts')}
           startIcon={<ArrowBackIcon />}
+          sx={{
+            background: theme.colors.primary.gradient,
+            color: 'white',
+            textTransform: 'none',
+            fontWeight: 500,
+            borderRadius: theme.shape.buttonBorderRadius,
+            boxShadow: theme.shadows.button,
+            padding: '10px 24px',
+            '&:hover': {
+              boxShadow: theme.shadows.buttonHover,
+              transform: 'translateY(-2px)',
+            },
+            transition: 'all 0.3s ease'
+          }}
         >
           Back to Posts
         </Button>
@@ -300,14 +406,44 @@ export default function PostPage() {
 
   if (!post) {
     return (
-      <Box sx={{ p: 3 }}>
-        <Alert severity="warning" sx={{ mb: 2 }}>
+      <Box sx={{ 
+        p: 4, 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center',
+        bgcolor: theme.colors.background.default,
+        minHeight: '100vh'
+      }}>
+        <Alert 
+          severity="warning" 
+          sx={{ 
+            mb: 3, 
+            width: '100%', 
+            maxWidth: 700,
+            borderRadius: theme.shape.borderRadius,
+            boxShadow: theme.shadows.card
+          }}
+        >
           Post not found
         </Alert>
         <Button 
           variant="contained" 
           onClick={() => router.push('/posts')}
           startIcon={<ArrowBackIcon />}
+          sx={{
+            background: theme.colors.primary.gradient,
+            color: 'white',
+            textTransform: 'none',
+            fontWeight: 500,
+            borderRadius: theme.shape.buttonBorderRadius,
+            boxShadow: theme.shadows.button,
+            padding: '10px 24px',
+            '&:hover': {
+              boxShadow: theme.shadows.buttonHover,
+              transform: 'translateY(-2px)',
+            },
+            transition: 'all 0.3s ease'
+          }}
         >
           Back to Posts
         </Button>
@@ -316,30 +452,82 @@ export default function PostPage() {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ 
+      p: 4, 
+      bgcolor: theme.colors.background.default,
+      minHeight: '100vh',
+      fontFamily: theme.typography.fontFamily
+    }}>
       <Button
         startIcon={<ArrowBackIcon />}
         onClick={() => router.push('/posts')}
-        sx={{ mb: 3 }}
+        sx={{ 
+          mb: 4,
+          color: theme.colors.text.primary,
+          fontWeight: 500,
+          textTransform: 'none',
+          borderRadius: theme.shape.buttonBorderRadius,
+          '&:hover': {
+            backgroundColor: 'rgba(71, 118, 230, 0.08)',
+          },
+          transition: 'all 0.3s ease'
+        }}
       >
         Back to All Posts
       </Button>
 
-      <Card sx={{ mb: 4, borderRadius: "12px", boxShadow: colors.shadows.card }}>
-        <CardContent>
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+      <Card 
+        sx={{ 
+          mb: 4, 
+          borderRadius: theme.shape.cardBorderRadius, 
+          boxShadow: theme.shadows.card,
+          maxWidth: 900,
+          margin: '0 auto',
+          overflow: 'hidden',
+          transition: 'all 0.3s ease',
+          borderTop: `4px solid ${theme.colors.primary.main}`,
+          '&:hover': {
+            boxShadow: theme.shadows.cardHover,
+            transform: 'translateY(-8px)',
+          }
+        }}
+      >
+        <CardContent sx={{ padding: 3 }}>
+          <Box sx={{ 
+            display: "flex", 
+            justifyContent: "space-between", 
+            alignItems: "center", 
+            mb: 3 
+          }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
               <Avatar
                 src={post.user?.avatar || "/default-avatar.jpg"}
-                sx={{ border: "2px solid #e0e0e0" }}
+                sx={{ 
+                  width: 50, 
+                  height: 50,
+                  border: `2px solid ${theme.colors.borders.light}`
+                }}
               >
                 {post.user?.name ? post.user.name.charAt(0) : "U"}
               </Avatar>
               <Box>
-                <Typography variant="subtitle1" fontWeight="bold">
+                <Typography 
+                  variant="subtitle1" 
+                  sx={{
+                    fontWeight: 600,
+                    color: theme.colors.text.primary,
+                    fontSize: '1rem'
+                  }}
+                >
                   {post.user?.name || "Unknown User"}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography 
+                  variant="body2" 
+                  sx={{
+                    color: theme.colors.text.secondary,
+                    fontSize: '0.825rem'
+                  }}
+                >
                   {new Date(post.created_at).toLocaleString()}
                 </Typography>
               </Box>
@@ -347,36 +535,91 @@ export default function PostPage() {
             
             {hasPostPermission() && (
               <Box>
-                <IconButton onClick={handleEdit} color="primary">
-                  <EditIcon />
-                </IconButton>
-                <IconButton onClick={handleDelete} color="error">
-                  <DeleteIcon />
-                </IconButton>
+                <Tooltip title="Edit Post">
+                  <IconButton 
+                    onClick={handleEdit} 
+                    sx={{
+                      color: theme.colors.primary.main,
+                      '&:hover': {
+                        backgroundColor: theme.colors.action.hover,
+                      }
+                    }}
+                  >
+                    <EditIcon />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Delete Post">
+                  <IconButton 
+                    onClick={handleDelete} 
+                    sx={{
+                      color: theme.colors.accent.red,
+                      '&:hover': {
+                        backgroundColor: 'rgba(211, 47, 47, 0.1)',
+                      }
+                    }}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Tooltip>
               </Box>
             )}
           </Box>
 
-          <Typography variant="h4" component="h1" sx={{ mb: 2 }}>
+          <Typography 
+            variant="h5"
+            component="h1" 
+            sx={{ 
+              mb: 2,
+              fontWeight: 600,
+              backgroundImage: theme.colors.primary.gradient,
+              backgroundClip: 'text',
+              textFillColor: 'transparent',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              fontSize: '1.5rem'
+            }}
+          >
             {post.title}
           </Typography>
 
-          <Divider sx={{ my: 3 }} />
+          <Divider sx={{ my: 3, borderColor: theme.colors.borders.light }} />
 
-          <Typography variant="body1" paragraph sx={{ mb: 4 }}>
+          <Typography 
+            variant="body1" 
+            sx={{ 
+              mb: 4,
+              color: theme.colors.text.primary,
+              lineHeight: 1.6,
+              fontSize: '1rem'
+            }}
+          >
             {post.content}
           </Typography>
 
           {post.files && post.files.length > 0 && (
-            <>
-              <Typography variant="h6" gutterBottom>
+            <Box sx={{ mb: 4 }}>
+              <Typography 
+                variant="h6" 
+                sx={{ 
+                  mb: 2,
+                  fontWeight: 600,
+                  color: theme.colors.text.primary,
+                  fontSize: '1.125rem'
+                }}
+              >
                 Attachments
               </Typography>
               <Carousel
                 showArrows={true}
                 showThumbs={false}
                 infiniteLoop={true}
-                sx={{ mb: 4 }}
+                showStatus={false}
+                swipeable={true}
+                emulateTouch={true}
+                autoPlay={false}
+                dynamicHeight={true}
+                className="custom-carousel"
+                sx={{ borderRadius: theme.shape.borderRadius }}
               >
                 {post.files.map((file, index) => (
                   <div key={index}>
@@ -386,7 +629,8 @@ export default function PostPage() {
                         sx={{
                           height: 400,
                           objectFit: "contain",
-                          borderRadius: "8px",
+                          borderRadius: theme.shape.borderRadius,
+                          backgroundColor: 'rgba(250, 250, 255, 0.8)'
                         }}
                         image={`${API_URL2}/${file.filename}`}
                         alt={file.originalname || `Attachment ${index + 1}`}
@@ -397,7 +641,7 @@ export default function PostPage() {
                         style={{
                           width: "100%",
                           maxHeight: "400px",
-                          borderRadius: "8px",
+                          borderRadius: theme.shape.borderRadius,
                         }}
                       >
                         <source
@@ -413,11 +657,18 @@ export default function PostPage() {
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          backgroundColor: colors.background.paper,
-                          borderRadius: "8px",
+                          backgroundColor: theme.colors.background.sidebar,
+                          borderRadius: theme.shape.borderRadius,
+                          border: `1px dashed ${theme.colors.borders.light}`
                         }}
                       >
-                        <Typography variant="body1">
+                        <Typography 
+                          variant="body1"
+                          sx={{
+                            color: theme.colors.text.primary,
+                            fontWeight: 500
+                          }}
+                        >
                           {file.originalname || `File ${index + 1}`}
                         </Typography>
                       </Box>
@@ -425,7 +676,7 @@ export default function PostPage() {
                   </div>
                 ))}
               </Carousel>
-            </>
+            </Box>
           )}
 
           {/* Reactions and Voting Section */}
@@ -433,9 +684,9 @@ export default function PostPage() {
             display: 'flex', 
             justifyContent: 'space-between', 
             alignItems: 'center',
-            borderTop: `1px solid ${colors.borders.light}`,
+            borderTop: `1px solid ${theme.colors.borders.light}`,
             pt: 2,
-            mt: 2
+            mt: 3
           }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Button
@@ -444,7 +695,15 @@ export default function PostPage() {
                   borderRadius: "20px",
                   textTransform: "none",
                   minWidth: "auto",
-                  color: colors.text.primary,
+                  color: theme.colors.text.primary,
+                  fontSize: '0.875rem',
+                  fontWeight: 500,
+                  padding: '6px 16px',
+                  backgroundColor: theme.colors.action.hover,
+                  '&:hover': {
+                    backgroundColor: theme.colors.action.selected,
+                  },
+                  transition: 'all 0.2s ease'
                 }}
               >
                 😊 React
@@ -459,11 +718,18 @@ export default function PostPage() {
                         size="small"
                         sx={{
                           minWidth: "auto",
-                          padding: "0 8px",
+                          padding: "3px 10px",
                           borderRadius: "16px",
-                          fontSize: "0.875rem",
-                          color: colors.text.primary,
-                          backgroundColor: userReactions[emoji] ? colors.action.selected : 'transparent',
+                          fontSize: "0.75rem",
+                          fontWeight: 500,
+                          color: theme.colors.text.primary,
+                          backgroundColor: userReactions[emoji] 
+                            ? theme.colors.action.selected 
+                            : theme.colors.action.hover,
+                          '&:hover': {
+                            backgroundColor: theme.colors.action.selected,
+                          },
+                          transition: 'all 0.2s ease'
                         }}
                         onClick={() => handleReactionToggle(emoji)}
                       >
@@ -476,26 +742,49 @@ export default function PostPage() {
             </Box>
 
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <IconButton
-                onClick={() => handleVote(1)}
-                color="primary"
-              >
-                <ThumbUpIcon />
-              </IconButton>
+              <Tooltip title="Upvote">
+                <IconButton
+                  onClick={() => handleVote(1)}
+                  sx={{
+                    color: theme.colors.primary.main,
+                    '&:hover': {
+                      backgroundColor: theme.colors.action.hover,
+                      transform: 'translateY(-2px)',
+                    },
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <ThumbUpIcon />
+                </IconButton>
+              </Tooltip>
 
               <Typography
                 variant="body2"
-                sx={{ mx: 1, color: colors.text.primary }}
+                sx={{ 
+                  mx: 1, 
+                  color: theme.colors.text.primary,
+                  fontWeight: 600,
+                  fontSize: '0.95rem'
+                }}
               >
                 {votes}
               </Typography>
 
-              <IconButton
-                onClick={() => handleVote(-1)}
-                color="primary"
-              >
-                <ThumbDownIcon />
-              </IconButton>
+              <Tooltip title="Downvote">
+                <IconButton
+                  onClick={() => handleVote(-1)}
+                  sx={{
+                    color: theme.colors.text.secondary,
+                    '&:hover': {
+                      backgroundColor: theme.colors.action.hover,
+                      transform: 'translateY(2px)',
+                    },
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <ThumbDownIcon />
+                </IconButton>
+              </Tooltip>
             </Box>
           </Box>
         </CardContent>
@@ -508,24 +797,29 @@ export default function PostPage() {
         onClose={handleCloseReactionMenu}
         sx={{
           "& .MuiPaper-root": {
-            backgroundColor: colors.background.paper,
-            boxShadow: colors.shadows.hover,
+            backgroundColor: theme.colors.background.card,
+            boxShadow: theme.shadows.cardHover,
+            borderRadius: theme.shape.borderRadius,
+            padding: '8px',
           },
         }}
       >
-        <Box sx={{ display: "flex", padding: "4px" }}>
+        <Box sx={{ display: "flex", padding: "8px" }}>
           {EMOJIS.map((emoji) => (
             <IconButton
               key={emoji}
               onClick={() => handleReactionToggle(emoji)}
               sx={{
-                fontSize: "1.5rem",
+                fontSize: "1.25rem",
+                margin: '0 2px',
                 backgroundColor: userReactions[emoji]
-                  ? colors.action.selected
+                  ? theme.colors.action.selected
                   : "transparent",
                 "&:hover": {
-                  backgroundColor: colors.action.hover,
+                  backgroundColor: theme.colors.action.hover,
+                  transform: 'scale(1.1)',
                 },
+                transition: 'all 0.2s ease'
               }}
             >
               {emoji}
@@ -544,7 +838,11 @@ export default function PostPage() {
           onClose={handleCloseNotification}
           severity={notification.severity}
           variant="filled"
-          sx={{ width: "100%" }}
+          sx={{ 
+            width: "100%",
+            borderRadius: theme.shape.borderRadius,
+            boxShadow: theme.shadows.card
+          }}
         >
           {notification.message}
         </Alert>
@@ -552,3 +850,4 @@ export default function PostPage() {
     </Box>
   );
 }
+

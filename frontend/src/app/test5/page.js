@@ -1,356 +1,210 @@
+// pages/events.js
 "use client";
-import { useState, useEffect } from 'react';
-import { fetchUserData } from '@/utils/auth';
-import {
-  Box,
-  Typography,
-  Container,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  MenuItem,
-  Select,
-  FormControl,
-  InputLabel,
-  IconButton,
-  Snackbar,
-  Alert,
-  CircularProgress
-} from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
 
-export default function SuperAdminManagement() {
-  const [currentUser, setCurrentUser] = useState(null);
-  const [users, setUsers] = useState([]);
-  const [superAdmins, setSuperAdmins] = useState([]);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [formData, setFormData] = useState({
-    userId: '',
-  });
+import { useEffect, useState } from 'react';
+import {
+  Grid, Card, CardContent, CardActions, Typography, Button,
+  Chip, Box, IconButton, Tooltip, Skeleton
+} from '@mui/material';
+import { Edit, Delete, Event, AccessTime, LocationOn, Timer, People } from '@mui/icons-material';
+
+const mockEvents = [
+  {
+    id: 1,
+    image: '/event1.jpg',
+    title: 'Introduction to AI and Machine Learning with real-world examples',
+    description: 'Explore how AI is changing the world. Join us for a session filled with insights, demos, and Q&A.',
+    date: '2025-04-15',
+    time: '4:00 PM',
+    venue: 'Auditorium A',
+    duration: '2h',
+    eventType: 'Session',
+    registrations: 42,
+    hasPermission: true
+  },
+  {
+    id: 2,
+    image: '/event2.jpg',
+    title: 'HackBattle 2025',
+    description: 'A 24-hour hackathon that challenges your creativity and coding skills. Prizes worth ₹1L+!',
+    date: '2025-04-20',
+    time: '9:00 AM',
+    venue: 'Main Hall',
+    duration: '24h',
+    eventType: 'Competition',
+    registrations: 128,
+    hasPermission: false
+  }
+];
+
+export default function EventsPage() {
   const [loading, setLoading] = useState(true);
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: '',
-    severity: 'success'
-  });
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const userData = await fetchUserData();
-        setCurrentUser(userData);
-
-        // Fetch all users
-        const response = await fetch('http://localhost:5000/users/users');
-        const data = await response.json();
-        setUsers(data);
-        
-        // Filter users who are super_admin
-        const admins = data.filter(user => user.userRole === 'super_admin');
-        setSuperAdmins(admins);
-        
-        setLoading(false);
-      } catch (error) {
-        console.error('Error loading data:', error);
-        setSnackbar({
-          open: true,
-          message: 'Failed to load user data',
-          severity: 'error'
-        });
-        setLoading(false);
-      }
-    };
-
-    loadData();
+    const timer = setTimeout(() => setLoading(false), 1500);
+    return () => clearTimeout(timer);
   }, []);
 
-  const handleOpenDialog = () => {
-    setFormData({ userId: '' });
-    setOpenDialog(true);
-  };
-
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
-  };
-
-  const handleOpenDeleteDialog = (user) => {
-    setSelectedUser(user);
-    setOpenDeleteDialog(true);
-  };
-
-  const handleCloseDeleteDialog = () => {
-    setOpenDeleteDialog(false);
-  };
-
-  const handleFormChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const requestBody = {
-        userId: formData.userId
-      };
-
-      const response = await fetch('http://localhost:5000/users/assign-super-admin', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to assign super admin role');
-      }
-
-      const updatedUser = await response.json();
-      
-      // Update the users list
-      setUsers(prev => prev.map(user => 
-        user._id === updatedUser._id ? updatedUser : user
-      ));
-      
-      // Update super admins list
-      setSuperAdmins(prev => [...prev, updatedUser]);
-
-      setSnackbar({
-        open: true,
-        message: 'Successfully assigned super admin role',
-        severity: 'success'
-      });
-      setOpenDialog(false);
-    } catch (error) {
-      console.error('Error assigning super admin role:', error);
-      setSnackbar({
-        open: true,
-        message: error.message || 'Failed to assign super admin role',
-        severity: 'error'
-      });
-    }
-  };
-
-  const handleDeleteSuperAdmin = async () => {
-    try {
-      const response = await fetch(`http://localhost:5000/users/remove-admin/${selectedUser._id}`, {
-        method: 'PATCH',
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to remove super admin role');
-      }
-
-      const updatedUser = await response.json();
-      
-      // Update the users list
-      setUsers(prev => prev.map(user => 
-        user._id === updatedUser._id ? updatedUser : user
-      ));
-      
-      // Update super admins list
-      setSuperAdmins(prev => prev.filter(user => user._id !== selectedUser._id));
-
-      setSnackbar({
-        open: true,
-        message: 'Successfully removed super admin role',
-        severity: 'success'
-      });
-      setOpenDeleteDialog(false);
-    } catch (error) {
-      console.error('Error removing super admin role:', error);
-      setSnackbar({
-        open: true,
-        message: error.message || 'Failed to remove super admin role',
-        severity: 'error'
-      });
-    }
-  };
-
-  const handleCloseSnackbar = () => {
-    setSnackbar(prev => ({ ...prev, open: false }));
-  };
-
-  // Filter non-super-admin users for the dropdown
-  const eligibleUsers = users.filter(user => user.userRole !== 'super_admin');
+  const skeletonArray = Array(3).fill(0);
 
   return (
-    <Container maxWidth="lg">
-      <Box sx={{ my: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Super Admin Management
-        </Typography>
-        
-        {loading ? (
-          <Box display="flex" justifyContent="center" my={4}>
-            <CircularProgress />
-          </Box>
-        ) : (
-          <>
-            {currentUser?.isSuperAdmin && (
-              <Button 
-                variant="contained" 
-                color="primary" 
-                onClick={handleOpenDialog}
-                sx={{ mb: 3 }}
-              >
-                Add New Super Admin
-              </Button>
-            )}
-
-            <TableContainer component={Paper}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Name</TableCell>
-                    <TableCell>Email</TableCell>
-                    <TableCell>Department</TableCell>
-                    <TableCell>Date Added</TableCell>
-                    {currentUser?.isSuperAdmin && <TableCell>Actions</TableCell>}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {superAdmins.length > 0 ? (
-                    superAdmins.map((user) => (
-                      <TableRow key={user._id}>
-                        <TableCell>{user.name}</TableCell>
-                        <TableCell>{user.email_id}</TableCell>
-                        <TableCell>{user.department || 'N/A'}</TableCell>
-                        <TableCell>
-                          {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
-                        </TableCell>
-                        {currentUser?.isSuperAdmin && (
-                          <TableCell>
-                            <IconButton 
-                              color="error" 
-                              onClick={() => handleOpenDeleteDialog(user)}
-                              disabled={user._id === currentUser.userId || superAdmins.length <= 1}
-                              title={
-                                user._id === currentUser.userId 
-                                  ? "Cannot remove yourself" 
-                                  : superAdmins.length <= 1 
-                                    ? "Cannot remove the last super admin" 
-                                    : "Remove super admin"
-                              }
-                            >
-                              <DeleteIcon />
-                            </IconButton>
-                          </TableCell>
-                        )}
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={currentUser?.isSuperAdmin ? 5 : 4} align="center">
-                        No super admin users found
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </>
-        )}
-      </Box>
-
-      {/* Add Super Admin Dialog */}
-      <Dialog open={openDialog} onClose={handleCloseDialog}>
-        <DialogTitle>Assign Super Admin Role</DialogTitle>
-        <form onSubmit={handleSubmit}>
-          <DialogContent>
-            <FormControl fullWidth margin="normal" required>
-              <InputLabel>User</InputLabel>
-              <Select
-                name="userId"
-                value={formData.userId}
-                onChange={handleFormChange}
-                required
-              >
-                {eligibleUsers.map(user => (
-                  <MenuItem key={user._id} value={user._id}>
-                    {user.name} ({user.email_id})
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseDialog}>Cancel</Button>
-            <Button 
-              type="submit" 
-              variant="contained" 
-              color="primary"
-              disabled={!formData.userId}
+    <Box sx={{ backgroundColor: '#f8faff', minHeight: '100vh', p: 4 }}>
+      <Grid container spacing={3}>
+        {(loading ? skeletonArray : mockEvents).map((event, idx) => (
+          <Grid item xs={12} sm={6} md={4} key={loading ? idx : event.id}>
+            <Card
+              elevation={3}
+              sx={{
+                borderRadius: '16px',
+                transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                '&:hover': !loading && {
+                  transform: 'translateY(-8px)',
+                  boxShadow: '0 12px 20px rgba(95, 150, 230, 0.2)'
+                },
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                height: '100%'
+              }}
             >
-              Assign Super Admin Role
-            </Button>
-          </DialogActions>
-        </form>
-      </Dialog>
+              {loading ? (
+                <Skeleton variant="rectangular" height={180} sx={{ borderTopLeftRadius: '16px', borderTopRightRadius: '16px' }} />
+              ) : (
+                <Box
+                  sx={{
+                    height: 180,
+                    backgroundImage: `url(${event.image})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    borderTopLeftRadius: '16px',
+                    borderTopRightRadius: '16px'
+                  }}
+                />
+              )}
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={openDeleteDialog} onClose={handleCloseDeleteDialog}>
-        <DialogTitle>Remove Super Admin Role</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to remove {selectedUser?.name}'s super admin privileges?
-            {selectedUser?._id === currentUser?.userId && (
-              <Typography color="error" mt={1}>
-                Warning: You cannot remove your own super admin privileges!
-              </Typography>
-            )}
-            {superAdmins.length <= 1 && (
-              <Typography color="error" mt={1}>
-                Warning: Cannot remove the last super admin user!
-              </Typography>
-            )}
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDeleteDialog}>Cancel</Button>
-          <Button 
-            onClick={handleDeleteSuperAdmin} 
-            variant="contained" 
-            color="error"
-            disabled={selectedUser?._id === currentUser?.userId || superAdmins.length <= 1}
-          >
-            Remove
-          </Button>
-        </DialogActions>
-      </Dialog>
+              <CardContent sx={{ p: 3 }}>
+                {loading ? (
+                  <>
+                    <Skeleton variant="text" height={30} width="90%" />
+                    <Skeleton variant="text" height={20} width="100%" />
+                    <Skeleton variant="text" height={20} width="80%" />
+                    <Box sx={{ mt: 2 }}>
+                      {[1, 2, 3, 4].map((i) => (
+                        <Skeleton key={i} variant="text" height={20} width={`${80 - i * 10}%`} sx={{ mb: 0.5 }} />
+                      ))}
+                      <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                        <Skeleton variant="rectangular" width={60} height={22} />
+                        <Skeleton variant="rectangular" width={100} height={22} />
+                      </Box>
+                    </Box>
+                  </>
+                ) : (
+                  <>
+                    <Typography variant="h6" fontWeight={600} sx={{
+                      overflow: 'hidden',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical'
+                    }}>
+                      {event.title}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{
+                      mt: 1,
+                      overflow: 'hidden',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical'
+                    }}>
+                      {event.description}
+                    </Typography>
 
-      {/* Snackbar for notifications */}
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={handleCloseSnackbar}
-      >
-        <Alert 
-          onClose={handleCloseSnackbar} 
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </Container>
+                    <Box sx={{ mt: 2 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+                        <Event sx={{ fontSize: 18, color: 'primary.main', mr: 1 }} />
+                        <Typography variant="body2">{event.date}</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+                        <AccessTime sx={{ fontSize: 18, color: 'primary.main', mr: 1 }} />
+                        <Typography variant="body2">{event.time}</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+                        <LocationOn sx={{ fontSize: 18, color: 'primary.main', mr: 1 }} />
+                        <Typography variant="body2">{event.venue}</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                        <Timer sx={{ fontSize: 18, color: 'primary.main', mr: 1 }} />
+                        <Typography variant="body2">{event.duration}</Typography>
+                      </Box>
+
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                        <Chip size="small" label={event.eventType} color="secondary" />
+                        <Chip size="small" label={`${event.registrations} registrations`} icon={<People />} sx={{ fontSize: '0.7rem' }} />
+                      </Box>
+                    </Box>
+                  </>
+                )}
+              </CardContent>
+
+              <CardActions sx={{ p: 3, pt: 0, justifyContent: 'space-between' }}>
+                {loading ? (
+                  <Skeleton variant="rectangular" height={36} width={60} />
+                ) : (
+                  <Box>
+                    {event.hasPermission && (
+                      <>
+                        <Tooltip title="Edit">
+                          <IconButton color="primary">
+                            <Edit />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Delete">
+                          <IconButton color="error">
+                            <Delete />
+                          </IconButton>
+                        </Tooltip>
+                      </>
+                    )}
+                  </Box>
+                )}
+
+                {loading ? (
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Skeleton variant="rectangular" height={36} width={130} />
+                    <Skeleton variant="rectangular" height={36} width={90} />
+                  </Box>
+                ) : (
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      sx={{ textTransform: 'none', fontWeight: 500 }}
+                    >
+                      View Registrations
+                    </Button>
+                    <Button
+                      variant="contained"
+                      size="small"
+                      sx={{
+                        textTransform: 'none',
+                        fontWeight: 500,
+                        background: 'linear-gradient(to right, #4776E6, #8E54E9)',
+                        boxShadow: '0 4px 10px rgba(71, 118, 230, 0.3)',
+                        '&:hover': {
+                          background: 'linear-gradient(to right, #3a5fc0, #7a42d8)',
+                          boxShadow: '0 6px 15px rgba(71, 118, 230, 0.4)',
+                          transform: 'translateY(-2px)'
+                        }
+                      }}
+                    >
+                      Register
+                    </Button>
+                  </Box>
+                )}
+              </CardActions>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+    </Box>
   );
 }

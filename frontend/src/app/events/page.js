@@ -1,24 +1,25 @@
 "use client";
-import { useState, useContext, useEffect } from "react";
+import React, { useState, useContext, useEffect } from 'react';
 import { fetchUserData } from "@/utils/auth";
 import { useRouter } from "next/navigation";
 import {
-  Container,
+  Box,
   Card,
   CardContent,
+  CardMedia,
   Typography,
-  Button,
-  Box,
   Grid,
-  Divider,
+  Avatar,
   Chip,
+  Divider,
+  Button,
+  Container,
   IconButton,
-  Fab,
+  VisibilityOutlined,
   Snackbar,
   Alert,
-  Avatar,
-  Tooltip,
   Dialog,
+  Fab,
   DialogTitle,
   DialogContent,
   List,
@@ -26,17 +27,130 @@ import {
   ListItemAvatar,
   ListItemText,
   CircularProgress,
-} from "@mui/material";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
-import AddIcon from "@mui/icons-material/Add";
-import CloseIcon from "@mui/icons-material/Close";
-import FavoriteIcon from "@mui/icons-material/Favorite";
-import GroupsIcon from "@mui/icons-material/Groups";
-import WorkspacesIcon from "@mui/icons-material/Workspaces";
+  Tooltip,
+} from '@mui/material';
+import { styled } from '@mui/material/styles';
+import {
+  AccessTime,
+  CalendarToday,
+  LocationOn,
+  People,
+  Visibility,
+  BookmarkBorder,
+  CheckCircle,
+  Edit,
+  Delete,
+  Add,
+  Close,
+  Favorite,
+  FavoriteBorder,
+  Star,
+  StarOutline,
+  OpenInNew,
+  CheckCircleOutline,
+} from '@mui/icons-material';
 import EventsSearchBar from "../../components/events/EventsSearchBar";
 import EventForm from "../../components/events/EventForm";
-import { colors } from "../../color";
+import UniversalShareMenu from "../../components/shared/UniversalShareMenu";
+
+import { Share } from '@mui/icons-material';
+const API_URL2 = `${process.env.NEXT_PUBLIC_BACKEND_URL}/uploads`;
+// Styled components based on the design system
+const StyledCard = styled(Card)(({ theme }) => ({
+  borderRadius: 16,
+  backgroundColor: 'white',
+  boxShadow: '0 4px 12px rgba(95, 150, 230, 0.1)',
+  transition: 'all 0.3s ease',
+  overflow: 'hidden',
+  height: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+  position: 'relative',
+  '&:hover': {
+    transform: 'translateY(-8px)',
+    boxShadow: '0 12px 20px rgba(95, 150, 230, 0.2)',
+  },
+  borderTop: `3px solid ${theme.palette.primary.main}`,
+}));
+
+// Enhanced EventChip with color based on event type
+const EventChip = styled(Chip)(({ theme, eventtype }) => {
+  const typeColors = {
+    'Session': '#4CAF50',
+    'Competition': '#FF5722',
+    'Workshop': '#9C27B0',
+    'Meeting': '#2196F3',
+    'Masterclass': '#9C27B0',
+    'Seminar': '#03A9F4',
+    'Summit': '#1976D2'
+  };
+  
+  const color = typeColors[eventtype] || theme.palette.primary.main;
+  
+  return {
+    backgroundColor: `${color}15`,
+    color: color,
+    height: 28,
+    fontSize: '0.75rem',
+    borderRadius: 14,
+    fontWeight: 500,
+    padding: '0 12px'
+  };
+});
+
+const DurationChip = styled(Chip)(({ theme }) => ({
+  backgroundColor: 'rgba(95, 150, 230, 0.15)',
+  color: theme.palette.primary.main,
+  height: 28,
+  fontSize: '0.75rem',
+  borderRadius: 14,
+  fontWeight: 500,
+  padding: '0 12px'
+}));
+
+const FollowingChip = styled(Chip)(({ theme }) => ({
+  backgroundColor: 'rgba(95, 150, 230, 0.1)',
+  color: theme.palette.primary.main,
+  height: 28,
+  fontSize: '0.75rem',
+  borderRadius: 14,
+  fontWeight: 500,
+  marginLeft: 12
+}));
+
+const RegisterButton = styled(Button)(({ theme }) => ({
+  background: `linear-gradient(to right, ${theme.palette.primary.main}, #8E54E9)`,
+  color: 'white',
+  fontWeight: 500,
+  borderRadius: 20,
+  padding: '8px 24px',
+  boxShadow: '0 4px 10px rgba(71, 118, 230, 0.3)',
+  transition: 'all 0.3s ease',
+  '&:hover': {
+    background: `linear-gradient(to right, ${theme.palette.primary.dark}, #7c46d4)`,
+    boxShadow: '0 6px 15px rgba(71, 118, 230, 0.4)',
+    transform: 'translateY(-2px)',
+  },
+}));
+
+const RegistrationsChip = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  backgroundColor: 'rgba(95, 150, 230, 0.1)',
+  color: theme.palette.text.secondary,
+  borderRadius: 16,
+  padding: '4px 12px',
+  fontSize: '0.85rem'
+}));
+
+const ImageOverlayIcons = styled(Box)(({ theme }) => ({
+  position: 'absolute',
+  top: 12,
+  right: 12,
+  display: 'flex',
+  gap: 8,
+  zIndex: 2,
+}));
 
 const filters = [
   "My Clubs",
@@ -46,15 +160,8 @@ const filters = [
   "Year",
   "My Registered Events",
 ];
-const eventTypes = ["Session", "Competition", "Workshop", "Meeting"];
-const typeColors = {
-  Session: "#4CAF50",
-  Competition: "#FF5722",
-  Workshop: "#9C27B0",
-  Meeting: "#2196F3",
-};
 
-export default function EVENTS() {
+export default function EventsPage() {
   const [selectedFilters, setSelectedFilters] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
   const [openDialog, setOpenDialog] = useState(false);
@@ -64,43 +171,19 @@ export default function EVENTS() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editFormData, setEditFormData] = useState(null);
-  const selectedClubId = null;
-  const selectedBoardId = null;
   const [userData, setUserData] = useState(null);
   const [user_id, setUserId] = useState(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-  const [userClubsWithEventPermission, setUserClubsWithEventPermission] =
-    useState([]);
-
+  const [userClubsWithEventPermission, setUserClubsWithEventPermission] = useState([]);
+  const [hoveredCard, setHoveredCard] = useState(null);
+  const [shareMenu, setShareMenu] = useState({
+    open: false,
+    anchorEl: null,
+    id: null,
+    title: "",
+    contentType: "event"
+  });
   const router = useRouter();
-
-  useEffect(() => {
-    async function loadUserData() {
-      const result = await fetchUserData();
-
-      if (result) {
-        console.log(result);
-        setUserData(result.userData);
-        setUserId(result.userId);
-        setIsSuperAdmin(result.isSuperAdmin);
-
-        // Extract clubs with events permission
-        if (result.userData?.clubs) {
-          const clubsWithEventPermission = Object.keys(
-            result.userData.clubs
-          ).filter((clubId) => result.userData.clubs[clubId].events === true);
-          setUserClubsWithEventPermission(clubsWithEventPermission);
-        }
-      }
-    }
-    loadUserData();
-  }, []);
-
-  useEffect(() => {
-    if (userData) {
-      console.log(userData);
-    }
-  }, [userData]);
 
   const [notification, setNotification] = useState({
     open: false,
@@ -115,12 +198,32 @@ export default function EVENTS() {
   });
 
   useEffect(() => {
+    async function loadUserData() {
+      const result = await fetchUserData();
+
+      if (result) {
+        setUserData(result.userData);
+        setUserId(result.userId);
+        setIsSuperAdmin(result.isSuperAdmin);
+
+        if (result.userData?.clubs) {
+          const clubsWithEventPermission = Object.keys(
+            result.userData.clubs
+          ).filter((clubId) => result.userData.clubs[clubId].events === true);
+          setUserClubsWithEventPermission(clubsWithEventPermission);
+        }
+      }
+    }
+    loadUserData();
+  }, []);
+
+  useEffect(() => {
     const fetchEvents = async () => {
       try {
         setIsLoading(true);
         const url = user_id
-          ? `http://localhost:5000/events?userId=${user_id}`
-          : "http://localhost:5000/events";
+          ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/events?userId=${user_id}`
+          : `${process.env.NEXT_PUBLIC_BACKEND_URL}/events`;
 
         const response = await fetch(url);
         if (!response.ok)
@@ -130,11 +233,10 @@ export default function EVENTS() {
         if (!result.success)
           throw new Error(result.message || "Failed to fetch events");
 
-        // Fetch registration counts for each event
         const eventsWithCounts = await Promise.all(
           (result.data || []).map(async (event) => {
             const rsvpResponse = await fetch(
-              `http://localhost:5000/events/${event._id}/rsvp`
+              `${process.env.NEXT_PUBLIC_BACKEND_URL}/events/${event._id}/rsvp`
             );
             if (!rsvpResponse.ok) return { ...event, registeredCount: 0 };
 
@@ -163,26 +265,16 @@ export default function EVENTS() {
     fetchEvents();
   }, [user_id]);
 
-  // Check if user has permission to edit/delete an event
   const hasEventPermission = (event) => {
-    // Superadmins have all permissions
     if (isSuperAdmin) return true;
 
-    // Check club permissions
     const hasClubPermission =
       event.club_id &&
       userData?.data?.clubs?.[event.club_id._id || event.club_id]?.events;
 
-    // Check board permissions (assuming similar structure to clubs)
     const hasBoardPermission =
       event.board_id &&
       userData?.data?.boards?.[event.board_id._id || event.board_id]?.events;
-
-    // console.log(event.club_id);
-    // console.log(event);
-    // console.log(userData);
-    // console.log(hasClubPermission);
-    // console.log(hasBoardPermission);
 
     return hasClubPermission || hasBoardPermission;
   };
@@ -199,7 +291,7 @@ export default function EVENTS() {
 
     try {
       const response = await fetch(
-        `http://localhost:5000/events/${event._id}/rsvp`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/events/${event._id}/rsvp`,
         {
           method: "POST",
           headers: {
@@ -253,7 +345,7 @@ export default function EVENTS() {
       }));
 
       const response = await fetch(
-        `http://localhost:5000/events/${eventId}/rsvp`
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/events/${eventId}/rsvp`
       );
       if (!response.ok)
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -285,14 +377,26 @@ export default function EVENTS() {
       [event.target.name]: event.target.checked,
     }));
   };
-
+  const handleShareClick = (event, eventId) => {
+    event.stopPropagation();
+    // Find the current event to get its title
+    const currentEvent = events.find(e => e._id === eventId);
+    setShareMenu({
+      open: true,
+      anchorEl: event.currentTarget,
+      id: eventId,
+      title: currentEvent.name,
+      contentType: "event"
+    });
+  };
+  
   const clearFilters = () => {
     setSelectedFilters({});
   };
 
   const handleDelete = async (eventId) => {
     try {
-      const response = await fetch(`http://localhost:5000/events/${eventId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/events/${eventId}`, {
         method: "DELETE",
       });
       if (!response.ok)
@@ -316,7 +420,7 @@ export default function EVENTS() {
 
   const handleEdit = async (event) => {
     try {
-      const response = await fetch(`http://localhost:5000/events/${event._id}`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/events/${event._id}`);
       if (!response.ok)
         throw new Error(`HTTP error! status: ${response.status}`);
 
@@ -359,8 +463,8 @@ export default function EVENTS() {
   const handleFormSubmit = async (formData) => {
     try {
       const url = isEditing
-        ? `http://localhost:5000/events/${currentEvent._id}`
-        : "http://localhost:5000/events";
+        ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/events/${currentEvent._id}`
+        : "${process.env.NEXT_PUBLIC_BACKEND_URL}/events";
       const method = isEditing ? "PUT" : "POST";
 
       const multipartFormData = new FormData();
@@ -496,18 +600,13 @@ export default function EVENTS() {
   }
 
   return (
-    <Box
-      sx={{ backgroundColor: colors.background.default, minHeight: "100vh" }}
-    >
-      <Container
-        maxWidth="lg"
-        sx={{
-          py: 2,
-          position: "relative",
-          minHeight: "80vh",
-          backgroundColor: colors.background.default,
-        }}
-      >
+    <Box sx={{ 
+      padding: 4, 
+      backgroundColor: '#f8faff',
+      minHeight: '100vh'
+    }}>
+      <Container maxWidth="xl">
+        
         <EventsSearchBar
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
@@ -516,282 +615,319 @@ export default function EVENTS() {
           filters={filters}
           clearFilters={clearFilters}
         />
-
-        <Grid container spacing={2}>
+        
+        <Grid container spacing={4}>
           {filteredEvents.map((event) => (
-            <Grid item xs={12} sm={6} md={4} key={event._id}>
-              <Card
-                elevation={1}
-                sx={{
-                  height: "100%",
-                  borderRadius: "12px",
-                  boxShadow: colors.shadows.card,
-                  backgroundColor: colors.background.paper,
-                  transition: "transform 0.3s ease, box-shadow 0.3s ease",
-                  "&:hover": {
-                    transform: "translateY(-2px)",
-                    boxShadow: colors.shadows.hover,
-                  },
-                }}
-                onClick={(e) => {
-                  // Add this click handler
-                  if (e.target.closest('button, a, [role="button"]')) return;
-                  router.push(`/current_event/${event._id}`);
-                }}
+            <Grid item xs={12} sm={6} md={4} lg={3} key={event._id}>
+              <StyledCard
+                onMouseEnter={() => setHoveredCard(event._id)}
+                onMouseLeave={() => setHoveredCard(null)}
               >
-                <CardContent>
+                <Box sx={{ position: 'relative' }}>
                   {event.image && (
-                    <Box
+                    <CardMedia
                       component="img"
-                      sx={{
-                        width: "100%",
-                        height: 200,
-                        objectFit: "cover",
-                        mb: 2,
-                        borderRadius: 1,
-                      }}
-                      src={event.image.path || event.image}
+                      height="180"
+                      image={`${API_URL2}/${event?.image?.filename}`}
                       alt={event.name}
                     />
                   )}
-
-                  {/* Registration count and view button */}
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      mb: 2,
-                    }}
-                  >
-                    <Chip
-                      label={`${event.registeredCount} registrations`}
-                      size="small"
-                      color="info"
-                      variant="outlined"
-                    />
-                    {(isSuperAdmin || hasEventPermission(event)) && (
-                      <Button
-                        variant="text"
-                        size="small"
-                        onClick={() => handleViewRegistrations(event._id)}
-                        sx={{ color: colors.primary.main }}
+                  <ImageOverlayIcons>
+                    {event.isClubFollowed || event.isBoardFollowed ? (
+                      <IconButton 
+                        size="small" 
+                        sx={{ 
+                          backgroundColor: 'white', 
+                          '&:hover': { backgroundColor: 'white' } 
+                        }}
                       >
-                        View
-                      </Button>
+                        <Star style={{ color: '#ffb400' }} />
+                      </IconButton>
+                    ) : (
+                      <IconButton 
+                        size="small" 
+                        sx={{ 
+                          backgroundColor: 'white', 
+                          '&:hover': { backgroundColor: 'white' } 
+                        }}
+                      >
+                        <StarOutline color="action" />
+                      </IconButton>
                     )}
-                  </Box>
-
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1,
-                      mb: 1,
-                    }}
-                  >
-                    {(event.isClubFollowed ||
-                      event.isBoardFollowed ||
-                      event.registered) && (
-                      <Box sx={{ display: "flex", gap: 0.5 }}>
-                        {event.isClubFollowed && (
-                          <Tooltip title="You follow this club">
-                            <GroupsIcon color="primary" fontSize="small" />
-                          </Tooltip>
-                        )}
-                        {event.isBoardFollowed && (
-                          <Tooltip title="You follow this board">
-                            <WorkspacesIcon
-                              color="secondary"
-                              fontSize="small"
-                            />
-                          </Tooltip>
-                        )}
-                        {event.registered && (
-                          <Tooltip title="You're registered for this event">
-                            <FavoriteIcon color="error" fontSize="small" />
-                          </Tooltip>
-                        )}
-                      </Box>
+                    {event.registered && (
+                      <IconButton 
+                        size="small" 
+                        sx={{ 
+                          backgroundColor: 'white', 
+                          '&:hover': { backgroundColor: 'white' } 
+                        }}
+                      >
+                        <CheckCircle style={{ color: '#4CAF50' }} />
+                      </IconButton>
                     )}
-                    <Typography
-                      variant="h6"
-                      color={colors.text.primary}
-                      sx={{ flexGrow: 1 }}
-                    >
-                      {event.name}
-                    </Typography>
-                    {(isSuperAdmin || hasEventPermission(event)) && (
-                      <Box>
-                        <IconButton
-                          onClick={() => handleEdit(event)}
-                          sx={{
-                            color: colors.primary.main,
-                            "&:hover": { backgroundColor: colors.action.hover },
-                          }}
-                          size="small"
-                        >
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton
-                          onClick={() => handleDelete(event._id)}
-                          sx={{
-                            color: colors.status.error,
-                            "&:hover": {
-                              backgroundColor: "rgba(244, 67, 54, 0.08)",
-                            },
-                          }}
-                          size="small"
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </Box>
-                    )}
-                  </Box>
-
-                  {/* Club and Board info */}
-                  {event.club_id && (
+                  </ImageOverlayIcons>
+                  
+                  {(isSuperAdmin || hasEventPermission(event)) && (
                     <Box
                       sx={{
-                        display: "flex",
-                        alignItems: "center",
+                        position: 'absolute',
+                        top: 8,
+                        left: 8,
+                        display: 'flex',
                         gap: 1,
-                        mb: 1,
                       }}
                     >
-                      <Avatar
-                        src={event.club_id.image?.path || event.club_id.image}
-                        sx={{ width: 24, height: 24 }}
-                      />
-                      <Typography variant="caption" color="text.secondary">
-                        {event.club_id.name}
-                      </Typography>
-                      {event.isClubFollowed && (
-                        <Chip
-                          label="Following"
-                          size="small"
-                          color="primary"
-                          variant="outlined"
-                          sx={{ height: 20 }}
-                        />
-                      )}
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEdit(event);
+                        }}
+                        sx={{
+                          bgcolor: 'rgba(255,255,255,0.8)',
+                          '&:hover': { bgcolor: 'rgba(255,255,255,0.95)' },
+                          width: 32,
+                          height: 32,
+                        }}
+                      >
+                        <Edit fontSize="small" sx={{ color: '#4776E6' }} />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(event._id);
+                        }}
+                        sx={{
+                          bgcolor: 'rgba(255,255,255,0.8)',
+                          '&:hover': { bgcolor: 'rgba(255,255,255,0.95)' },
+                          width: 32,
+                          height: 32,
+                        }}
+                      >
+                        <Delete fontSize="small" sx={{ color: '#f44336' }} />
+                      </IconButton>
                     </Box>
                   )}
-
-                  {event.board_id && (
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                        mb: 1,
-                      }}
-                    >
-                      <WorkspacesIcon color="action" fontSize="small" />
-                      <Typography variant="caption" color="text.secondary">
-                        {event.board_id.name}
-                      </Typography>
-                      {event.isBoardFollowed && (
-                        <Chip
-                          label="Following"
-                          size="small"
-                          color="secondary"
-                          variant="outlined"
-                          sx={{ height: 20 }}
+                </Box>
+                
+                <CardContent sx={{ p: 3, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+  <Typography variant="h6" component="div" sx={{ fontWeight: 600 }}>
+    {event.name}
+  </Typography>
+  <Box sx={{ display: 'flex' }}>
+    <IconButton 
+      size="small" 
+      onClick={(e) => handleShareClick(e, event._id)}
+      sx={{
+        color: 'primary.main',
+        mr: 1,
+        '&:hover': {
+          backgroundColor: 'rgba(95, 150, 230, 0.1)'
+        }
+      }}
+    >
+      <Share fontSize="small" />
+    </IconButton>
+    <IconButton 
+    size="small" 
+    onClick={(e) => {
+      e.stopPropagation();
+      router.push(`/current_event/${event._id}`);
+    }}
+    sx={{
+      color: 'primary.main',
+      '&:hover': {
+        backgroundColor: 'rgba(95, 150, 230, 0.1)'
+      }
+    }}
+  >
+    <OpenInNew fontSize="small" />
+  </IconButton>
+  </Box>
+</Box>
+                  
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      {event.club_id ? (
+                        <Avatar
+                          src={event.club_id.image?.path || event.club_id.image}
+                          alt={event.club_id.name}
+                          sx={{ width: 28, height: 28, mr: 1.5 }}
                         />
+                      ) : event.board_id ? (
+                        <Avatar
+                          alt={event.board_id.name}
+                          sx={{ width: 28, height: 28, mr: 1.5, bgcolor: '#e0e0e0' }}
+                        >
+                          {event?.board_id?.name?.charAt(0)}
+                        </Avatar>
+                      ) : (
+                        <Avatar
+                          sx={{ width: 28, height: 28, mr: 1.5, bgcolor: '#e0e0e0' }}
+                        >
+                          H
+                        </Avatar>
                       )}
+                      <Typography variant="body2" color="text.secondary">
+                        {event.club_id?.name || event.board_id?.name || "Host"}
+                      </Typography>
                     </Box>
-                  )}
-
-                  <Chip
-                    label={event.event_type_id || "Session"}
-                    size="small"
-                    sx={{
-                      backgroundColor:
-                        typeColors[event.event_type_id] ||
-                        typeColors["Session"],
-                      color: colors.common.white,
-                      mt: 0.5,
-                      mb: 1,
-                    }}
-                  />
-
-                  <Divider sx={{ my: 1, borderColor: colors.borders.light }} />
-
+                    <FollowingChip 
+                      label={event.isClubFollowed || event.isBoardFollowed ? "Following" : "Follow"}
+                      size="small"
+                      variant={event.isClubFollowed || event.isBoardFollowed ? "filled" : "outlined"}
+                    />
+                  </Box>
+                  
+                  <Box sx={{ display: 'flex', gap: 1.5, mb: 2 }}>
+                    <EventChip 
+                      label={event.event_type_id || "Event"} 
+                      size="small"
+                      eventtype={event.event_type_id || "Event"}
+                    />
+                    <DurationChip 
+                      icon={<AccessTime style={{ fontSize: 16 }} />}
+                      label={`${event.duration} mins`}
+                      size="small"
+                    />
+                  </Box>
+                  
+                  <Divider sx={{ mb: 2 }} />
+                  
                   <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2" color={colors.text.secondary}>
-                      <strong>Description:</strong> {event.description}
-                    </Typography>
-                    <Typography variant="body2" color={colors.text.secondary}>
-                      <strong>Date:</strong>{" "}
-                      {new Date(event.timestamp).toLocaleDateString()}
-                    </Typography>
-                    <Typography variant="body2" color={colors.text.secondary}>
-                      <strong>Time:</strong>{" "}
-                      {new Date(event.timestamp).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </Typography>
-                    <Typography variant="body2" color={colors.text.secondary}>
-                      <strong>Venue:</strong> {event.venue}
-                    </Typography>
-                    <Typography variant="body2" color={colors.text.secondary}>
-                      <strong>Duration:</strong> {event.duration} minutes
-                    </Typography>
+  {event.description && (
+    <>
+      <Typography 
+        variant="body2" 
+        color="text.secondary" 
+        sx={{ 
+          fontSize: '0.85rem', 
+          lineHeight: 1.5,
+          display: '-webkit-box',
+          WebkitLineClamp: '3',
+          WebkitBoxOrient: 'vertical',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          maxHeight: '4rem'  // approximately 3 lines
+        }}
+      >
+        {event.description}
+      </Typography>
+      
+      {event.description.length > 120 && (
+        <Button 
+          variant="text" 
+          size="small" 
+          sx={{ 
+            mt: 0.5, 
+            p: 0, 
+            textTransform: 'none', 
+            fontSize: '0.8rem',
+            color: 'primary.main'
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            router.push(`/current_event/${event._id}`);
+          }}
+        >
+          Read more
+        </Button>
+      )}
+    </>
+  )}
+</Box>
+                  
+                  <Box sx={{ mt: 'auto' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mr: 3 }}>
+                        <CalendarToday color="primary" sx={{ fontSize: 16, mr: 1 }} />
+                        <Typography variant="body2" color="text.secondary">
+                          {new Date(event.timestamp).toLocaleDateString()}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <AccessTime color="primary" sx={{ fontSize: 16, mr: 1 }} />
+                        <Typography variant="body2" color="text.secondary">
+                          {new Date(event.timestamp).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </Typography>
+                      </Box>
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                      <LocationOn color="primary" sx={{ fontSize: 16, mr: 1 }} />
+                      <Typography variant="body2" color="text.secondary">
+                        {event.venue}
+                      </Typography>
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+                      <RegistrationsChip>
+                        <People color="primary" sx={{ fontSize: 20, mr: 1 }} />
+                        <Typography variant="body2">
+                          {event.registeredCount} Registered
+                        </Typography>
+                      </RegistrationsChip>
+                      {(isSuperAdmin || hasEventPermission(event)) && (
+                        <Tooltip title="View registrations">
+                          <IconButton 
+                            size="small" 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewRegistrations(event._id);
+                            }}
+                          >
+                            <Visibility color="action" sx={{ fontSize: 18 }} />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                      <RegisterButton 
+                        variant="contained" 
+                        fullWidth
+                        disabled={event.registered}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          !event.registered && handleRegister(event);
+                        }}
+                        startIcon={event.registered ? <CheckCircleOutline sx={{ fontSize: 16 }} /> : null}
+                      >
+                        {event.registered ? "Registered" : "Register Now"}
+                      </RegisterButton>
+                    </Box>
                   </Box>
-
-                  <Button
-                    variant={event.registered ? "contained" : "outlined"}
-                    fullWidth
-                    onClick={() => !event.registered && handleRegister(event)}
-                    disabled={event.registered}
-                    sx={{
-                      backgroundColor: event.registered
-                        ? colors.status.success
-                        : "transparent",
-                      color: event.registered
-                        ? colors.common.white
-                        : colors.primary.main,
-                      borderColor: colors.primary.main,
-                      "&:hover": {
-                        backgroundColor: event.registered
-                          ? colors.status.success
-                          : colors.action.hover,
-                        boxShadow: "none",
-                      },
-                    }}
-                  >
-                    {event.registered ? "Registered" : "Register"}
-                  </Button>
                 </CardContent>
-              </Card>
+              </StyledCard>
             </Grid>
           ))}
         </Grid>
 
-        {false && (
-          <Fab
-            color="primary"
-            aria-label="add"
-            onClick={handleAddNew}
-            sx={{
-              position: "fixed",
-              bottom: 24,
-              right: 24,
-              boxShadow: colors.shadows.hover,
-              backgroundColor: colors.primary.main,
-              color: colors.common.white,
-              "&:hover": {
-                backgroundColor: colors.primary.dark,
-                transform: "scale(1.05)",
-              },
-              transition: "all 0.2s ease",
-            }}
-          >
-            <AddIcon />
-          </Fab>
-        )}
+        <Fab
+          color="primary"
+          aria-label="add"
+          onClick={handleAddNew}
+          sx={{
+            position: "fixed",
+            bottom: 24,
+            right: 24,
+            boxShadow: "0 4px 10px rgba(71, 118, 230, 0.3)",
+            background: "linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)",
+            color: "white",
+            "&:hover": {
+              background: "linear-gradient(90deg, #3a5fc0 0%, #7b46c7 100%)",
+              transform: "scale(1.05)",
+            },
+            transition: "all 0.2s ease",
+          }}
+        >
+          <Add />
+        </Fab>
 
         <EventForm
           open={openDialog}
@@ -815,12 +951,9 @@ export default function EVENTS() {
           }
           title={isEditing ? "Edit Event" : "Add New Event"}
           submitButtonText={isEditing ? "Update Event" : "Create Event"}
-          eventTypes={eventTypes}
-          club_id={selectedClubId} // Pass the actual club_id from your state
-          board_id={selectedBoardId} // Pass the actual board_id from your state
+          eventTypes={["Session", "Competition", "Workshop", "Meeting", "Masterclass", "Seminar", "Summit"]}
         />
 
-        {/* Registrations Dialog */}
         <Dialog
           open={registrationsDialog.open}
           onClose={() =>
@@ -837,7 +970,7 @@ export default function EVENTS() {
               }
               sx={{ position: "absolute", right: 8, top: 8 }}
             >
-              <CloseIcon />
+              <Close />
             </IconButton>
           </DialogTitle>
           <DialogContent>
@@ -876,7 +1009,16 @@ export default function EVENTS() {
             )}
           </DialogContent>
         </Dialog>
-
+        <UniversalShareMenu
+  anchorEl={shareMenu.anchorEl}
+  open={shareMenu.open}
+  onClose={() => setShareMenu({ open: false, anchorEl: null, id: null, title: "", contentType: "event" })}
+  id={shareMenu.id}
+  title={shareMenu.title}
+  contentType={shareMenu.contentType}
+  // Optional: You can pass custom share text if needed
+  // customShareText={`Check out this amazing event: ${shareMenu.title}`}
+/>
         <Snackbar
           open={notification.open}
           autoHideDuration={4000}

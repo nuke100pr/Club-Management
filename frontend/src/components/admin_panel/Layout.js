@@ -1,19 +1,36 @@
-import { Box } from '@mui/material';
-import Sidebar from './Sidebar';
+import { Box, useTheme, useMediaQuery } from "@mui/material";
+import Sidebar from "./Sidebar";
 
 const Layout = ({ children, activeTab, setActiveTab }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
   return (
-    <Box sx={{ display: 'flex', height: '100vh', backgroundColor: '#f5f5f8' }}>
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+    <Box
+      sx={{
+        display: "flex",
+        height: "100vh",
+        width: "100%",
+        overflowX: "hidden",
+        backgroundColor: theme.palette.background.default,
+      }}
+    >
+      <Sidebar 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab} 
+      />
       <Box
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
-          ml: { xs: 0 },
-          backgroundColor: '#f5f5f8',
-          minHeight: '100vh',
-          width: { xs: '100%', sm: 'calc(100% - 240px)' }
+          p: { xs: 2, sm: 3 },
+          width: "100%",
+          height: "100vh",
+          overflowY: "auto",
+          transition: theme.transitions.create(["width", "margin"], {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.standard,
+          }),
         }}
       >
         {children}

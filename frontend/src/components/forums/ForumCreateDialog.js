@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+// components/forums/ForumCreateDialog.js
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -7,331 +8,323 @@ import {
   TextField,
   Button,
   FormControl,
-  FormControlLabel,
-  FormLabel,
-  Radio,
-  RadioGroup,
-  OutlinedInput,
-  IconButton,
+  InputLabel,
+  Select,
+  MenuItem,
   Box,
   Chip,
-  Grid,
-  Snackbar,
-  Alert
+  Input,
+  CircularProgress,
 } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
-import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 
-const ForumCreateDialog = ({ 
-  open, 
+const ForumCreateDialog = ({
+  open,
   onClose,
   onCreateForum,
   userId,
-  board_id,
-  club_id
+  boardId,
+  clubId,
+  disableBoardSelection,
+  forum,
 }) => {
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
-  const [newTag, setNewTag] = useState("");
-  const [openSnackbar, setOpenSnackbar] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [snackbarSeverity, setSnackbarSeverity] = useState("success");
-  const [newForum, setNewForum] = useState({
-    title: "",
-    description: "",
-    public_or_private: "public",
-    tags: [],
+  const isEditMode = !!forum;
+
+  // Initialize form data either from provided forum or with defaults
+  const [formData, setFormData] = useState({
+    title: forum?.title || "",
+    description: forum?.description || "",
+    public_or_private: forum?.public_or_private || "public",
+    boardId: forum?.boardId || boardId || "",
+    clubId: forum?.clubId || clubId || "",
+    tags: forum?.tags || [],
     user_id: userId,
-    board_id: board_id || null,
-    club_id: club_id || null
   });
 
-  const handleAddTag = (e) => {
-    e.preventDefault(); 
-  
-    if (newTag.trim() !== "") {
-      setNewForum(prev => ({
-        ...prev,
-        tags: [...prev.tags, newTag.trim()]
-      }));
-      setNewTag(""); 
+  const [image, setImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(
+    forum?.image ? `http://localhost:5000/uploads/${forum.image.filename}` : ""
+  );
+  const [loading, setLoading] = useState(false);
+  const [currentTag, setCurrentTag] = useState("");
+
+  useEffect(() => {
+    if (formData) {
+      console.log(formData);
     }
-  };
-  
-  const handleRemoveTag = (index) => {
-    const updatedTags = [...newForum.tags];
-    updatedTags.splice(index, 1);
-    setNewForum(prev => ({
-      ...prev,
-      tags: updatedTags
-    }));
+  }, [formData]);
+
+  // Modify your useEffect to only run when necessary
+  useEffect(() => {
+    if (!open) return;
+
+    setFormData((prev) => {
+      if (!forum) {
+        return {
+          title: "",
+          description: "",
+          public_or_private: "public",
+          boardId: boardId || "",
+          clubId: clubId || "",
+          tags: [],
+          user_id: userId,
+        };
+      } else {
+        return {
+          title: forum.title || "",
+          description: forum.description || "",
+          public_or_private: forum.public_or_private || "public",
+          boardId: forum.boardId || boardId || "",
+          clubId: forum.clubId || clubId || "",
+          tags: forum.tags || [],
+          user_id: userId,
+        };
+      }
+    });
+
+    setImage(null);
+    setImagePreview(
+      forum?.image
+        ? `http://localhost:5000/uploads/${forum.image.filename}`
+        : ""
+    );
+  }, [open]); // only reset when `open` changes
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validate file size (e.g., limit to 5MB)
-      const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-      if (file.size > MAX_FILE_SIZE) {
-        setSnackbarMessage("File is too large. Maximum size is 5MB.");
-        setSnackbarSeverity("error");
-        setOpenSnackbar(true);
-        return;
-      }
-
-      // Store the file separately
-      setImageFile(file);
-
-      // Create image preview
-      const reader = new FileReader();
-      reader.onload = () => {
-        setImagePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
+      setImage(file);
+      setImagePreview(URL.createObjectURL(file));
     }
   };
 
-  const handleNewForumChange = (e) => {
-    const { name, value } = e.target;
-    setNewForum((prev) => ({
+  const handleTagInputChange = (e) => {
+    setCurrentTag(e.target.value);
+  };
+
+  const handleAddTag = () => {
+    if (currentTag.trim() && !formData.tags.includes(currentTag.trim())) {
+      setFormData((prev) => ({
+        ...prev,
+        tags: [...prev.tags, currentTag.trim()],
+      }));
+      setCurrentTag("");
+    }
+  };
+
+  const handleDeleteTag = (tagToDelete) => {
+    setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      tags: prev.tags.filter((tag) => tag !== tagToDelete),
     }));
   };
 
-  const handleSubmit = async () => {
-    // Validate required fields
-    if (!newForum.title || !newForum.description) {
-      setSnackbarMessage("Please fill in all required fields");
-      setSnackbarSeverity("error");
-      setOpenSnackbar(true);
-      return;
-    }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
 
     try {
-      // Create FormData
-      const formData = new FormData();
-      
-      // Append text fields
-      formData.append("title", newForum.title);
-      formData.append("description", newForum.description);
-      formData.append("public_or_private", newForum.public_or_private);
-      formData.append("user_id", newForum.user_id);
-      
-      // Append board_id or club_id if they exist
-      if (newForum.board_id) {
-        formData.append("board_id", newForum.board_id);
-      }
-      if (newForum.club_id) {
-        formData.append("club_id", newForum.club_id);
-      }
-      
-      // Append tags
-      newForum.tags.forEach((tag, index) => {
-        formData.append(`tags[${index}]`, tag);
+      const formDataObj = new FormData();
+
+      // Append all form data
+      Object.keys(formData).forEach((key) => {
+        if (key === "tags") {
+          // Handle tags array specially
+          formData.tags.forEach((tag, index) => {
+            formDataObj.append(`tags[${index}]`, tag);
+          });
+        } else {
+          formDataObj.append(key, formData[key]);
+        }
       });
 
-      // Append image if exists
-      if (imageFile) {
-        formData.append("image", imageFile);
+      if(boardId)
+      {
+        formDataObj.append("board_id",boardId);
       }
 
-      const response = await fetch('http://localhost:5000/forums2/forums', {
-        method: 'POST',
-        body: formData
-      });
+      if(clubId)
+        {
+          formDataObj.append("clubId",clubId);
+        }
+
+      // Append image if a new one is selected
+      if (image) {
+        formDataObj.append("image", image);
+      }
+
+      let response;
+
+      if (isEditMode) {
+        // Update existing forum
+
+        formDataObj.forEach((value, key) => {
+          console.log(`${key}:`, value);
+        });
+        response = await fetch(
+          `http://localhost:5000/forums2/forums/${forum._id}`,
+          {
+            method: "PUT",
+            body: formDataObj,
+          }
+        );
+      } else {
+        // Create new forum
+        response = await fetch("http://localhost:5000/forums2/forums", {
+          method: "POST",
+          body: formDataObj,
+        });
+      }
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create forum');
+        throw new Error(
+          isEditMode ? "Failed to update forum" : "Failed to create forum"
+        );
       }
 
-      const responseData = await response.json();
-      
-      // Call the parent component's onCreateForum with the new forum data
-      onCreateForum(responseData);
-      
-      // Success handling
-      setSnackbarMessage("Forum created successfully!");
-      setSnackbarSeverity("success");
-      setOpenSnackbar(true);
-      
-      // Reset form
-      setNewForum({
-        title: "",
-        description: "",
-        public_or_private: "public",
-        tags: [],
-        user_id: userId,
-        board_id: board_id || null,
-        club_id: club_id || null
-      });
-      setImageFile(null);
-      setImagePreview(null);
-      
-      // Close dialog
-      onClose();
-    } catch (error) {
-      // Error handling
-      setSnackbarMessage(`Error creating forum: ${error.message}`);
-      setSnackbarSeverity("error");
-      setOpenSnackbar(true);
-    }
-  };
+      const result = await response.json();
 
-  const handleCloseSnackbar = (event, reason) => {
-    if (reason === 'clickaway') {
-      return;
+      // Close dialog and pass result back
+      onClose(result);
+    } catch (error) {
+      console.error(
+        isEditMode ? "Error updating forum:" : "Error creating forum:",
+        error
+      );
+    } finally {
+      setLoading(false);
     }
-    setOpenSnackbar(false);
   };
 
   return (
-    <>
-      <Dialog
-        open={open}
-        onClose={onClose}
-        fullWidth
-        maxWidth="sm"
-      >
-        <DialogTitle>Create New Discussion</DialogTitle>
-        <DialogContent>
-          {/* Title */}
-          <TextField
-            autoFocus
-            margin="dense"
-            name="title"
-            label="Title"
-            type="text"
-            fullWidth
-            variant="outlined"
-            value={newForum.title}
-            onChange={handleNewForumChange}
-            sx={{ mb: 2, mt: 1 }}
-            required
-          />
+    <Dialog
+      open={open}
+      onClose={() => !loading && onClose()}
+      maxWidth="md"
+      fullWidth
+    >
+      <DialogTitle>
+        {isEditMode ? "Edit Forum" : "Create New Forum"}
+      </DialogTitle>
+      <DialogContent>
+        <TextField
+          margin="dense"
+          name="title"
+          label="Forum Title"
+          type="text"
+          fullWidth
+          value={formData.title}
+          onChange={handleChange}
+          required
+          disabled={loading}
+        />
+        <TextField
+          margin="dense"
+          name="description"
+          label="Description"
+          type="text"
+          fullWidth
+          multiline
+          rows={4}
+          value={formData.description}
+          onChange={handleChange}
+          required
+          disabled={loading}
+        />
 
-          {/* Description */}
-          <TextField
-            margin="dense"
-            name="description"
-            label="Description"
-            type="text"
-            fullWidth
-            multiline
-            rows={4}
-            variant="outlined"
-            value={newForum.description}
-            onChange={handleNewForumChange}
-            sx={{ mb: 2 }}
-            required
-          />
-
-          {/* Image Upload */}
-          <Grid item xs={12}>
-            <Button
-              component="label"
-              variant="outlined"
-              startIcon={<CloudUploadIcon />}
-              sx={{ mb: 2 }}
-            >
-              Upload Image
-              <input
-                type="file"
-                accept="image/*"
-                hidden
-                onChange={handleImageChange}
-              />
-            </Button>
-
-            {imagePreview && (
-              <Box sx={{ textAlign: "center", mt: 1, mb: 2 }}>
-                <img
-                  src={imagePreview}
-                  alt="Preview"
-                  style={{ maxWidth: "100%", maxHeight: "200px" }}
-                />
-              </Box>
-            )}
-          </Grid>
-
-          {/* Tags */}
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <OutlinedInput
-              value={newTag}
-              onChange={(e) => setNewTag(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleAddTag(e)}
-              placeholder="Add Tags"
-              endAdornment={
-                <IconButton onClick={handleAddTag}>
-                  <AddIcon />
-                </IconButton>
-              }
-            />
-            <Box sx={{ mt: 1 }}>
-              {newForum.tags.map((tag, index) => (
-                <Chip
-                  key={index}
-                  label={tag}
-                  onDelete={() => handleRemoveTag(index)}
-                  sx={{ mr: 1, mt: 1 }}
-                />
-              ))}
-            </Box>
-          </FormControl>
-
-          {/* Privacy Selection */}
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <FormLabel>Privacy</FormLabel>
-            <RadioGroup
-              name="public_or_private"
-              value={newForum.public_or_private}
-              onChange={handleNewForumChange}
-              row
-            >
-              <FormControlLabel
-                value="public"
-                control={<Radio />}
-                label="Public"
-              />
-              <FormControlLabel
-                value="private"
-                control={<Radio />}
-                label="Private"
-              />
-            </RadioGroup>
-          </FormControl>
-        </DialogContent>
-
-        <DialogActions sx={{ px: 3, pb: 3 }}>
-          <Button onClick={onClose} variant="outlined">
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            variant="contained"
-            color="primary"
+        <FormControl fullWidth margin="dense">
+          <InputLabel>Visibility</InputLabel>
+          <Select
+            name="public_or_private"
+            value={formData.public_or_private}
+            onChange={handleChange}
+            disabled={loading}
           >
-            Create
-          </Button>
-        </DialogActions>
-      </Dialog>
+            <MenuItem value="public">Public</MenuItem>
+            <MenuItem value="private">Private</MenuItem>
+          </Select>
+        </FormControl>
 
-      <Snackbar
-        open={openSnackbar}
-        autoHideDuration={6000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <Alert 
-          onClose={handleCloseSnackbar} 
-          severity={snackbarSeverity} 
-          sx={{ width: '100%' }}
+        <Box sx={{ mt: 2 }}>
+          <InputLabel>Forum Image</InputLabel>
+          <Input
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            disabled={loading}
+            fullWidth
+          />
+          {imagePreview && (
+            <Box sx={{ mt: 2, textAlign: "center" }}>
+              <img
+                src={imagePreview}
+                alt="Preview"
+                style={{ maxHeight: "200px", maxWidth: "100%" }}
+              />
+            </Box>
+          )}
+        </Box>
+
+        <Box sx={{ mt: 2 }}>
+          <Box sx={{ display: "flex", gap: 1, mb: 1 }}>
+            <TextField
+              label="Add Tags"
+              value={currentTag}
+              onChange={handleTagInputChange}
+              onKeyPress={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleAddTag();
+                }
+              }}
+              disabled={loading}
+              fullWidth
+            />
+            <Button
+              variant="contained"
+              onClick={handleAddTag}
+              disabled={!currentTag.trim() || loading}
+            >
+              Add
+            </Button>
+          </Box>
+
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+            {formData.tags.map((tag, index) => (
+              <Chip
+                key={index}
+                label={tag}
+                onDelete={() => handleDeleteTag(tag)}
+                disabled={loading}
+              />
+            ))}
+          </Box>
+        </Box>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => onClose()} disabled={loading}>
+          Cancel
+        </Button>
+        <Button
+          onClick={handleSubmit}
+          variant="contained"
+          color="primary"
+          disabled={loading || !formData.title || !formData.description}
         >
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
-    </>
+          {loading ? (
+            <CircularProgress size={24} />
+          ) : isEditMode ? (
+            "Update Forum"
+          ) : (
+            "Create Forum"
+          )}
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 };
 

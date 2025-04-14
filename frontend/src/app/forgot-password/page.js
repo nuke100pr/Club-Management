@@ -2,7 +2,20 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import landscapeImage from "../../../public/img3.jpg";
+import img6 from "../../../public/img6.jpg";
+import img7 from "../../../public/img7.jpg";
+import img8 from "../../../public/img8.jpg";
+import { 
+  Mail, 
+  Lock, 
+  Eye, 
+  EyeOff, 
+  ArrowLeft, 
+  KeyRound, 
+  Check, 
+  RefreshCw,
+  AlertCircle
+} from "lucide-react";
 
 export default function ForgotPasswordPage() {
   const [step, setStep] = useState(1); // 1: email, 2: OTP, 3: new password
@@ -14,11 +27,23 @@ export default function ForgotPasswordPage() {
     newPassword: "",
     confirmPassword: "",
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0); // Start with 0 (inactive)
   const [attemptsLeft, setAttemptsLeft] = useState(3);
   const [canResend, setCanResend] = useState(true);
   const [resendCooldown, setResendCooldown] = useState(0); // 30 seconds cooldown
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const otpInputRefs = useRef([]);
+  const images = [img6, img7, img8];
+
+  // Image carousel effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Format time as MM:SS
   const formatTime = (seconds) => {
@@ -88,7 +113,7 @@ export default function ForgotPasswordPage() {
     setMessage({ type: "", text: "" });
 
     try {
-      const response = await fetch(`http://localhost:5000/otp/send`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/otp/send`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -163,7 +188,7 @@ export default function ForgotPasswordPage() {
     setMessage({ type: "", text: "" });
 
     try {
-      const response = await fetch("http://localhost:5000/otp/verify", {
+      const response = await fetch("${process.env.NEXT_PUBLIC_BACKEND_URL}/otp/verify", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -225,7 +250,7 @@ export default function ForgotPasswordPage() {
     setMessage({ type: "", text: "" });
 
     try {
-      const response = await fetch("http://localhost:5000/otp/reset-password", {
+      const response = await fetch("${process.env.NEXT_PUBLIC_BACKEND_URL}/otp/reset-password", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -260,28 +285,74 @@ export default function ForgotPasswordPage() {
     }
   };
 
+  const getStepTitle = () => {
+    switch(step) {
+      case 1: return "Recover Your Account";
+      case 2: return "Verify Your Identity";
+      case 3: return "Create New Password";
+      default: return "Forgot Password";
+    }
+  };
+
+  const getStepDescription = () => {
+    switch(step) {
+      case 1: return "Enter your email and we'll send a verification code";
+      case 2: return `Enter the 6-digit code sent to ${formData.email}`;
+      case 3: return "Set a strong password to secure your account";
+      default: return "";
+    }
+  };
+
   return (
-    <div className="flex h-screen bg-[#ffffff]">
-      {/* Left Side with Image */}
-      <div className="hidden md:block md:w-1/2 relative bg-[#8E24AA]">
+    <div className="flex h-screen bg-[#f8faff] font-['Inter',sans-serif]">
+      {/* Left Side with Image Carousel */}
+      <div className="hidden md:block md:w-1/2 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#4776E6] to-[#8E54E9] opacity-40 z-10"></div>
+        
+        {/* Image Carousel */}
         <div className="relative w-full h-full">
-          <div className="absolute inset-0 z-10">
-            <Image
-              src={landscapeImage}
-              alt="Landscape image"
-              fill
-              style={{ objectFit: "cover" }}
-              priority
-            />
+          {images.map((img, index) => (
+            <div
+              key={index}
+              className={`absolute inset-0 transition-opacity duration-1000 ${
+                currentImageIndex === index ? "opacity-100" : "opacity-0"
+              }`}
+            >
+              <Image
+                src={img}
+                alt={`Background ${index + 1}`}
+                fill
+                style={{ objectFit: "cover" }}
+                priority={index === 0}
+              />
+            </div>
+          ))}
+        </div>
+        
+        {/* Content overlay */}
+        <div className="absolute inset-0 z-20 flex flex-col justify-between p-16">
+          <div>
+            <h1 className="text-white text-4xl font-bold mb-3">
+              Account Recovery
+            </h1>
+            <div className="h-1 w-24 bg-white rounded-full mb-8"></div>
           </div>
-          <div className="absolute inset-0 bg-black opacity-30 z-20"></div>
-          <div className="absolute bottom-16 left-16 text-white z-30">
-            <h2 className="text-4xl font-bold mb-2">Reset Your Password</h2>
-            <h2 className="text-4xl font-bold mb-8">Secure Your Account</h2>
-            <div className="flex space-x-2">
-              <div className={`w-6 h-1 rounded-full ${step === 1 ? "bg-white" : "bg-gray-400"}`}></div>
-              <div className={`w-6 h-1 rounded-full ${step === 2 ? "bg-white" : "bg-gray-400"}`}></div>
-              <div className={`w-6 h-1 rounded-full ${step === 3 ? "bg-white" : "bg-gray-400"}`}></div>
+          
+          <div className="w-4/5">
+            <h2 className="text-white text-5xl font-bold mb-6">{getStepTitle()}</h2>
+            <p className="text-white/90 text-xl mb-12">{getStepDescription()}</p>
+            
+            {/* Step indicators */}
+            <div className="flex space-x-4 mb-8">
+              <div className={`h-3 w-20 rounded-full transition-all duration-500 ${
+                step === 1 ? "bg-white" : "bg-white/40"
+              }`}></div>
+              <div className={`h-3 w-20 rounded-full transition-all duration-500 ${
+                step === 2 ? "bg-white" : "bg-white/40"
+              }`}></div>
+              <div className={`h-3 w-20 rounded-full transition-all duration-500 ${
+                step === 3 ? "bg-white" : "bg-white/40"
+              }`}></div>
             </div>
           </div>
         </div>
@@ -290,312 +361,326 @@ export default function ForgotPasswordPage() {
       {/* Right Side with Form */}
       <div className="w-full md:w-1/2 p-6 md:p-12 flex flex-col justify-center">
         <div className="max-w-md mx-auto w-full">
-          {/* Back button for mobile */}
-          <div className="md:hidden mb-6">
-            <Link href="/login" className="text-[#6A1B9A] flex items-center">
-              <svg
-                className="mr-1 w-4 h-4 rotate-180"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M9 5l7 7-7 7"
-                ></path>
-              </svg>
-              <span>Back to login</span>
-            </Link>
-          </div>
-
-          {/* Back button for desktop */}
-          <div className="hidden md:block absolute top-6 right-8">
+          {/* Back button for all screen sizes */}
+          <div className="mb-8">
             <Link
               href="/login"
-              className="text-[#6A1B9A] bg-[#F3E5F5] px-4 py-2 rounded-full flex items-center"
+              className="inline-flex items-center py-2 px-4 rounded-full text-[#4776E6] hover:text-[#3a5fc0] transition-all duration-300 hover:-translate-x-1"
             >
-              <svg
-                className="mr-1 w-4 h-4 rotate-180"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M9 5l7 7-7 7"
-                ></path>
-              </svg>
+              <ArrowLeft className="mr-2 h-4 w-4" />
               <span>Back to login</span>
             </Link>
           </div>
 
-          {/* Form Header */}
-          <div className="mb-6">
-            <h1 className="text-4xl font-bold text-[#6A1B9A]">
-              {step === 1 && "Forgot Password"}
-              {step === 2 && "Verify OTP"}
-              {step === 3 && "Reset Password"}
+          {/* Form Header - Mobile friendly version of the left side content */}
+          <div className="mb-8 md:hidden">
+            <h1 className="text-4xl font-semibold bg-gradient-to-r from-[#4776E6] to-[#8E54E9] bg-clip-text text-transparent">
+              {getStepTitle()}
             </h1>
-            <p className="mt-2 text-[#AB47BC]">
-              {step === 1 && "Enter your email to receive a reset OTP"}
-              {step === 2 && `Enter the OTP sent to ${formData.email}`}
-              {step === 3 && "Set your new password"}
+            <p className="mt-2 text-[#607080]">
+              {getStepDescription()}
             </p>
-          </div>
-
-          {/* Status Message */}
-          {message.text && (
-            <div
-              className={`mb-4 p-3 rounded-md ${
-                message.type === "error"
-                  ? "bg-red-100 text-red-700"
-                  : "bg-green-100 text-green-700"
-              }`}
-            >
-              {message.text}
+            
+            {/* Step indicators for mobile */}
+            <div className="flex space-x-2 mt-6">
+              <div className={`h-1 w-16 rounded-full transition-all duration-500 ${
+                step === 1 ? "bg-gradient-to-r from-[#4776E6] to-[#8E54E9]" : "bg-gray-200"
+              }`}></div>
+              <div className={`h-1 w-16 rounded-full transition-all duration-500 ${
+                step === 2 ? "bg-gradient-to-r from-[#4776E6] to-[#8E54E9]" : "bg-gray-200"
+              }`}></div>
+              <div className={`h-1 w-16 rounded-full transition-all duration-500 ${
+                step === 3 ? "bg-gradient-to-r from-[#4776E6] to-[#8E54E9]" : "bg-gray-200"
+              }`}></div>
             </div>
-          )}
+          </div>
+          
+          {/* Form Card */}
+          <div className="bg-white rounded-2xl shadow-[0_4px_12px_rgba(95,150,230,0.1)] p-6 mb-6 transition-all duration-300 hover:shadow-[0_12px_20px_rgba(95,150,230,0.2)]">
+            {/* Desktop Form Header */}
+            <div className="hidden md:block mb-6">
+              <h1 className="text-3xl font-semibold bg-gradient-to-r from-[#4776E6] to-[#8E54E9] bg-clip-text text-transparent">
+                {getStepTitle()}
+              </h1>
+              <p className="mt-2 text-[#607080]">
+                {getStepDescription()}
+              </p>
+            </div>
 
-          {/* Step 1: Email Input */}
-          {step === 1 && (
-            <form onSubmit={handleSendOTP}>
-              <div className="mb-6">
-                <input
-                  type="email"
-                  name="email"
-                  placeholder="Enter your email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="w-full p-3 border border-[#CE93D8] rounded-md bg-[#F3E5F5] text-[#6A1B9A] focus:outline-none focus:ring-2 focus:ring-[#8E24AA]"
-                  disabled={loading}
-                />
-              </div>
-
-              <button
-                type="submit"
-                className={`w-full font-medium py-3 px-4 rounded-md transition duration-300 flex justify-center items-center ${
-                  loading
-                    ? "bg-[#CE93D8] cursor-not-allowed"
-                    : "bg-[#AB47BC] hover:bg-[#8E24AA] text-white"
+            {/* Status Message */}
+            {message.text && (
+              <div
+                className={`mb-6 p-4 rounded-lg flex items-start ${
+                  message.type === "error"
+                    ? "bg-red-50 text-red-700 border-l-4 border-red-500"
+                    : "bg-green-50 text-green-700 border-l-4 border-green-500"
                 }`}
-                disabled={loading}
               >
-                {loading ? (
-                  <>
-                    <svg
-                      className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    Sending OTP...
-                  </>
-                ) : (
-                  "Send OTP"
-                )}
-              </button>
-            </form>
-          )}
+                <div className="mr-3 mt-0.5">
+                  {message.type === "error" ? (
+                    <AlertCircle className="h-5 w-5" />
+                  ) : (
+                    <Check className="h-5 w-5" />
+                  )}
+                </div>
+                <p>{message.text}</p>
+              </div>
+            )}
 
-          {/* Step 2: OTP Verification */}
-          {step === 2 && (
-            <form onSubmit={handleVerifyOTP}>
-              <div className="mb-6">
-                <div className="flex justify-between space-x-2 mb-4">
-                  {formData.otp.map((digit, index) => (
+            {/* Step 1: Email Input */}
+            {step === 1 && (
+              <form onSubmit={handleSendOTP} className="space-y-6">
+                <div className="relative">
+                  <label htmlFor="email" className="block text-sm font-medium text-[#2A3B4F] mb-2">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-[#607080]">
+                      <Mail className="h-5 w-5" />
+                    </div>
                     <input
-                      key={index}
-                      type="text"
-                      maxLength="1"
-                      value={digit}
-                      onChange={(e) => handleOtpChange(index, e.target.value)}
-                      onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                      ref={(el) => (otpInputRefs.current[index] = el)}
-                      className="w-12 h-12 text-center text-xl border-2 border-[#CE93D8] rounded-md bg-[#F3E5F5] text-[#6A1B9A] focus:outline-none focus:ring-2 focus:ring-[#8E24AA]"
-                      disabled={loading || timeLeft <= 0}
+                      id="email"
+                      type="email"
+                      name="email"
+                      placeholder="Enter your email address"
+                      value={formData.email}
+                      onChange={handleChange}
+                      className="w-full pl-10 pr-4 py-3 border border-[#E2E8F0] rounded-lg bg-white shadow-[0_2px_8px_rgba(95,150,230,0.1)] text-[#2A3B4F] focus:outline-none focus:ring-2 focus:ring-[#4776E6] focus:border-transparent transition-all duration-300"
+                      disabled={loading}
                     />
-                  ))}
-                </div>
-                
-                <div className="flex justify-between items-center mb-2">
-                  <p className="text-sm text-[#AB47BC]">
-                    OTP sent to {formData.email}
-                  </p>
-                  <p className={`text-sm font-medium ${
-                    timeLeft <= 60 ? "text-red-500" : "text-[#6A1B9A]"
-                  }`}>
-                    {timeLeft > 0 ? formatTime(timeLeft) : "OTP expired"}
-                  </p>
+                  </div>
                 </div>
 
-                <div className="text-center">
+                <button
+                  type="submit"
+                  className={`w-full font-medium py-3 px-4 rounded-lg transition-all duration-300 flex justify-center items-center shadow-[0_4px_10px_rgba(71,118,230,0.3)] transform hover:-translate-y-1 ${
+                    loading
+                      ? "bg-[#6a98ff] cursor-not-allowed"
+                      : "bg-gradient-to-r from-[#4776E6] to-[#8E54E9] hover:from-[#3a5fc0] hover:to-[#7b45d2] text-white"
+                  }`}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <RefreshCw className="animate-spin mr-2 h-5 w-5" />
+                      Sending Code...
+                    </>
+                  ) : (
+                    "Send Verification Code"
+                  )}
+                </button>
+              </form>
+            )}
+
+            {/* Step 2: OTP Verification */}
+            {step === 2 && (
+              <form onSubmit={handleVerifyOTP} className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-[#2A3B4F] mb-2">
+                    Verification Code
+                  </label>
+                  
+                  <div className="flex justify-between space-x-2 mb-4">
+                    {formData.otp.map((digit, index) => (
+                      <input
+                        key={index}
+                        type="text"
+                        maxLength="1"
+                        value={digit}
+                        onChange={(e) => handleOtpChange(index, e.target.value)}
+                        onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                        ref={(el) => (otpInputRefs.current[index] = el)}
+                        className={`w-12 h-12 text-center text-xl border rounded-lg shadow-[0_2px_8px_rgba(95,150,230,0.1)] focus:outline-none focus:ring-2 focus:ring-[#4776E6] focus:border-transparent transition-all duration-300 ${
+                          timeLeft <= 0 
+                            ? "bg-gray-100 text-gray-400 border-gray-200" 
+                            : "bg-white text-[#2A3B4F] border-[#E2E8F0]"
+                        }`}
+                        disabled={loading || timeLeft <= 0}
+                      />
+                    ))}
+                  </div>
+                  
+                  <div className="flex justify-between items-center mb-2">
+                    <div className="flex items-center text-sm text-[#607080]">
+                      <Mail className="mr-2 h-4 w-4" />
+                      <span className="truncate max-w-[150px] md:max-w-full">
+                        {formData.email}
+                      </span>
+                    </div>
+                    <div className={`flex items-center text-sm font-medium ${
+                      timeLeft <= 60 ? "text-red-500" : "text-[#4776E6]"
+                    }`}>
+                      <KeyRound className="mr-2 h-4 w-4" />
+                      {timeLeft > 0 ? formatTime(timeLeft) : "Expired"}
+                    </div>
+                  </div>
+
+                  <div className="text-center mt-4">
+                    <button
+                      type="button"
+                      onClick={handleResendOTP}
+                      disabled={!canResend || loading}
+                      className={`text-sm inline-flex items-center transition-all duration-300 ${
+                        canResend 
+                          ? "text-[#4776E6] hover:text-[#3a5fc0]" 
+                          : "text-gray-400 cursor-not-allowed"
+                      }`}
+                    >
+                      <RefreshCw className={`mr-1 h-3 w-3 ${!canResend && resendCooldown > 0 ? "animate-spin" : ""}`} />
+                      {canResend
+                        ? "Resend verification code"
+                        : `Available in ${resendCooldown}s`}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex space-x-4">
                   <button
                     type="button"
-                    onClick={handleResendOTP}
-                    disabled={!canResend || loading}
-                    className={`text-sm ${canResend ? "text-[#6A1B9A] hover:underline" : "text-gray-400"}`}
+                    onClick={() => {
+                      setStep(1);
+                      setFormData({...formData, otp: Array(6).fill("")});
+                    }}
+                    className="w-1/3 font-medium py-3 px-4 rounded-lg transition-all duration-300 flex justify-center items-center border border-[#E2E8F0] text-[#607080] hover:bg-gray-50"
+                    disabled={loading}
                   >
-                    {canResend ? (
-                      "Resend OTP"
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Back
+                  </button>
+                  <button
+                    type="submit"
+                    className={`w-2/3 font-medium py-3 px-4 rounded-lg transition-all duration-300 flex justify-center items-center shadow-[0_4px_10px_rgba(71,118,230,0.3)] transform hover:-translate-y-1 ${
+                      loading || timeLeft <= 0
+                        ? "bg-[#6a98ff] cursor-not-allowed"
+                        : "bg-gradient-to-r from-[#4776E6] to-[#8E54E9] hover:from-[#3a5fc0] hover:to-[#7b45d2] text-white"
+                    }`}
+                    disabled={loading || timeLeft <= 0}
+                  >
+                    {loading ? (
+                      <>
+                        <RefreshCw className="animate-spin mr-2 h-5 w-5" />
+                        Verifying...
+                      </>
                     ) : (
-                      `Resend available in ${resendCooldown}s`
+                      <>
+                        <Check className="mr-2 h-5 w-5" />
+                        Verify Code
+                      </>
                     )}
                   </button>
                 </div>
-              </div>
+              </form>
+            )}
 
-              <div className="flex space-x-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setStep(1);
-                    setFormData({...formData, otp: Array(6).fill("")});
-                  }}
-                  className="w-1/3 font-medium py-3 px-4 rounded-md transition duration-300 flex justify-center items-center bg-[#E1BEE7] text-[#6A1B9A] hover:bg-[#CE93D8]"
-                  disabled={loading}
-                >
-                  Back
-                </button>
-                <button
-                  type="submit"
-                  className={`w-2/3 font-medium py-3 px-4 rounded-md transition duration-300 flex justify-center items-center ${
-                    loading || timeLeft <= 0
-                      ? "bg-[#CE93D8] cursor-not-allowed"
-                      : "bg-[#AB47BC] hover:bg-[#8E24AA] text-white"
-                  }`}
-                  disabled={loading || timeLeft <= 0}
-                >
-                  {loading ? (
-                    <>
-                      <svg
-                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      Verifying...
-                    </>
-                  ) : (
-                    "Verify OTP"
-                  )}
-                </button>
-              </div>
-            </form>
-          )}
+            {/* Step 3: New Password */}
+            {step === 3 && (
+              <form onSubmit={handleResetPassword} className="space-y-6">
+                <div>
+                  <label htmlFor="newPassword" className="block text-sm font-medium text-[#2A3B4F] mb-2">
+                    New Password
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-[#607080]">
+                      <Lock className="h-5 w-5" />
+                    </div>
+                    <input
+                      id="newPassword"
+                      type={showPassword ? "text" : "password"}
+                      name="newPassword"
+                      placeholder="Enter new password"
+                      value={formData.newPassword}
+                      onChange={handleChange}
+                      className="w-full pl-10 pr-10 py-3 border border-[#E2E8F0] rounded-lg bg-white shadow-[0_2px_8px_rgba(95,150,230,0.1)] text-[#2A3B4F] focus:outline-none focus:ring-2 focus:ring-[#4776E6] focus:border-transparent transition-all duration-300"
+                      disabled={loading}
+                    />
+                    <button
+                      type="button"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-[#607080] hover:text-[#4776E6]"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
 
-          {/* Step 3: New Password */}
-          {step === 3 && (
-            <form onSubmit={handleResetPassword}>
-              <div className="mb-4">
-                <input
-                  type="password"
-                  name="newPassword"
-                  placeholder="New password"
-                  value={formData.newPassword}
-                  onChange={handleChange}
-                  className="w-full p-3 border border-[#CE93D8] rounded-md bg-[#F3E5F5] text-[#6A1B9A] focus:outline-none focus:ring-2 focus:ring-[#8E24AA]"
-                  disabled={loading}
-                />
-              </div>
+                <div>
+                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-[#2A3B4F] mb-2">
+                    Confirm Password
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-[#607080]">
+                      <Lock className="h-5 w-5" />
+                    </div>
+                    <input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      name="confirmPassword"
+                      placeholder="Confirm new password"
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                      className="w-full pl-10 pr-10 py-3 border border-[#E2E8F0] rounded-lg bg-white shadow-[0_2px_8px_rgba(95,150,230,0.1)] text-[#2A3B4F] focus:outline-none focus:ring-2 focus:ring-[#4776E6] focus:border-transparent transition-all duration-300"
+                      disabled={loading}
+                    />
+                    <button
+                      type="button"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-[#607080] hover:text-[#4776E6]"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
 
-              <div className="mb-6">
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  placeholder="Confirm new password"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  className="w-full p-3 border border-[#CE93D8] rounded-md bg-[#F3E5F5] text-[#6A1B9A] focus:outline-none focus:ring-2 focus:ring-[#8E24AA]"
-                  disabled={loading}
-                />
-              </div>
+                <div className="flex space-x-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStep(2);
+                      setFormData({...formData, newPassword: "", confirmPassword: ""});
+                    }}
+                    className="w-1/3 font-medium py-3 px-4 rounded-lg transition-all duration-300 flex justify-center items-center border border-[#E2E8F0] text-[#607080] hover:bg-gray-50"
+                    disabled={loading}
+                  >
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Back
+                  </button>
+                  <button
+                    type="submit"
+                    className={`w-2/3 font-medium py-3 px-4 rounded-lg transition-all duration-300 flex justify-center items-center shadow-[0_4px_10px_rgba(71,118,230,0.3)] transform hover:-translate-y-1 ${
+                      loading
+                        ? "bg-[#6a98ff] cursor-not-allowed"
+                        : "bg-gradient-to-r from-[#4776E6] to-[#8E54E9] hover:from-[#3a5fc0] hover:to-[#7b45d2] text-white"
+                    }`}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <RefreshCw className="animate-spin mr-2 h-5 w-5" />
+                        Resetting...
+                      </>
+                    ) : (
+                      "Reset Password"
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
 
-              <div className="flex space-x-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setStep(2);
-                    setFormData({...formData, newPassword: "", confirmPassword: ""});
-                  }}
-                  className="w-1/3 font-medium py-3 px-4 rounded-md transition duration-300 flex justify-center items-center bg-[#E1BEE7] text-[#6A1B9A] hover:bg-[#CE93D8]"
-                  disabled={loading}
-                >
-                  Back
-                </button>
-                <button
-                  type="submit"
-                  className={`w-2/3 font-medium py-3 px-4 rounded-md transition duration-300 flex justify-center items-center ${
-                    loading
-                      ? "bg-[#CE93D8] cursor-not-allowed"
-                      : "bg-[#AB47BC] hover:bg-[#8E24AA] text-white"
-                  }`}
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <>
-                      <svg
-                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      Resetting...
-                    </>
-                  ) : (
-                    "Reset Password"
-                  )}
-                </button>
-              </div>
-            </form>
-          )}
+          {/* Note at bottom */}
+          <div className="text-center text-sm text-[#607080]">
+            <p>
+              Need help? <a href="#" className="text-[#4776E6] hover:text-[#3a5fc0] font-medium">Contact Support</a>
+            </p>
+          </div>
         </div>
       </div>
     </div>
