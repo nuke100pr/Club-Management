@@ -46,82 +46,82 @@ import { fetchUserData } from "@/utils/auth";
 
 // Styled components for the premium UI
 const GradientText = styled(Typography)(({ theme }) => ({
-  background: 'linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)',
-  WebkitBackgroundClip: 'text',
-  WebkitTextFillColor: 'transparent',
+  background: "linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)",
+  WebkitBackgroundClip: "text",
+  WebkitTextFillColor: "transparent",
   fontWeight: 600,
 }));
 
 const PremiumCard = styled(Card)(({ theme }) => ({
   width: 350,
-  borderRadius: '16px',
-  boxShadow: '0 4px 12px rgba(95, 150, 230, 0.1)',
-  transition: 'all 0.3s ease',
-  '&:hover': {
-    transform: 'translateY(-8px)',
-    boxShadow: '0 12px 20px rgba(95, 150, 230, 0.2)',
+  borderRadius: "16px",
+  boxShadow: "0 4px 12px rgba(95, 150, 230, 0.1)",
+  transition: "all 0.3s ease",
+  "&:hover": {
+    transform: "translateY(-8px)",
+    boxShadow: "0 12px 20px rgba(95, 150, 230, 0.2)",
   },
-  borderTop: '4px solid #4776E6',
+  borderTop: "4px solid #4776E6",
 }));
 
 const PrimaryButton = styled(Button)(({ theme }) => ({
-  background: 'linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)',
-  color: 'white',
+  background: "linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)",
+  color: "white",
   fontWeight: 500,
-  borderRadius: '8px',
-  boxShadow: '0 4px 10px rgba(71, 118, 230, 0.3)',
-  padding: '8px 16px',
-  textTransform: 'none',
-  transition: 'all 0.3s ease',
-  '&:hover': {
-    background: 'linear-gradient(90deg, #3a5fc0 0%, #7b3dc1 100%)',
-    boxShadow: '0 6px 15px rgba(71, 118, 230, 0.4)',
-    transform: 'translateY(-2px)',
+  borderRadius: "8px",
+  boxShadow: "0 4px 10px rgba(71, 118, 230, 0.3)",
+  padding: "8px 16px",
+  textTransform: "none",
+  transition: "all 0.3s ease",
+  "&:hover": {
+    background: "linear-gradient(90deg, #3a5fc0 0%, #7b3dc1 100%)",
+    boxShadow: "0 6px 15px rgba(71, 118, 230, 0.4)",
+    transform: "translateY(-2px)",
   },
 }));
 
 const SecondaryButton = styled(Button)(({ theme }) => ({
-  color: '#4776E6',
-  borderColor: '#4776E6',
-  borderRadius: '8px',
-  padding: '8px 16px',
-  textTransform: 'none',
-  transition: 'all 0.3s ease',
-  '&:hover': {
-    backgroundColor: alpha('#4776E6', 0.08),
-    borderColor: '#3a5fc0',
-    transform: 'translateY(-2px)',
+  color: "#4776E6",
+  borderColor: "#4776E6",
+  borderRadius: "8px",
+  padding: "8px 16px",
+  textTransform: "none",
+  transition: "all 0.3s ease",
+  "&:hover": {
+    backgroundColor: alpha("#4776E6", 0.08),
+    borderColor: "#3a5fc0",
+    transform: "translateY(-2px)",
   },
 }));
 
 const PremiumChip = styled(Chip)(({ theme }) => ({
   height: 22,
-  fontSize: '0.65rem',
-  backgroundColor: alpha('#4776E6', 0.1),
-  color: '#4776E6',
-  '& .MuiChip-label': {
-    padding: '0 8px',
+  fontSize: "0.65rem",
+  backgroundColor: alpha("#4776E6", 0.1),
+  color: "#4776E6",
+  "& .MuiChip-label": {
+    padding: "0 8px",
   },
 }));
 
 const PremiumTextField = styled(TextField)(({ theme }) => ({
-  '& .MuiOutlinedInput-root': {
-    borderRadius: '8px',
-    boxShadow: '0 2px 8px rgba(95, 150, 230, 0.1)',
-    '&:hover': {
-      boxShadow: '0 4px 15px rgba(95, 150, 230, 0.2)',
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "8px",
+    boxShadow: "0 2px 8px rgba(95, 150, 230, 0.1)",
+    "&:hover": {
+      boxShadow: "0 4px 15px rgba(95, 150, 230, 0.2)",
     },
-    '&.Mui-focused': {
-      boxShadow: '0 4px 15px rgba(95, 150, 230, 0.2)',
-      borderColor: '#4776E6',
+    "&.Mui-focused": {
+      boxShadow: "0 4px 15px rgba(95, 150, 230, 0.2)",
+      borderColor: "#4776E6",
     },
   },
 }));
 
 const PremiumDialog = styled(Dialog)(({ theme }) => ({
-  '& .MuiPaper-root': {
-    borderRadius: '16px',
-    boxShadow: '0 8px 32px rgba(95, 150, 230, 0.2)',
+  "& .MuiPaper-root": {
+    borderRadius: "16px",
+    boxShadow: "0 8px 32px rgba(95, 150, 230, 0.2)",
   },
 }));
 
@@ -152,7 +152,8 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
         throw new Error("Failed to fetch forum members");
       }
       const data = await response.json();
-      setMembers(data.members || data);
+      console.log(data);
+      setMembers(data.data);
     } catch (error) {
       console.error("Error fetching forum members:", error);
     } finally {
@@ -162,7 +163,9 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
 
   const fetchAllUsers = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users/users/`);
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/users/users/`
+      );
       if (!response.ok) {
         throw new Error("Failed to fetch users");
       }
@@ -206,17 +209,20 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
       const currentDate = new Date().toISOString();
 
       const addPromises = selectedUsers.map((userId) =>
-        fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/forums2/forums/${forumId}/members`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            user_id: userId,
-            forum_id: forumId,
-            joined_at: currentDate,
-          }),
-        })
+        fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/forums2/forums/${forumId}/members`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              user_id: userId,
+              forum_id: forumId,
+              joined_at: currentDate,
+            }),
+          }
+        )
       );
 
       const responses = await Promise.all(addPromises);
@@ -246,30 +252,38 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
   const availableUsers = allUsers.filter(
     (user) =>
       !members.some(
-        (member) => member.user_id === user._id || member._id === user._id
+        (member) =>
+          member.user_id?._id === user._id || // Compare with nested user_id._id
+          member._id === user._id
       )
   );
 
   const filteredAvailableUsers = availableUsers.filter(
     (user) =>
-      user.name?.toLowerCase().includes(searchNewMember.toLowerCase()) ||
-      user.email?.toLowerCase().includes(searchNewMember.toLowerCase())
+      user.name?.toLowerCase().includes(searchNewMember.toLowerCase()) || // Direct name check
+      user.email_id?.toLowerCase().includes(searchNewMember.toLowerCase()) // email_id instead of email
   );
 
   const filteredMembers = members.filter((member) => {
     const searchTerm = searchExistingMember.toLowerCase();
-    if (member.name && member.name.toLowerCase().includes(searchTerm)) {
+
+    // Check member's user_id.name
+    if (member.user_id?.name?.toLowerCase().includes(searchTerm)) {
       return true;
     }
-    if (member.email && member.email.toLowerCase().includes(searchTerm)) {
+
+    // Check member's user_id.email_id
+    if (member.user_id?.email_id?.toLowerCase().includes(searchTerm)) {
       return true;
     }
-    if (member.user_id && member.user_id.toLowerCase().includes(searchTerm)) {
+
+    // Check member's own _id as fallback
+    if (member._id?.toLowerCase().includes(searchTerm)) {
       return true;
     }
+
     return searchTerm === "";
   });
-
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
@@ -292,7 +306,10 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
         ) : (
           <>
             <Box sx={{ mb: 3 }}>
-              <Typography variant="h6" sx={{ mb: 1, color: '#2A3B4F', fontWeight: 600 }}>
+              <Typography
+                variant="h6"
+                sx={{ mb: 1, color: "#2A3B4F", fontWeight: 600 }}
+              >
                 Add New Members
               </Typography>
 
@@ -340,8 +357,8 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
                         button="true"
                         onClick={() => handleUserSelect(user._id)}
                         sx={{
-                          '&:hover': {
-                            backgroundColor: alpha('#4776E6', 0.05),
+                          "&:hover": {
+                            backgroundColor: alpha("#4776E6", 0.05),
                           },
                         }}
                       >
@@ -355,8 +372,8 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
                         <ListItemText
                           primary={user.name || user._id}
                           secondary={user.email}
-                          primaryTypographyProps={{ color: '#2A3B4F' }}
-                          secondaryTypographyProps={{ color: '#607080' }}
+                          primaryTypographyProps={{ color: "#2A3B4F" }}
+                          secondaryTypographyProps={{ color: "#607080" }}
                         />
                       </ListItem>
                     ))}
@@ -381,7 +398,10 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
 
             <Divider sx={{ my: 2 }} />
 
-            <Typography variant="h6" sx={{ mb: 1, color: '#2A3B4F', fontWeight: 600 }}>
+            <Typography
+              variant="h6"
+              sx={{ mb: 1, color: "#2A3B4F", fontWeight: 600 }}
+            >
               Current Members ({members.length})
             </Typography>
 
@@ -409,19 +429,21 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
             ) : (
               <List>
                 {filteredMembers.map((member) => (
-                  <React.Fragment key={member._id || member.user_id}>
+                  <React.Fragment key={member._id}>
                     <ListItem
                       sx={{
-                        '&:hover': {
-                          backgroundColor: alpha('#4776E6', 0.05),
+                        "&:hover": {
+                          backgroundColor: alpha("#4776E6", 0.05),
                         },
                       }}
                     >
                       <ListItemText
-                        primary={member.name || member.user_id}
+                        primary={member.user_id?.name || "Unknown User"}
                         secondary={
                           <>
-                            {member.email && <span>{member.email}</span>}
+                            {member.user_id?.email_id && (
+                              <span>{member.user_id.email_id}</span>
+                            )}
                             {member.joined_at && (
                               <span style={{ display: "block" }}>
                                 Joined: {formatDate(member.joined_at)}
@@ -429,14 +451,14 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
                             )}
                           </>
                         }
-                        primaryTypographyProps={{ color: '#2A3B4F' }}
-                        secondaryTypographyProps={{ color: '#607080' }}
+                        primaryTypographyProps={{ color: "#2A3B4F" }}
+                        secondaryTypographyProps={{ color: "#607080" }}
                       />
                       <ListItemSecondaryAction>
                         <IconButton
                           edge="end"
                           color="error"
-                          onClick={() => handleRemoveMember(member.user_id)}
+                          onClick={() => handleRemoveMember(member.user_id._id)}
                         >
                           <PersonRemoveIcon />
                         </IconButton>
@@ -451,9 +473,7 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
         )}
       </DialogContent>
       <DialogActions>
-        <SecondaryButton onClick={onClose}>
-          Close
-        </SecondaryButton>
+        <SecondaryButton onClick={onClose}>Close</SecondaryButton>
       </DialogActions>
     </PremiumDialog>
   );
@@ -497,8 +517,14 @@ const ForumCard = ({
   };
 
   const tagColors = [
-    "#2196F3", "#4CAF50", "#FF9800", "#9C27B0", 
-    "#F44336", "#00BCD4", "#673AB7", "#3F51B5"
+    "#2196F3",
+    "#4CAF50",
+    "#FF9800",
+    "#9C27B0",
+    "#F44336",
+    "#00BCD4",
+    "#673AB7",
+    "#3F51B5",
   ];
 
   const getTagColor = (index) => {
@@ -511,11 +537,11 @@ const ForumCard = ({
         component="img"
         height="160"
         image={
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/uploads/${forum.image.filename}` ||
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/Uploads/${forum.image.filename}` ||
           "https://via.placeholder.com/350x160"
         }
         alt={forum.title}
-        sx={{ borderTopLeftRadius: '12px', borderTopRightRadius: '12px' }}
+        sx={{ borderTopLeftRadius: "12px", borderTopRightRadius: "12px" }}
       />
       <Box p={3}>
         <Box
@@ -526,7 +552,10 @@ const ForumCard = ({
             mb: 1,
           }}
         >
-          <Typography variant="h6" sx={{ flexGrow: 1, color: '#2A3B4F', fontWeight: 600 }}>
+          <Typography
+            variant="h6"
+            sx={{ flexGrow: 1, color: "#2A3B4F", fontWeight: 600 }}
+          >
             {forum.title}
           </Typography>
           {hasPermission && (
@@ -566,8 +595,8 @@ const ForumCard = ({
               label={boardName}
               size="small"
               sx={{
-                backgroundColor: alpha('#4CAF50', 0.1),
-                color: '#4CAF50',
+                backgroundColor: alpha("#4CAF50", 0.1),
+                color: "#4CAF50",
               }}
             />
           )}
@@ -576,8 +605,8 @@ const ForumCard = ({
               label={clubName}
               size="small"
               sx={{
-                backgroundColor: alpha('#FF5722', 0.1),
-                color: '#FF5722',
+                backgroundColor: alpha("#FF5722", 0.1),
+                color: "#FF5722",
               }}
             />
           )}
@@ -596,7 +625,7 @@ const ForumCard = ({
             ))}
         </Box>
 
-        <Typography variant="body2" sx={{ mb: 2, color: '#607080' }}>
+        <Typography variant="body2" sx={{ mb: 2, color: "#607080" }}>
           {truncateText(forum.description)}
         </Typography>
 
@@ -645,7 +674,7 @@ const ForumCard = ({
             onClick={() => onViewMembers(forum._id)}
             sx={{
               py: 1,
-              minWidth: 'auto',
+              minWidth: "auto",
             }}
           >
             <PeopleIcon sx={{ mr: 0.5 }} fontSize="small" />
@@ -771,7 +800,7 @@ const ForumList = ({ boards: propBoards = {}, clubs: propClubs = {} }) => {
         }
         const data = await response.json();
         console.log(data);
-        setForums(data);
+        setForums(data.data);
       } catch (error) {
         console.error("Error fetching forums:", error);
       }
@@ -813,13 +842,16 @@ const ForumList = ({ boards: propBoards = {}, clubs: propClubs = {} }) => {
 
   const handleCreateForum = async (newForum) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/forums2/forums`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newForum),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/forums2/forums`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(newForum),
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Failed to create forum");
@@ -840,7 +872,7 @@ const ForumList = ({ boards: propBoards = {}, clubs: propClubs = {} }) => {
     ? propClubs
     : sampleClubs;
 
-  const filteredForums = forums.filter(
+  const filteredForums = forums?.filter(
     (forum) =>
       forum.title.toLowerCase().includes(search.toLowerCase()) &&
       (!selectedBoard || forum.board_id === selectedBoard) &&
@@ -851,16 +883,14 @@ const ForumList = ({ boards: propBoards = {}, clubs: propClubs = {} }) => {
   const defaultContext = getDefaultClubOrBoardId();
 
   return (
-    <Box sx={{ 
-      backgroundColor: '#f8faff',
-      minHeight: '100vh',
-      p: 4,
-    }}>
-      <Box sx={{ maxWidth: 1600, mx: 'auto' }}>
-        <GradientText variant="h4" sx={{ mb: 3 }}>
-          Community Forums
-        </GradientText>
-        
+    <Box
+      sx={{
+        backgroundColor: "#f8faff",
+        minHeight: "100vh",
+        p: 4,
+      }}
+    >
+      <Box sx={{ maxWidth: 1600, mx: "auto" }}>
         <SearchAndFilter
           onSearchChange={handleSearchChange}
           onFilterChange={handleFilterChange}
@@ -868,7 +898,7 @@ const ForumList = ({ boards: propBoards = {}, clubs: propClubs = {} }) => {
           availableClubs={availableClubs}
         />
 
-        <Grid container spacing={3} sx={{ mt: 2 }}>
+        <Grid container spacing={3} sx={{ mt: 3 }}>
           {filteredForums.map((forum) => (
             <Grid item key={forum._id} xs={12} sm={6} md={4} lg={3}>
               <ForumCard
@@ -893,9 +923,9 @@ const ForumList = ({ boards: propBoards = {}, clubs: propClubs = {} }) => {
               position: "fixed",
               bottom: 32,
               right: 32,
-              background: 'linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)',
-              '&:hover': {
-                background: 'linear-gradient(90deg, #3a5fc0 0%, #7b3dc1 100%)',
+              background: "linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)",
+              "&:hover": {
+                background: "linear-gradient(90deg, #3a5fc0 0%, #7b3dc1 100%)",
               },
             }}
           >
