@@ -524,92 +524,94 @@ const Users = () => {
         mb: 3,
         bgcolor: darkMode ? 'black.800' : 'background.paper'
       }}>
-        <TableContainer sx={{ maxHeight: isMobile ? '70vh' : 'none' }}>
+        <TableContainer sx={{ 
+  maxHeight: isMobile ? '70vh' : 'none',
+  overflowX: 'auto' // Add this to enable horizontal scrolling
+}}>
           <Table stickyHeader aria-label="users table" size={isMobile ? 'small' : 'medium'}>
             <TableHead>
-              <TableRow>
-                {!isMobile && <TableCell>#</TableCell>}
-                <TableCell>User</TableCell>
-                {!isMobile && <TableCell>Email</TableCell>}
-                {!isMobile && <TableCell>Department</TableCell>}
-                <TableCell>Role</TableCell>
-                <TableCell>Status</TableCell>
-                {!isMobile && <TableCell>Join Date</TableCell>}
-                <TableCell>Actions</TableCell>
-              </TableRow>
+            <TableRow>
+    <TableCell sx={{ whiteSpace: 'nowrap', minWidth: '50px' }}>#</TableCell>
+    <TableCell sx={{ whiteSpace: 'nowrap', minWidth: '120px' }}>User</TableCell>
+    <TableCell sx={{ whiteSpace: 'nowrap', minWidth: '150px' }}>Email</TableCell>
+    <TableCell sx={{ whiteSpace: 'nowrap', minWidth: '150px' }}>Department</TableCell>
+    <TableCell sx={{ whiteSpace: 'nowrap', minWidth: '100px' }}>Role</TableCell>
+    <TableCell sx={{ whiteSpace: 'nowrap', minWidth: '100px' }}>Status</TableCell>
+    <TableCell sx={{ whiteSpace: 'nowrap', minWidth: '120px' }}>Join Date</TableCell>
+    <TableCell sx={{ whiteSpace: 'nowrap', minWidth: '80px' }}>Actions</TableCell>
+  </TableRow>
             </TableHead>
             <TableBody>
               {filteredUsers.map((user, index) => (
                 <TableRow key={user._id} hover>
-                  {!isMobile && renderTableCell(index + 1)}
-                  
-                  {renderTableCell(
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <Avatar sx={{ 
-                        mr: isMobile ? 1 : 2, 
-                        width: 32, 
-                        height: 32,
-                        bgcolor: darkMode ? 'primary.dark' : 'primary.main'
-                      }}>
-                        {user.name.charAt(0)}
-                      </Avatar>
-                      <Typography variant="body2">
-                        {isMobile ? user.name.split(' ')[0] : user.name}
-                      </Typography>
-                    </Box>,
-                    isMobile ? 'Name' : ''
-                  )}
-
-                  {!isMobile && renderTableCell(
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <EmailIcon fontSize="small" sx={{ mr: 1, color: darkMode ? 'primary.light' : 'primary.main' }} />
-                      {user.email_id}
-                    </Box>
-                  )}
-
-                  {!isMobile && renderTableCell(
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <SchoolIcon fontSize="small" sx={{ mr: 1, color: darkMode ? 'secondary.light' : 'secondary.main' }} />
-                      {user.department || 'N/A'}
-                    </Box>
-                  )}
-
-                  {renderTableCell(
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      {React.cloneElement(getUserRoleIcon(user.userRole), {
-                        sx: { color: darkMode ? 'primary.light' : 'primary.main' }
-                      })}
-                      {!isMobile && (
-                        <Typography variant="body2" sx={{ ml: 1 }}>
-                          {getUserRoleLabel(user.userRole)}
-                        </Typography>
-                      )}
-                    </Box>,
-                    isMobile ? 'Role' : ''
-                  )}
-
-                  {renderTableCell(
-                    <Chip {...getStatusChipProps(user.status)} size="small" />,
-                    isMobile ? 'Status' : ''
-                  )}
-
-                  {!isMobile && renderTableCell(user.registered_at)}
-
-                  {renderTableCell(
-                    <IconButton 
-                      size="small"
-                      onClick={(e) => handleMenuClick(e, user)}
-                      sx={{
-                        color: darkMode ? 'text.secondary' : '#607080',
-                        "&:hover": {
-                          color: 'primary.main',
-                        },
-                      }}
-                    >
-                      <MoreVertIcon fontSize="small" />
-                    </IconButton>
-                  )}
-                </TableRow>
+                <TableCell sx={{ display: isMobile ? 'table-cell' : 'table-cell' }}>
+                  {index + 1}
+                </TableCell>
+                
+                <TableCell>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Avatar sx={{ 
+                      mr: isMobile ? 1 : 2, 
+                      width: 32, 
+                      height: 32,
+                      bgcolor: darkMode ? 'primary.dark' : 'primary.main'
+                    }}>
+                      {user.name.charAt(0)}
+                    </Avatar>
+                    <Typography variant="body2">
+                      {isMobile ? user.name.split(' ')[0] : user.name}
+                    </Typography>
+                  </Box>
+                </TableCell>
+              
+                <TableCell sx={{ display: isMobile ? 'table-cell' : 'table-cell' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <EmailIcon fontSize="small" sx={{ mr: 1, color: darkMode ? 'primary.light' : 'primary.main' }} />
+                    {user.email_id}
+                  </Box>
+                </TableCell>
+              
+                <TableCell sx={{ display: isMobile ? 'table-cell' : 'table-cell' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <SchoolIcon fontSize="small" sx={{ mr: 1, color: darkMode ? 'secondary.light' : 'secondary.main' }} />
+                    {user.department || 'N/A'}
+                  </Box>
+                </TableCell>
+              
+                <TableCell>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    {React.cloneElement(getUserRoleIcon(user.userRole), {
+                      sx: { color: darkMode ? 'primary.light' : 'primary.main' }
+                    })}
+                    <Typography variant="body2" sx={{ ml: 1, display: isMobile ? 'none' : 'block' }}>
+                      {getUserRoleLabel(user.userRole)}
+                    </Typography>
+                  </Box>
+                </TableCell>
+              
+                <TableCell>
+                  <Chip {...getStatusChipProps(user.status)} size="small" />
+                </TableCell>
+              
+                <TableCell sx={{ display: isMobile ? 'table-cell' : 'table-cell' }}>
+                  {user.registered_at}
+                </TableCell>
+              
+                <TableCell>
+                  <IconButton 
+                    size="small"
+                    onClick={(e) => handleMenuClick(e, user)}
+                    sx={{
+                      color: darkMode ? 'text.secondary' : '#607080',
+                      "&:hover": {
+                        color: 'primary.main',
+                      },
+                    }}
+                  >
+                    <MoreVertIcon fontSize="small" />
+                  </IconButton>
+                </TableCell>
+              </TableRow>
               ))}
             </TableBody>
           </Table>

@@ -668,207 +668,183 @@ const POR = ({ colorMode }) => {
               </Box>
             ) : (
               <Paper elevation={2} sx={{ borderRadius: 2 }}>
-                <TableContainer>
-                  <Table>
-                    <TableHead
-                      sx={{
-                        backgroundColor:
-                          theme.palette.mode === "light"
-                            ? "#f3e5f5"
-                            : "#2d2d2d",
-                      }}
-                    >
-                      <TableRow>
-                        <TableCell width="50px">#</TableCell>
-                        <TableCell>User</TableCell>
-                        <TableCell
-                          sx={{ display: { xs: "none", sm: "table-cell" } }}
-                        >
-                          Email
-                        </TableCell>
-                        <TableCell
-                          sx={{ display: { xs: "none", sm: "table-cell" } }}
-                        >
-                          Position
-                        </TableCell>
-                        <TableCell
-                          sx={{ display: { xs: "none", sm: "table-cell" } }}
-                        >
-                          Organization
-                        </TableCell>
-                        <TableCell
-                          sx={{ display: { xs: "none", sm: "table-cell" } }}
-                        >
-                          Type
-                        </TableCell>
-                        <TableCell>Duration</TableCell>
-                        <TableCell>Status</TableCell>
-                        <TableCell>Actions</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {filteredPositions.length > 0 ? (
-                        filteredPositions.map((position, index) => (
-                          <TableRow key={position._id}>
-                            <TableCell>{index + 1}</TableCell>
-                            <TableCell>
-                              <Box
-                                sx={{ display: "flex", alignItems: "center" }}
-                              >
-                                <Avatar sx={{ bgcolor: "#8E54E9", mr: 2 }}>
-                                  {position.user
-                                    ? position.user.charAt(0)
-                                    : "U"}
-                                </Avatar>
-                                <Box
-                                  sx={{ display: { xs: "block", sm: "none" } }}
-                                >
-                                  <Typography>
-                                    {position.user || "Unknown User"}
-                                  </Typography>
-                                  <Typography
-                                    variant="caption"
-                                    color="text.secondary"
-                                  >
-                                    {position.position || "Unknown Position"}
-                                  </Typography>
-                                </Box>
-                                <Box
-                                  sx={{ display: { xs: "none", sm: "block" } }}
-                                >
-                                  {position.user || "Unknown User"}
-                                </Box>
-                              </Box>
-                            </TableCell>
-                            <TableCell
-                              sx={{ display: { xs: "none", sm: "table-cell" } }}
-                            >
-                              {position.email && (
-                                <Box
-                                  sx={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    cursor: "pointer",
-                                    "&:hover": {
-                                      textDecoration: "underline",
-                                      color: "#8E54E9",
-                                    },
-                                  }}
-                                  onClick={() =>
-                                    handleEmailClick(position.email)
-                                  }
-                                >
-                                  <EmailIcon
-                                    sx={{ mr: 1, color: "#8E54E9" }}
-                                    fontSize="small"
-                                  />
-                                  {position.email}
-                                </Box>
-                              )}
-                            </TableCell>
-                            <TableCell
-                              sx={{ display: { xs: "none", sm: "table-cell" } }}
-                            >
-                              {position.position || "Unknown Position"}
-                            </TableCell>
-                            <TableCell
-                              sx={{ display: { xs: "none", sm: "table-cell" } }}
-                            >
-                              <Chip
-                                label={position.organization || "N/A"}
-                                size="small"
-                                sx={{
-                                  backgroundColor:
-                                    theme.palette.mode === "light"
-                                      ? "#e1bee7"
-                                      : "#4a148c",
-                                  color:
-                                    theme.palette.mode === "light"
-                                      ? "#4a148c"
-                                      : "#e1bee7",
-                                }}
-                              />
-                            </TableCell>
-                            <TableCell
-                              sx={{ display: { xs: "none", sm: "table-cell" } }}
-                            >
-                              <Chip
-                                icon={
-                                  position.organizationType === "Club" ? (
-                                    <GroupsIcon />
-                                  ) : (
-                                    <SchoolIcon />
-                                  )
-                                }
-                                label={position.organizationType || "N/A"}
-                                size="small"
-                                sx={{
-                                  backgroundColor:
-                                    position.organizationType === "Club"
-                                      ? theme.palette.mode === "light"
-                                        ? "#bbdefb"
-                                        : "#0d47a1"
-                                      : theme.palette.mode === "light"
-                                      ? "#c8e6c9"
-                                      : "#1b5e20",
-                                  color:
-                                    position.organizationType === "Club"
-                                      ? theme.palette.mode === "light"
-                                        ? "#0d47a1"
-                                        : "#bbdefb"
-                                      : theme.palette.mode === "light"
-                                      ? "#1b5e20"
-                                      : "#c8e6c9",
-                                }}
-                              />
-                            </TableCell>
-                            <TableCell>
-                              {formatDate(position.start_date)} to{" "}
-                              {formatDate(position.end_date)}
-                            </TableCell>
-                            <TableCell>
-                              <Chip
-                                label={position.status}
-                                size="small"
-                                sx={{
-                                  backgroundColor:
-                                    position.status === "Active"
-                                      ? theme.palette.mode === "light"
-                                        ? "#c8e6c9"
-                                        : "#2e7d32"
-                                      : theme.palette.mode === "light"
-                                      ? "#ffcdd2"
-                                      : "#c62828",
-                                  color:
-                                    position.status === "Active"
-                                      ? theme.palette.mode === "light"
-                                        ? "#2e7d32"
-                                        : "#c8e6c9"
-                                      : theme.palette.mode === "light"
-                                      ? "#c62828"
-                                      : "#ffcdd2",
-                                }}
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <IconButton
-                                onClick={(e) => handleMenuClick(e, position)}
-                              >
-                                <MoreVertIcon />
-                              </IconButton>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={9} align="center">
-                            No positions found
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
+                <TableContainer sx={{ 
+  overflowX: 'auto',
+  '&::-webkit-scrollbar': {
+    height: '8px',
+  },
+  '&::-webkit-scrollbar-track': {
+    backgroundColor: theme.palette.mode === 'light' ? '#f1f1f1' : '#2d2d2d',
+  },
+  '&::-webkit-scrollbar-thumb': {
+    backgroundColor: theme.palette.mode === 'light' ? '#bbb' : '#555',
+    borderRadius: '4px',
+  },
+  '&::-webkit-scrollbar-thumb:hover': {
+    backgroundColor: theme.palette.mode === 'light' ? '#999' : '#777',
+  },
+}}>
+  <Table sx={{ minWidth: 1000 }}>
+    <TableHead
+      sx={{
+        backgroundColor:
+          theme.palette.mode === "light"
+            ? "#f3e5f5"
+            : "#2d2d2d",
+      }}
+    >
+      <TableRow>
+        <TableCell width="50px" >#</TableCell>
+        <TableCell >User</TableCell>
+        <TableCell >Email</TableCell>
+        <TableCell >Position</TableCell>
+        <TableCell >Organization</TableCell>
+        <TableCell >Type</TableCell>
+        <TableCell >Duration</TableCell>
+        <TableCell >Status</TableCell>
+        <TableCell >Actions</TableCell>
+      </TableRow>
+    </TableHead>
+    <TableBody>
+      {filteredPositions.length > 0 ? (
+        filteredPositions.map((position, index) => (
+          <TableRow key={position._id}>
+            <TableCell>{index + 1}</TableCell>
+            <TableCell>
+              <Box
+                sx={{ display: "flex", alignItems: "center" }}
+              >
+                <Avatar sx={{ bgcolor: "#8E54E9", mr: 2 }}>
+                  {position.user
+                    ? position.user.charAt(0)
+                    : "U"}
+                </Avatar>
+                <Typography>
+                  {position.user || "Unknown User"}
+                </Typography>
+              </Box>
+            </TableCell>
+            <TableCell>
+              {position.email && (
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    cursor: "pointer",
+                    "&:hover": {
+                      textDecoration: "underline",
+                      color: "#8E54E9",
+                    },
+                  }}
+                  onClick={() =>
+                    handleEmailClick(position.email)
+                  }
+                >
+                  <EmailIcon
+                    sx={{ mr: 1, color: "#8E54E9" }}
+                    fontSize="small"
+                  />
+                  {position.email}
+                </Box>
+              )}
+            </TableCell>
+            <TableCell>
+              {position.position || "Unknown Position"}
+            </TableCell>
+            <TableCell>
+              <Chip
+                label={position.organization || "N/A"}
+                size="small"
+                sx={{
+                  backgroundColor:
+                    theme.palette.mode === "light"
+                      ? "#e1bee7"
+                      : "#4a148c",
+                  color:
+                    theme.palette.mode === "light"
+                      ? "#4a148c"
+                      : "#e1bee7",
+                }}
+              />
+            </TableCell>
+            <TableCell>
+              <Chip
+                icon={
+                  position.organizationType === "Club" ? (
+                    <GroupsIcon />
+                  ) : (
+                    <SchoolIcon />
+                  )
+                }
+                label={position.organizationType || "N/A"}
+                size="small"
+                sx={{
+                  backgroundColor:
+                    position.organizationType === "Club"
+                      ? theme.palette.mode === "light"
+                        ? "#bbdefb"
+                        : "#0d47a1"
+                      : theme.palette.mode === "light"
+                      ? "#c8e6c9"
+                      : "#1b5e20",
+                  color:
+                    position.organizationType === "Club"
+                      ? theme.palette.mode === "light"
+                        ? "#0d47a1"
+                        : "#bbdefb"
+                      : theme.palette.mode === "light"
+                      ? "#1b5e20"
+                      : "#c8e6c9",
+                }}
+              />
+            </TableCell>
+            <TableCell>
+              {formatDate(position.start_date)} to{" "}
+              {formatDate(position.end_date)}
+            </TableCell>
+            <TableCell>
+              <Chip
+                label={position.status}
+                size="small"
+                sx={{
+                  backgroundColor:
+                    position.status === "Active"
+                      ? theme.palette.mode === "light"
+                        ? "#c8e6c9"
+                        : "#2e7d32"
+                      : theme.palette.mode === "light"
+                      ? "#ffcdd2"
+                      : "#c62828",
+                  color:
+                    position.status === "Active"
+                      ? theme.palette.mode === "light"
+                        ? "#2e7d32"
+                        : "#c8e6c9"
+                      : theme.palette.mode === "light"
+                      ? "#c62828"
+                      : "#ffcdd2",
+                }}
+              />
+            </TableCell>
+            <TableCell>
+              <IconButton
+                onClick={(e) => handleMenuClick(e, position)}
+              >
+                <MoreVertIcon />
+              </IconButton>
+            </TableCell>
+          </TableRow>
+        ))
+      ) : (
+        <TableRow>
+          <TableCell colSpan={9} align="center">
+            No positions found
+          </TableCell>
+        </TableRow>
+      )}
+    </TableBody>
+  </Table>
+</TableContainer>
 
                 <Box
                   sx={{

@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Box,
   Typography,
@@ -12,7 +13,8 @@ import { useTheme } from "@mui/material/styles";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
 export default function Home() {
-  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -20,6 +22,24 @@ export default function Home() {
 
   // Determining dark mode from theme
   const isDarkMode = theme.palette.mode === "dark";
+  useEffect(() => {
+    // Check if we're running on the client side
+    if (typeof window !== 'undefined') {
+      const referrer = document.referrer || '';
+      const currentPath = router.asPath || '';
+      
+      const fromAuthPage = 
+        currentPath.includes('/auth') 
+
+      if (fromAuthPage) {
+        setIsLoading(true);
+        const timer = setTimeout(() => {
+          setIsLoading(false);
+        }, 2000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [router.asPath]);
 
   // Simulate loading state
   useEffect(() => {

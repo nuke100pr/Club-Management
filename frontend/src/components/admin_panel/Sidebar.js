@@ -28,10 +28,9 @@ import {
   ChevronRight as ChevronRightIcon
 } from "@mui/icons-material";
 
-const Sidebar = ({ activeTab, setActiveTab }) => {
+const Sidebar = ({ activeTab, setActiveTab, isMobile }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  // Always start with sidebar expanded on desktop, collapsed on mobile
+  // Initial state - open on desktop, closed on mobile
   const [open, setOpen] = useState(!isMobile);
 
   // Use theme colors instead of hardcoded values
@@ -51,7 +50,7 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
   const textPrimary = theme.palette.text.primary;
   const textSecondary = theme.palette.text.secondary;
 
-  // Update open state when screen size changes
+  // Update sidebar state when screen size changes
   useEffect(() => {
     setOpen(!isMobile);
   }, [isMobile]);
@@ -207,7 +206,7 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
     </>
   );
 
-  // Uncollapse button that shows when sidebar is collapsed
+  // Uncollapse button that shows when sidebar is collapsed on desktop only (not mobile)
   const uncollapseButton = !open && !isMobile && (
     <Tooltip title="Expand Sidebar" placement="right">
       <IconButton
@@ -253,33 +252,78 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
           }),
         }}
       >
-        {/* Unified Drawer - works for both mobile and desktop */}
-        <Drawer
-          variant={isMobile ? "temporary" : "permanent"}
-          open={isMobile ? open : true}
-          onClose={isMobile ? handleDrawerToggle : undefined}
-          ModalProps={{ keepMounted: true }}
+        {/* Mobile: temporary drawer that can be closed/opened */}
+        {isMobile ? (
+          <Drawer
+            variant="temporary"
+            open={open}
+            onClose={handleDrawerToggle}
+            ModalProps={{ keepMounted: true }}
+            sx={{
+              '& .MuiDrawer-paper': {
+                width: 280, // Full width on mobile when open
+                boxSizing: 'border-box',
+                boxShadow: theme.palette.mode === 'dark'
+                  ? `0 12px 20px ${alpha(theme.palette.background.paper, 0.3)}`
+                  : "0 12px 20px rgba(95, 150, 230, 0.2)",
+                borderRight: `1px solid ${alpha(primary.main, 0.2)}`,
+                backgroundColor: bgSidebar,
+                zIndex: 1300, // Higher than tab bar
+              },
+            }}
+          >
+            {drawer}
+          </Drawer>
+        ) : (
+          // Desktop: permanent drawer that can be collapsed/expanded
+          <Drawer
+            variant="permanent"
+            open={true}
+            sx={{
+              '& .MuiDrawer-paper': {
+                width: open ? 280 : 72,
+                boxSizing: 'border-box',
+                boxShadow: theme.palette.mode === 'dark'
+                  ? `0 12px 20px ${alpha(theme.palette.background.paper, 0.3)}`
+                  : "0 12px 20px rgba(95, 150, 230, 0.2)",
+                borderRight: `1px solid ${alpha(primary.main, 0.2)}`,
+                backgroundColor: bgSidebar,
+                transition: theme.transitions.create("width", {
+                  easing: theme.transitions.easing.easeInOut,
+                  duration: theme.transitions.duration.standard,
+                }),
+                overflowX: 'hidden',
+              },
+            }}
+          >
+            {drawer}
+          </Drawer>
+        )}
+      </Box>
+      
+      {/* Show uncollapse button only on desktop when sidebar is collapsed */}
+      {uncollapseButton}
+      
+      {/* Mobile hamburger menu button - fixed to top left corner */}
+      {isMobile && !open && (
+        <IconButton
+          onClick={handleDrawerToggle}
           sx={{
-            '& .MuiDrawer-paper': {
-              width: open ? 280 : 72,
-              boxSizing: 'border-box',
-              boxShadow: theme.palette.mode === 'dark'
-                ? `0 12px 20px ${alpha(theme.palette.background.paper, 0.3)}`
-                : "0 12px 20px rgba(95, 150, 230, 0.2)",
-              borderRight: `1px solid ${alpha(primary.main, 0.2)}`,
-              backgroundColor: bgSidebar,
-              transition: theme.transitions.create("width", {
-                easing: theme.transitions.easing.easeInOut,
-                duration: theme.transitions.duration.standard,
-              }),
-              overflowX: 'hidden',
+            position: 'fixed',
+            top: '10px',
+            left: '10px',
+            zIndex: 1100,
+            backgroundColor: theme.palette.background.paper,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            color: primary.main,
+            '&:hover': {
+              backgroundColor: alpha(primary.main, 0.1),
             },
           }}
         >
-          {drawer}
-        </Drawer>
-      </Box>
-      {uncollapseButton}
+          <MenuIcon />
+        </IconButton>
+      )}
     </>
   );
 };

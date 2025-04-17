@@ -6,7 +6,7 @@ const Layout = ({ children, activeTab, setActiveTab }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   return (
-    <Box
+   <Box
       sx={{
         display: "flex",
         height: "100vh",
@@ -15,10 +15,10 @@ const Layout = ({ children, activeTab, setActiveTab }) => {
         backgroundColor: theme.palette.background.default,
       }}
     >
-      <Sidebar 
+       {!isMobile &&(<Sidebar 
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
-      />
+      />)}
       <Box
         component="main"
         sx={{

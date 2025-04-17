@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import { 
   Box,
   Paper,
@@ -27,7 +27,6 @@ export default function AdminPanel() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  // Handle tab change with animation
   const handleTabChange = (event, newValue) => {
     if (newValue !== activeTab) {
       setIsTransitioning(true);
