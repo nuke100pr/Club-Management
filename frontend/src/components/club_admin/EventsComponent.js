@@ -55,7 +55,7 @@ const typeColors = {
   Meeting: "#2196F3",
 };
 
-export default function EventsPage({ boardId = null, searchQuery = "" }) {
+export default function EventsPage({ clubId = null, searchQuery = "" }) {
   const [loading, setLoading] = useState(true);
   const [events, setEvents] = useState([]);
   const [currentEvent, setCurrentEvent] = useState(null);
@@ -111,7 +111,7 @@ export default function EventsPage({ boardId = null, searchQuery = "" }) {
           const boardsWithEventPermission = Object.keys(
             result.userData?.data?.boards
           ).filter(
-            (boardId) => result.userData?.data?.boards[boardId].events === true
+            (clubId) => result.userData?.data?.boards[clubId].events === true
           );
           setUserBoardsWithEventPermission(boardsWithEventPermission);
         }
@@ -142,8 +142,8 @@ export default function EventsPage({ boardId = null, searchQuery = "" }) {
           url.searchParams.append("userId", user_id);
         }
 
-        if (boardId) {
-          url.searchParams.append("board_id", boardId);
+        if (clubId) {
+          url.searchParams.append("board_id", clubId);
         }
 
         // Add search query if provided
@@ -205,7 +205,7 @@ export default function EventsPage({ boardId = null, searchQuery = "" }) {
     };
 
     fetchEvents();
-  }, [user_id, isEditing, boardId, searchQuery]);
+  }, [user_id, isEditing, clubId, searchQuery]);
 
   // Effect to control the loading state based on data fetching and minimum time
   useEffect(() => {
@@ -449,7 +449,7 @@ export default function EventsPage({ boardId = null, searchQuery = "" }) {
         formData.event_type_id || "Session"
       );
       multipartFormData.append("club_id", formData.club_id);
-      multipartFormData.append("board_id", formData.board_id || boardId || "");
+      multipartFormData.append("board_id", formData.board_id || clubId || "");
 
       if (formData.image instanceof File) {
         multipartFormData.append("image", formData.image);
@@ -1021,7 +1021,7 @@ export default function EventsPage({ boardId = null, searchQuery = "" }) {
             isSuperAdmin={isSuperAdmin}
             isBoardAdmin={isBoardAdmin}
             eventTypes={eventTypes}
-            boardId={boardId}
+            clubId={clubId}
           />
         </DialogContent>
       </Dialog>

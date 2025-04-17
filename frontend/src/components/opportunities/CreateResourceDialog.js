@@ -15,11 +15,21 @@ import {
   Select,
   MenuItem,
   Chip,
+  Typography,
+  Paper,
+  Slider,
+  Tooltip,
 } from "@mui/material";
 import {
   Close as CloseIcon,
   CloudUpload as CloudUploadIcon,
+  Crop as CropIcon,
+  Check as CheckIcon,
+  ZoomIn as ZoomInIcon,
+  ZoomOut as ZoomOutIcon,
 } from "@mui/icons-material";
+import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop';
+import 'react-image-crop/dist/ReactCrop.css';
 
 const CreateResourceDialog = ({ 
   open, 
@@ -56,6 +66,15 @@ const CreateResourceDialog = ({
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const fileInputRef = useRef(null);
+  const imgRef = useRef(null);
+  
+  // Image cropping states
+  const [crop, setCrop] = useState();
+  const [completedCrop, setCompletedCrop] = useState(null);
+  const [isCropping, setIsCropping] = useState(false);
+  const [originalImage, setOriginalImage] = useState(null);
+  const [zoom, setZoom] = useState(1);
+  const [rotation, setRotation] = useState(0);
 
   useEffect(() => {
     if (initialData) {
@@ -91,6 +110,7 @@ const CreateResourceDialog = ({
       setImageFile(null);
     }
     setSubmitError(null);
+    setIsCropping(false);
   }, [initialData, open, boardId, clubId, creatorId]);
 
   const handleFormChange = (e) => {
@@ -131,14 +151,36 @@ const CreateResourceDialog = ({
     }));
   };
 
+  const centerAspectCrop = (mediaWidth, mediaHeight, aspect) => {
+    return centerCrop(
+      makeAspectCrop(
+        {
+          unit: '%',
+          width: 90,
+        },
+        aspect,
+        mediaWidth,
+        mediaHeight
+      ),
+      mediaWidth,
+      mediaHeight
+    );
+  };
+
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setImageFile(file);
-
       const reader = new FileReader();
       reader.onloadend = () => {
+        setOriginalImage(reader.result);
         setImagePreview(reader.result);
+        setImageFile(file);
+        setIsCropping(true);
+        
+        // Reset crop settings
+        setCrop(undefined);
+        setZoom(1);
+        setRotation(0);
       };
       reader.readAsDataURL(file);
     }
@@ -147,8 +189,87 @@ const CreateResourceDialog = ({
   const handleRemoveImage = () => {
     setImageFile(null);
     setImagePreview(null);
+    setOriginalImage(null);
+    setIsCropping(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
+    }
+  };
+
+  const onImageLoad = (e) => {
+    const { width, height } = e.currentTarget;
+    // You can use specific aspect ratio or set it free
+    // For example 16/9 or 1 for square
+    const aspect = 16 / 9;
+    setCrop(centerAspectCrop(width, height, aspect));
+  };
+
+  const getCroppedImg = async () => {
+    if (!completedCrop || !imgRef.current) return;
+
+    const canvas = document.createElement('canvas');
+    const scaleX = imgRef.current.naturalWidth / imgRef.current.width;
+    const scaleY = imgRef.current.naturalHeight / imgRef.current.height;
+    
+    canvas.width = completedCrop.width;
+    canvas.height = completedCrop.height;
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Apply rotation if needed
+    if (rotation !== 0) {
+      ctx.save();
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      ctx.translate(centerX, centerY);
+      ctx.rotate((rotation * Math.PI) / 180);
+      ctx.translate(-centerX, -centerY);
+    }
+
+    ctx.drawImage(
+      imgRef.current,
+      completedCrop.x * scaleX,
+      completedCrop.y * scaleY,
+      completedCrop.width * scaleX,
+      completedCrop.height * scaleY,
+      0,
+      0,
+      completedCrop.width,
+      completedCrop.height
+    );
+    
+    if (rotation !== 0) {
+      ctx.restore();
+    }
+
+    const base64Image = canvas.toDataURL('image/jpeg');
+    setImagePreview(base64Image);
+    
+    // Convert base64 to file
+    const res = await fetch(base64Image);
+    const blob = await res.blob();
+    const croppedFile = new File([blob], imageFile.name, { type: 'image/jpeg' });
+    setImageFile(croppedFile);
+    
+    setIsCropping(false);
+  };
+
+  const handleCompleteCrop = () => {
+    if (completedCrop) {
+      getCroppedImg();
+    } else {
+      setIsCropping(false);
+    }
+  };
+
+  const handleCancelCrop = () => {
+    setIsCropping(false);
+    if (!imagePreview && !initialData?.image) {
+      // If cancel was pressed and no previous image exists, remove any uploaded image
+      handleRemoveImage();
+    } else if (initialData?.image && !imageFile) {
+      // Restore original image if editing and cancel was pressed
+      setImagePreview(initialData.image);
     }
   };
 
@@ -221,6 +342,198 @@ const CreateResourceDialog = ({
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const renderCroppingUI = () => {
+    return (
+      <Box sx={{ my: 3 }}>
+        <Paper 
+          elevation={3} 
+          sx={{ 
+            p: 2, 
+            bgcolor: '#f5f5f5', 
+            borderRadius: 2,
+            position: 'relative'
+          }}
+        >
+          <Typography variant="h6" sx={{ mb: 2, fontWeight: 'medium', color: '#333' }}>
+            Crop Image
+          </Typography>
+          
+          <Box sx={{ 
+            position: 'relative', 
+            width: '100%', 
+            height: 'auto', 
+            maxHeight: '400px', 
+            display: 'flex',
+            justifyContent: 'center', 
+            mb: 2,
+            bgcolor: '#000',
+            borderRadius: 1,
+            overflow: 'hidden'
+          }}>
+            <ReactCrop
+              crop={crop}
+              onChange={(c) => setCrop(c)}
+              onComplete={(c) => setCompletedCrop(c)}
+              aspect={16 / 9} // You can change or make this configurable
+              style={{ maxHeight: '400px' }}
+            >
+              <img
+                ref={imgRef}
+                src={originalImage}
+                style={{ 
+                  transform: `scale(${zoom}) rotate(${rotation}deg)`,
+                  maxWidth: '100%',
+                  maxHeight: '400px',
+                  transition: 'transform 0.2s'
+                }}
+                onLoad={onImageLoad}
+                alt="Upload preview"
+              />
+            </ReactCrop>
+          </Box>
+          
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', width: '45%' }}>
+              <ZoomOutIcon sx={{ color: 'primary.main', mr: 1 }} />
+              <Tooltip title="Zoom">
+                <Slider
+                  value={zoom}
+                  min={0.5}
+                  max={3}
+                  step={0.1}
+                  onChange={(_, value) => setZoom(value)}
+                  valueLabelDisplay="auto"
+                  valueLabelFormat={value => `${Math.round(value * 100)}%`}
+                />
+              </Tooltip>
+              <ZoomInIcon sx={{ color: 'primary.main', ml: 1 }} />
+            </Box>
+            
+            <Box sx={{ display: 'flex', alignItems: 'center', width: '45%' }}>
+              <CropIcon sx={{ color: 'primary.main', mr: 1 }} />
+              <Tooltip title="Rotation">
+                <Slider
+                  value={rotation}
+                  min={0}
+                  max={360}
+                  step={1}
+                  onChange={(_, value) => setRotation(value)}
+                  valueLabelDisplay="auto"
+                  valueLabelFormat={value => `${value}°`}
+                />
+              </Tooltip>
+            </Box>
+          </Box>
+          
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+            <Button
+              variant="outlined"
+              onClick={handleCancelCrop}
+              startIcon={<CloseIcon />}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleCompleteCrop}
+              startIcon={<CheckIcon />}
+              disabled={!completedCrop?.width || !completedCrop?.height}
+            >
+              Apply Crop
+            </Button>
+          </Box>
+        </Paper>
+      </Box>
+    );
+  };
+
+  const renderImagePreview = () => {
+    const previewImage = imagePreview || (initialData?.image && !imageFile ? initialData.image : null);
+    
+    if (!previewImage) return null;
+    
+    return (
+      <Box sx={{ mt: 2 }}>
+        <Paper elevation={3} sx={{ 
+          p: 2, 
+          borderRadius: 2,
+          bgcolor: '#fafafa',
+          position: 'relative',
+          display: 'inline-block',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+        }}>
+          <Box sx={{ 
+            position: 'relative',
+            borderRadius: 1,
+            overflow: 'hidden',
+            boxShadow: 'inset 0 0 2px rgba(0,0,0,0.1)'
+          }}>
+            <img
+              src={previewImage}
+              alt="Preview"
+              style={{
+                maxWidth: "300px",
+                maxHeight: "200px",
+                objectFit: "contain",
+                display: 'block',
+              }}
+            />
+            
+            <Box sx={{ 
+              position: 'absolute',
+              top: 0,
+              right: 0,
+              display: 'flex',
+              gap: 0.5
+            }}>
+              <IconButton
+                onClick={() => {
+                  setIsCropping(true);
+                  setOriginalImage(previewImage);
+                }}
+                sx={{
+                  backgroundColor: 'rgba(255,255,255,0.9)',
+                  '&:hover': {
+                    backgroundColor: 'rgba(255,255,255,1)',
+                  },
+                  m: 0.5,
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                  fontSize: '0.8rem'
+                }}
+                size="small"
+                title="Crop image"
+              >
+                <CropIcon fontSize="small" />
+              </IconButton>
+              
+              <IconButton
+                onClick={handleRemoveImage}
+                sx={{
+                  backgroundColor: 'rgba(255,255,255,0.9)',
+                  '&:hover': {
+                    backgroundColor: 'rgba(255,255,255,1)',
+                  },
+                  m: 0.5,
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                  fontSize: '0.8rem'
+                }}
+                size="small"
+                title="Remove image"
+              >
+                <CloseIcon fontSize="small" />
+              </IconButton>
+            </Box>
+          </Box>
+          
+          <Typography variant="caption" sx={{ display: 'block', mt: 1, color: '#666' }}>
+            Image preview
+          </Typography>
+        </Paper>
+      </Box>
+    );
   };
 
   return (
@@ -314,47 +627,40 @@ const CreateResourceDialog = ({
             />
           </Grid>
           <Grid item xs={12}>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              style={{ display: "none" }}
-              onChange={handleImageUpload}
-              id="image-upload-input"
-            />
-            <label htmlFor="image-upload-input">
-              <Button
-                variant="contained"
-                component="span"
-                startIcon={<CloudUploadIcon />}
-              >
-                Upload Image
-              </Button>
-            </label>
-            {(imagePreview || (initialData?.image && !imageFile)) && (
-              <Box sx={{ mt: 2, position: "relative", display: "inline-block" }}>
-                <img
-                  src={imagePreview || initialData.image}
-                  alt="Preview"
-                  style={{
-                    maxWidth: "200px",
-                    maxHeight: "200px",
-                    objectFit: "contain",
-                  }}
-                />
-                <IconButton
-                  onClick={handleRemoveImage}
-                  sx={{
-                    position: "absolute",
-                    top: 0,
-                    right: 0,
-                    color: "red",
-                  }}
-                >
-                  <CloseIcon />
-                </IconButton>
-              </Box>
-            )}
+            <Paper elevation={1} sx={{ p: 2, borderRadius: 2, bgcolor: '#fdfdfd' }}>
+              <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'medium' }}>
+                Image Upload
+              </Typography>
+              
+              {!isCropping ? (
+                <>
+                  <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      style={{ display: "none" }}
+                      onChange={handleImageUpload}
+                      id="image-upload-input"
+                    />
+                    <label htmlFor="image-upload-input">
+                      <Button
+                        variant="contained"
+                        component="span"
+                        startIcon={<CloudUploadIcon />}
+                        sx={{ boxShadow: 2 }}
+                      >
+                        Upload Image
+                      </Button>
+                    </label>
+                    
+                    {renderImagePreview()}
+                  </Box>
+                </>
+              ) : (
+                renderCroppingUI()
+              )}
+            </Paper>
           </Grid>
           <Grid item xs={12}>
             <FormControl fullWidth>
@@ -404,7 +710,7 @@ const CreateResourceDialog = ({
           onClick={handleSubmit} 
           variant="contained" 
           color="primary"
-          disabled={isSubmitting}
+          disabled={isSubmitting || isCropping}
         >
           {isSubmitting ? (initialData ? "Updating..." : "Creating...") : (initialData ? "Update" : "Create")}
         </Button>

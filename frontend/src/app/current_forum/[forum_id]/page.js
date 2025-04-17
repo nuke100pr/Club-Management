@@ -75,14 +75,23 @@ const theme = createTheme({
   palette: {
     mode: "light",
     primary: {
-      main: "#6d28d9",
+      main: "#6B46C1",
+      light: "#A78BFA",
+      dark: "#553C9A",
+      contrastText: "#FFFFFF",
     },
     secondary: {
-      main: "#10b981",
+      main: "#10B981",
+      light: "#6EE7B7",
+      dark: "#047857",
     },
     background: {
-      default: "#f9fafb",
-      paper: "#ffffff",
+      default: "#F3F4F6",
+      paper: "#FFFFFF",
+    },
+    text: {
+      primary: "#1F2937",
+      secondary: "#6B7280",
     },
   },
   typography: {
@@ -99,6 +108,12 @@ const theme = createTheme({
       '"Segoe UI Emoji"',
       '"Segoe UI Symbol"',
     ].join(","),
+    h6: {
+      fontWeight: 700,
+    },
+    subtitle2: {
+      fontWeight: 600,
+    },
   },
   components: {
     MuiCssBaseline: {
@@ -108,6 +123,10 @@ const theme = createTheme({
           50% { transform: scale(1.2); }
           100% { transform: scale(1); }
         }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
       `,
     },
     MuiButton: {
@@ -115,13 +134,19 @@ const theme = createTheme({
         root: {
           textTransform: "none",
           fontWeight: 600,
-          borderRadius: "8px",
-          padding: "8px 16px",
+          borderRadius: "12px",
+          padding: "10px 20px",
+          transition: "all 0.3s ease",
+          "&:hover": {
+            transform: "translateY(-2px)",
+            boxShadow: "0 4px 12px rgba(107, 70, 193, 0.2)",
+          },
         },
         contained: {
-          boxShadow: "none",
+          background: "linear-gradient(45deg, #6B46C1, #A78BFA)",
+          boxShadow: "0 2px 10px rgba(107, 70, 193, 0.3)",
           "&:hover": {
-            boxShadow: "none",
+            background: "linear-gradient(45deg, #553C9A, #A78BFA)",
           },
         },
       },
@@ -129,8 +154,12 @@ const theme = createTheme({
     MuiPaper: {
       styleOverrides: {
         root: {
-          borderRadius: "12px",
-          boxShadow: "0px 2px 8px rgba(0,0,0,0.05)",
+          borderRadius: "16px",
+          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
+          transition: "box-shadow 0.3s ease",
+          "&:hover": {
+            boxShadow: "0 6px 25px rgba(0, 0, 0, 0.15)",
+          },
         },
       },
     },
@@ -139,16 +168,21 @@ const theme = createTheme({
         root: {
           width: 40,
           height: 40,
-          backgroundColor: "#6d28d9",
-          color: "white",
+          background: "linear-gradient(45deg, #6B46C1, #A78BFA)",
+          color: "#FFFFFF",
           fontWeight: 600,
+          boxShadow: "0 2px 8px rgba(107, 70, 193, 0.2)",
         },
       },
     },
     MuiListItem: {
       styleOverrides: {
         root: {
-          padding: "8px 16px",
+          padding: "12px 16px",
+          transition: "background 0.3s ease",
+          "&:hover": {
+            backgroundColor: "rgba(107, 70, 193, 0.05)",
+          },
         },
       },
     },
@@ -156,10 +190,10 @@ const theme = createTheme({
 });
 
 const PremiumAppBar = styled(AppBar)(({ theme }) => ({
-  backgroundColor: theme.palette.background.paper,
+  background: "linear-gradient(90deg, #FFFFFF, #F3F4F6)",
   color: theme.palette.text.primary,
-  borderBottom: `1px solid ${theme.palette.divider}`,
-  boxShadow: "none",
+  borderBottom: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
+  boxShadow: "0 2px 10px rgba(0, 0, 0, 0.05)",
 }));
 
 const MessageInput = styled(TextField)(({ theme }) => ({
@@ -169,36 +203,49 @@ const MessageInput = styled(TextField)(({ theme }) => ({
     paddingLeft: theme.spacing(2),
     paddingRight: theme.spacing(1),
     "& fieldset": {
-      borderColor: theme.palette.divider,
+      borderColor: alpha(theme.palette.grey[400], 0.5),
+      transition: "border-color 0.3s ease",
     },
     "&:hover fieldset": {
-      borderColor: theme.palette.primary.main,
+      borderColor: alpha(theme.palette.primary.main, 0.7),
     },
     "&.Mui-focused fieldset": {
       borderColor: theme.palette.primary.main,
-      borderWidth: "1px",
+      borderWidth: "2px",
     },
+  },
+  "& .MuiInputBase-input": {
+    padding: theme.spacing(1.5),
+    fontSize: "1rem",
   },
 }));
 
-const MessageBubble = styled(Paper)(({ theme }) => ({
+const MessageBubble = styled(Paper)(({ theme, isUser }) => ({
   padding: theme.spacing(1.5, 2),
   borderRadius: "18px",
   maxWidth: "75%",
-  backgroundColor: theme.palette.grey[100],
-  color: theme.palette.text.primary,
+  background: isUser
+    ? "linear-gradient(90deg, #6B46C1, #A78BFA)"
+    : "linear-gradient(90deg, #E5E7EB, #F3F4F6)",
+  color: isUser ? "#FFFFFF" : theme.palette.text.primary,
   wordBreak: "break-word",
-  "&.user": {
-    backgroundColor: theme.palette.primary.light,
-    color: theme.palette.primary.contrastText,
+  display: "inline-block",
+  minWidth: "100px",
+  boxShadow: isUser ? "0 2px 10px rgba(107, 70, 193, 0.3)" : "0 1px 5px rgba(0, 0, 0, 0.1)",
+  transition: "transform 0.2s ease, box-shadow 0.2s ease",
+  "&:hover": {
+    transform: isUser ? "translateY(-2px)" : "none",
+    boxShadow: isUser ? "0 4px 15px rgba(107, 70, 193, 0.4)" : "0 2px 8px rgba(0, 0, 0, 0.15)",
   },
 }));
 
 const ActionButton = styled(IconButton)(({ theme }) => ({
   color: theme.palette.text.secondary,
   "&:hover": {
-    backgroundColor: alpha(theme.palette.primary.main, 0.1),
+    backgroundColor: alpha(theme.palette.primary.main, 0.15),
     color: theme.palette.primary.main,
+    transform: "scale(1.1)",
+    transition: "all 0.2s ease",
   },
 }));
 
@@ -206,10 +253,12 @@ const PollOption = styled(Box)(({ theme }) => ({
   padding: theme.spacing(1.5),
   borderRadius: "12px",
   backgroundColor: theme.palette.background.paper,
-  border: `1px solid ${theme.palette.divider}`,
+  border: `1px solid ${alpha(theme.palette.divider, 0.3)}`,
   marginBottom: theme.spacing(1),
+  transition: "all 0.3s ease",
   "&:hover": {
     borderColor: theme.palette.primary.main,
+    backgroundColor: alpha(theme.palette.primary.main, 0.05),
   },
 }));
 
@@ -228,7 +277,7 @@ export default function ChatApp() {
   const [expandedReplies, setExpandedReplies] = useState({});
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
   const [selectedMessageIndex, setSelectedMessageIndex] = useState(null);
-  const [forumName, setForumName] = useState("Project Discussion");
+  const [forumName, setForumName] = useState("Loading..."); // Initial state
   const [memberDialogOpen, setMemberDialogOpen] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
@@ -248,15 +297,31 @@ export default function ChatApp() {
   const socketRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  // Initialize socket and fetch messages
+  // Fetch forum name based on forum_id
+  useEffect(() => {
+    const fetchForumName = async () => {
+      try {
+        const response = await fetch(`http://localhost:5000/api/forums/${forum_id}`);
+        if (!response.ok) throw new Error("Failed to fetch forum name");
+        const data = await response.json();
+        setForumName(data.title);
+      } catch (error) {
+        console.error("Error fetching forum name:", error);
+        setForumName("Forum Names"); // Fallback
+      }
+    };
+
+    if (forum_id) {
+      fetchForumName();
+    }
+  }, [forum_id]);
+
   useEffect(() => {
     socketRef.current = initSocket();
     const socket = socketRef.current;
 
-    // Join forum room
     socket.emit("joinForum", forum_id);
 
-    // Set up event listeners
     socket.on("newMessage", (newMessage) => {
       setMessages((prev) => [...prev, newMessage]);
     });
@@ -278,24 +343,14 @@ export default function ChatApp() {
     socket.on("updatePoll", (updatedMessage) => {
       setMessages((prev) =>
         prev.map((msg) => {
-          if (msg._id === updatedMessage._id) {
-            return updatedMessage;
-          }
+          if (msg._id === updatedMessage._id) return updatedMessage;
 
           if (msg.replies) {
-            const updatedReplies = msg.replies.map((reply) => {
-              if (reply._id === updatedMessage._id) {
-                return updatedMessage;
-              }
-              return reply;
-            });
-
-            return {
-              ...msg,
-              replies: updatedReplies,
-            };
+            const updatedReplies = msg.replies.map((reply) =>
+              reply._id === updatedMessage._id ? updatedMessage : reply
+            );
+            return { ...msg, replies: updatedReplies };
           }
-
           return msg;
         })
       );
@@ -306,22 +361,15 @@ export default function ChatApp() {
         const filteredMessages = prev.filter((msg) => msg._id !== messageId);
 
         if (filteredMessages.length === prev.length) {
-          return prev.map((msg) => {
-            if (msg.replies) {
-              return {
-                ...msg,
-                replies: msg.replies.filter((reply) => reply._id !== messageId),
-              };
-            }
-            return msg;
-          });
+          return prev.map((msg) => ({
+            ...msg,
+            replies: msg.replies?.filter((reply) => reply._id !== messageId),
+          }));
         }
-
         return filteredMessages;
       });
     });
 
-    // Fetch initial messages
     fetchMessages(forum_id);
 
     return () => {
@@ -334,7 +382,6 @@ export default function ChatApp() {
     };
   }, []);
 
-  // Clean up recording resources
   const stopRecordingCleanup = () => {
     if (mediaRecorderRef.current) {
       mediaRecorderRef.current.stream
@@ -346,7 +393,6 @@ export default function ChatApp() {
     }
   };
 
-  // Scroll to bottom when messages change
   useEffect(() => {
     if (endOfMessagesRef.current) {
       endOfMessagesRef.current.scrollIntoView({ behavior: "smooth" });
@@ -379,7 +425,7 @@ export default function ChatApp() {
     if (audio) formData.append("audio", audio);
 
     try {
-      let endpoint = replyingTo
+      const endpoint = replyingTo
         ? `http://localhost:5000/api/messages/${replyingTo}/replies`
         : "http://localhost:5000/api/messages";
 
@@ -429,7 +475,6 @@ export default function ChatApp() {
       setIsRecording(true);
       setRecordingTime(0);
 
-      // Update recording time every second
       recordingIntervalRef.current = setInterval(() => {
         setRecordingTime((prev) => prev + 1);
       }, 1000);
@@ -1004,46 +1049,18 @@ export default function ChatApp() {
           bgcolor: "background.default",
         }}
       >
-        {/* Forum header */}
         <PremiumAppBar position="static">
           <Toolbar sx={{ px: 2 }}>
-            <Button
-              onClick={() => setMemberDialogOpen(true)}
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                width: "100%",
-                textTransform: "none",
-                color: "text.primary",
-                py: 1.5,
-                borderRadius: 1,
-                "&:hover": {
-                  backgroundColor: "action.hover",
-                },
-              }}
+            <Typography
+              variant="h6"
+              component="div"
+              sx={{ flexGrow: 1, fontWeight: 600 }}
             >
-              <Box sx={{ display: "flex", alignItems: "center" }}>
-                <Typography
-                  variant="h6"
-                  component="div"
-                  sx={{ flexGrow: 1, fontWeight: 600 }}
-                >
-                  {forumName}
-                </Typography>
-                <Badge
-                  badgeContent={membersList.filter((m) => m.online).length}
-                  color="success"
-                  sx={{ ml: 1 }}
-                >
-                  <People />
-                </Badge>
-              </Box>
-              <ChevronRight />
-            </Button>
+              {forumName}
+            </Typography>
           </Toolbar>
         </PremiumAppBar>
 
-        {/* Messages container */}
         <Box
           ref={messagesContainerRef}
           sx={{
@@ -1057,182 +1074,181 @@ export default function ChatApp() {
           }}
         >
           <List sx={{ pb: 0 }}>
-            {messages.map((msg, index) => (
-              <Box key={msg._id || index}>
-                <ListItem
-                  alignItems="flex-start"
-                  sx={{
-                    position: "relative",
-                    px: 0,
-                    "&:hover .message-actions": { opacity: 1 },
-                  }}
-                >
-                  <ListItemAvatar sx={{ minWidth: 56 }}>
-                    <Avatar sx={{ width: 40, height: 40 }}>
-                      {msg.username
-                        ? msg.username[0]
-                        : index % 2 === 0
-                        ? "U"
-                        : "A"}
-                    </Avatar>
-                  </ListItemAvatar>
-                  <Box sx={{ flexGrow: 1 }}>
-                    <Box
-                      sx={{ display: "flex", alignItems: "center", mb: 0.5 }}
-                    >
-                      <Typography variant="subtitle2" fontWeight="600">
-                        {msg.username || "Unknown User"}
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ ml: 1 }}
-                      >
-                        {formatTimestamp(msg.created_at)}
-                      </Typography>
-                    </Box>
-
-                    <MessageBubble className={msg.user_id === "67d824cfe5cfbbf1ee400416" ? "user" : ""}>
-                      {msg.text}
-                    </MessageBubble>
-
-                    {msg.type === "poll"
-                      ? renderPoll(msg.poll, msg._id)
-                      : msg.file
-                      ? renderFileContent(msg.file)
-                      : msg.audio
-                      ? renderFileContent({
-                          filename: msg.audio.filename,
-                          mimetype: msg.audio.mimetype,
-                        })
-                      : null}
-
-                    {msg.replies && msg.replies.length > 0 && (
-                      <Box sx={{ mt: 1 }}>
-                        <Button
-                          size="small"
-                          startIcon={
-                            expandedReplies[msg._id] ? (
-                              <ExpandLess />
-                            ) : (
-                              <ExpandMore />
-                            )
-                          }
-                          onClick={() => toggleReplies(msg._id)}
-                          sx={{
-                            color: "text.secondary",
-                            "&:hover": {
-                              backgroundColor: "action.hover",
-                            },
-                          }}
-                        >
-                          {msg.replies.length}{" "}
-                          {msg.replies.length === 1 ? "reply" : "replies"}
-                        </Button>
-
-                        <Collapse in={expandedReplies[msg._id] || false}>
-                          <List disablePadding>
-                            {msg.replies.map((reply, replyIndex) => (
-                              <ListItem
-                                key={reply._id || `reply-${replyIndex}`}
-                                alignItems="flex-start"
-                                sx={{ pl: 2, mt: 1, px: 0 }}
-                              >
-                                <ListItemAvatar sx={{ minWidth: 48 }}>
-                                  <Avatar sx={{ width: 36, height: 36 }}>
-                                    {reply.username
-                                      ? reply.username[0]
-                                      : (index + replyIndex + 1) % 2 === 0
-                                      ? "U"
-                                      : "A"}
-                                  </Avatar>
-                                </ListItemAvatar>
-                                <Box sx={{ flexGrow: 1 }}>
-                                  <Box
-                                    sx={{
-                                      display: "flex",
-                                      alignItems: "center",
-                                      mb: 0.5,
-                                    }}
-                                  >
-                                    <Typography
-                                      variant="subtitle2"
-                                      fontWeight="600"
-                                    >
-                                      {reply.username || "Unknown User"}
-                                    </Typography>
-                                    <Typography
-                                      variant="caption"
-                                      color="text.secondary"
-                                      sx={{ ml: 1 }}
-                                    >
-                                      {formatTimestamp(reply.created_at)}
-                                    </Typography>
-                                  </Box>
-
-                                  <MessageBubble
-                                    className={reply.user_id === "67d824cfe5cfbbf1ee400416" ? "user" : ""}
-                                  >
-                                    {reply.text}
-                                  </MessageBubble>
-
-                                  {reply.type === "poll"
-                                    ? renderPoll(reply.poll, reply._id, true)
-                                    : reply.file
-                                    ? renderFileContent(reply.file)
-                                    : reply.audio
-                                    ? renderFileContent({
-                                        filename: reply.audio.filename,
-                                        mimetype: reply.audio.mimetype,
-                                      })
-                                    : null}
-                                </Box>
-                              </ListItem>
-                            ))}
-                          </List>
-                        </Collapse>
-                      </Box>
-                    )}
-                  </Box>
-
-                  {/* Message action buttons */}
-                  <Box
-                    className="message-actions"
+            {messages.length === 0 ? (
+              <Typography
+                variant="body1"
+                color="text.secondary"
+                sx={{ textAlign: "center", py: 4 }}
+              >
+                No posts available
+              </Typography>
+            ) : (
+              messages.map((msg, index) => (
+                <Box key={msg._id || index}>
+                  <ListItem
+                    alignItems="flex-start"
                     sx={{
-                      position: "absolute",
-                      right: 8,
-                      top: 8,
-                      opacity: 0,
-                      transition: "opacity 0.2s",
-                      bgcolor: "background.paper",
-                      borderRadius: 2,
-                      boxShadow: 1,
-                      display: "flex",
+                      position: "relative",
+                      px: 0,
+                      "&:hover .message-actions": { opacity: 1 },
                     }}
                   >
-                    <Tooltip title="Reply">
-                      <ActionButton
-                        size="small"
-                        onClick={() => {
-                          setReplyingTo(msg._id);
-                          document.getElementById("message-input").focus();
-                        }}
-                      >
-                        <ReplyOutlined fontSize="small" />
-                      </ActionButton>
-                    </Tooltip>
-                  </Box>
-                </ListItem>
-                {index < messages.length - 1 && (
-                  <Divider variant="inset" component="li" sx={{ my: 1 }} />
-                )}
-              </Box>
-            ))}
+                    <ListItemAvatar sx={{ minWidth: 56 }}>
+                      <Avatar sx={{ width: 40, height: 40 }}>
+                        {msg.username
+                          ? msg.username[0]
+                          : index % 2 === 0
+                          ? "U"
+                          : "A"}
+                      </Avatar>
+                    </ListItemAvatar>
+                    <Box sx={{ flexGrow: 1 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", mb: 0.5 }}>
+                        <Typography variant="subtitle2" fontWeight="600">
+                          {msg.username || "Unknown User"}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ ml: 1 }}
+                        >
+                          {formatTimestamp(msg.created_at)}
+                        </Typography>
+                      </Box>
+
+                      <MessageBubble isUser={msg.user_id === "67d824cfe5cfbbf1ee400416"}>
+                        {msg.text}
+                      </MessageBubble>
+
+                      {msg.type === "poll"
+                        ? renderPoll(msg.poll, msg._id)
+                        : msg.file
+                        ? renderFileContent(msg.file)
+                        : msg.audio
+                        ? renderFileContent({
+                            filename: msg.audio.filename,
+                            mimetype: msg.audio.mimetype,
+                          })
+                        : null}
+
+                      {msg.replies && msg.replies.length > 0 && (
+                        <Box sx={{ mt: 1 }}>
+                          <Button
+                            size="small"
+                            startIcon={
+                              expandedReplies[msg._id] ? <ExpandLess /> : <ExpandMore />
+                            }
+                            onClick={() => toggleReplies(msg._id)}
+                            sx={{
+                              color: "text.secondary",
+                              "&:hover": {
+                                backgroundColor: "action.hover",
+                              },
+                            }}
+                          >
+                            {msg.replies.length}{" "}
+                            {msg.replies.length === 1 ? "reply" : "replies"}
+                          </Button>
+
+                          <Collapse in={expandedReplies[msg._id] || false}>
+                            <List disablePadding>
+                              {msg.replies.map((reply, replyIndex) => (
+                                <ListItem
+                                  key={reply._id || `reply-${replyIndex}`}
+                                  alignItems="flex-start"
+                                  sx={{ pl: 2, mt: 1, px: 0 }}
+                                >
+                                  <ListItemAvatar sx={{ minWidth: 48 }}>
+                                    <Avatar sx={{ width: 36, height: 36 }}>
+                                      {reply.username
+                                        ? reply.username[0]
+                                        : (index + replyIndex + 1) % 2 === 0
+                                        ? "U"
+                                        : "A"}
+                                    </Avatar>
+                                  </ListItemAvatar>
+                                  <Box sx={{ flexGrow: 1 }}>
+                                    <Box
+                                      sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        mb: 0.5,
+                                      }}
+                                    >
+                                      <Typography variant="subtitle2" fontWeight="600">
+                                        {reply.username || "Unknown User"}
+                                      </Typography>
+                                      <Typography
+                                        variant="caption"
+                                        color="text.secondary"
+                                        sx={{ ml: 1 }}
+                                      >
+                                        {formatTimestamp(reply.created_at)}
+                                      </Typography>
+                                    </Box>
+
+                                    <MessageBubble
+                                      isUser={reply.user_id === "67d824cfe5cfbbf1ee400416"}
+                                    >
+                                      {reply.text}
+                                    </MessageBubble>
+
+                                    {reply.type === "poll"
+                                      ? renderPoll(reply.poll, reply._id, true)
+                                      : reply.file
+                                      ? renderFileContent(reply.file)
+                                      : reply.audio
+                                      ? renderFileContent({
+                                          filename: reply.audio.filename,
+                                          mimetype: reply.audio.mimetype,
+                                        })
+                                      : null}
+                                  </Box>
+                                </ListItem>
+                              ))}
+                            </List>
+                          </Collapse>
+                        </Box>
+                      )}
+                    </Box>
+
+                    <Box
+                      className="message-actions"
+                      sx={{
+                        position: "absolute",
+                        right: 8,
+                        top: 8,
+                        opacity: 0,
+                        transition: "opacity 0.2s",
+                        bgcolor: "background.paper",
+                        borderRadius: 2,
+                        boxShadow: 1,
+                        display: "flex",
+                      }}
+                    >
+                      <Tooltip title="Reply">
+                        <ActionButton
+                          size="small"
+                          onClick={() => {
+                            setReplyingTo(msg._id);
+                            document.getElementById("message-input").focus();
+                          }}
+                        >
+                          <ReplyOutlined fontSize="small" />
+                        </ActionButton>
+                      </Tooltip>
+                    </Box>
+                  </ListItem>
+                  {index < messages.length - 1 && (
+                    <Divider variant="inset" component="li" sx={{ my: 1 }} />
+                  )}
+                </Box>
+              ))
+            )}
             <div ref={endOfMessagesRef} />
           </List>
         </Box>
 
-        {/* Message input area */}
         <Box
           sx={{
             p: 2,
@@ -1241,7 +1257,6 @@ export default function ChatApp() {
             borderColor: "divider",
           }}
         >
-          {/* Replying to indicator */}
           {replyingTo !== null && getReplyingToMessage() && (
             <Paper
               variant="outlined"
@@ -1255,17 +1270,8 @@ export default function ChatApp() {
                 borderRadius: 2,
               }}
             >
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  overflow: "hidden",
-                }}
-              >
-                <ReplyOutlined
-                  fontSize="small"
-                  sx={{ mr: 1, color: "text.secondary" }}
-                />
+              <Box sx={{ display: "flex", alignItems: "center", overflow: "hidden" }}>
+                <ReplyOutlined fontSize="small" sx={{ mr: 1, color: "text.secondary" }} />
                 <Typography variant="body2" noWrap>
                   Replying to: {getReplyingToMessage().text}
                 </Typography>
@@ -1276,7 +1282,6 @@ export default function ChatApp() {
             </Paper>
           )}
 
-          {/* File/Audio Preview */}
           {(file || audio) && (
             <Paper
               variant="outlined"
@@ -1391,7 +1396,61 @@ export default function ChatApp() {
           />
         </Box>
 
-        {/* Poll Creation Dialog */}
+        <Dialog
+          open={memberDialogOpen}
+          onClose={() => setMemberDialogOpen(false)}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{
+            sx: {
+              borderRadius: 3,
+            },
+          }}
+        >
+          <DialogTitle>
+            <Typography variant="h6" fontWeight={600}>
+              {forumName} Members
+            </Typography>
+          </DialogTitle>
+          <DialogContent>
+            <List sx={{ width: "100%" }}>
+              {membersList.map((member) => (
+                <ListItem key={member.id} sx={{ px: 0, py: 1.5 }}>
+                  <ListItemAvatar>
+                    <Avatar>{member.avatar}</Avatar>
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={
+                      <Box sx={{ display: "flex", alignItems: "center" }}>
+                        <Typography>{member.name}</Typography>
+                        {member.role === "Admin" && (
+                          <Chip
+                            label="Admin"
+                            size="small"
+                            sx={{
+                              ml: 1,
+                              bgcolor: "primary.light",
+                              color: "primary.contrastText",
+                            }}
+                          />
+                        )}
+                      </Box>
+                    }
+                  />
+                </ListItem>
+              ))}
+            </List>
+          </DialogContent>
+          <DialogActions sx={{ p: 2 }}>
+            <Button
+              onClick={() => setMemberDialogOpen(false)}
+              sx={{ borderRadius: 2 }}
+            >
+              Close
+            </Button>
+          </DialogActions>
+        </Dialog>
+
         <Dialog
           open={pollDialogOpen}
           onClose={() => !isSending && setPollDialogOpen(false)}
@@ -1478,9 +1537,7 @@ export default function ChatApp() {
                 <TextField
                   fullWidth
                   value={option}
-                  onChange={(e) =>
-                    handlePollOptionChange(index, e.target.value)
-                  }
+                  onChange={(e) => handlePollOptionChange(index, e.target.value)}
                   disabled={isSending}
                   size="small"
                 />
@@ -1536,93 +1593,6 @@ export default function ChatApp() {
               ) : (
                 "Create Poll"
               )}
-            </Button>
-          </DialogActions>
-        </Dialog>
-
-        {/* Members Dialog */}
-        <Dialog
-          open={memberDialogOpen}
-          onClose={() => setMemberDialogOpen(false)}
-          maxWidth="sm"
-          fullWidth
-          PaperProps={{
-            sx: {
-              borderRadius: 3,
-            },
-          }}
-        >
-          <DialogTitle>
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <Typography variant="h6" fontWeight={600}>
-                {forumName} Members
-              </Typography>
-              <Badge
-                badgeContent={membersList.filter((m) => m.online).length}
-                color="success"
-              >
-                <Typography variant="body2">Online</Typography>
-              </Badge>
-            </Box>
-          </DialogTitle>
-          <DialogContent>
-            <List sx={{ width: "100%" }}>
-              {membersList.map((member) => (
-                <ListItem key={member.id} sx={{ px: 0, py: 1.5 }}>
-                  <ListItemAvatar>
-                    <Badge
-                      overlap="circular"
-                      anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-                      variant="dot"
-                      color={member.online ? "success" : "default"}
-                    >
-                      <Avatar>{member.avatar}</Avatar>
-                    </Badge>
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={
-                      <Box sx={{ display: "flex", alignItems: "center" }}>
-                        <Typography>{member.name}</Typography>
-                        {member.role === "Admin" && (
-                          <Chip
-                            label="Admin"
-                            size="small"
-                            sx={{
-                              ml: 1,
-                              bgcolor: "primary.light",
-                              color: "primary.contrastText",
-                            }}
-                          />
-                        )}
-                      </Box>
-                    }
-                    secondary={
-                      <Typography
-                        variant="caption"
-                        color={
-                          member.online ? "success.main" : "text.secondary"
-                        }
-                      >
-                        {member.online ? "Online" : "Offline"}
-                      </Typography>
-                    }
-                  />
-                </ListItem>
-              ))}
-            </List>
-          </DialogContent>
-          <DialogActions sx={{ p: 2 }}>
-            <Button
-              onClick={() => setMemberDialogOpen(false)}
-              sx={{ borderRadius: 2 }}
-            >
-              Close
             </Button>
           </DialogActions>
         </Dialog>

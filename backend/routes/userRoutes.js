@@ -51,10 +51,11 @@ router.get("/auth/success", async (req, res) => {
         department: "",
       });
     }
-
+  
     return res.redirect(`${FRONTEND_URL}/home?id=${existingUser._id}`);
   } catch (err) {
     console.error("Auth success error:", err);
+
     return res.redirect(`${FRONTEND_URL}/login`);
   }
 });

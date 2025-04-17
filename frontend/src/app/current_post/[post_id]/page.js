@@ -1,226 +1,1190 @@
+// "use client";
+// import { useState, useEffect } from "react";
+// import { useParams, useRouter } from "next/navigation";
+// import {
+//   Box,
+//   IconButton,
+//   Typography,
+//   Card,
+//   CardHeader,
+//   CardMedia,
+//   CardContent,
+//   CardActions,
+//   Avatar,
+//   Button,
+//   CircularProgress,
+//   Snackbar,
+//   Alert,
+//   Menu,
+//   Tooltip,
+//   Dialog,
+//   Skeleton,
+// } from "@mui/material";
+// import {
+//   ThumbUp,
+//   ThumbDown,
+//   Comment as CommentIcon,
+//   Share as ShareIcon,
+//   Edit as EditIcon,
+//   Delete as DeleteIcon,
+// } from "@mui/icons-material";
+// import { Carousel } from "react-responsive-carousel";
+// import "react-responsive-carousel/lib/styles/carousel.min.css";
+// import { fetchUserData } from "@/utils/auth";
+// import PostEditor from "../../../components/posts/PostEditor";
+
+// const API_URL = "http://localhost:5000/api";
+// const API_URL2 = "http://localhost:5000/uploads";
+// const EMOJIS = ["👍", "❤️", "😂", "🔥", "😢", "👏"];
+
+// const SinglePostPage = () => {
+//   const params = useParams();
+//   const router = useRouter();
+//   const postId = params.post_id;
+
+//   const [post, setPost] = useState(null);
+//   const [reactions, setReactions] = useState({});
+//   const [votes, setVotes] = useState({});
+//   const [loading, setLoading] = useState(true);
+//   const [error, setError] = useState(null);
+//   const [userReactions, setUserReactions] = useState({});
+//   const [notification, setNotification] = useState({
+//     open: false,
+//     message: "",
+//     severity: "info",
+//   });
+//   const [reactionMenuAnchorEl, setReactionMenuAnchorEl] = useState(null);
+//   const [userId, setUserId] = useState(null);
+//   const [openEditor, setOpenEditor] = useState(false);
+//   const [postToEdit, setPostToEdit] = useState(null);
+//   const [skeletonLoading, setSkeletonLoading] = useState(true);
+
+//   useEffect(() => {
+//     async function loadUserData() {
+//       const result = await fetchUserData();
+//       if (result) {
+//         setUserId(result.userId);
+//       }
+//     }
+//     loadUserData();
+//     fetchPost();
+//   }, [postId]);
+
+//   const fetchPost = async () => {
+//     try {
+//       setLoading(true);
+//       setSkeletonLoading(true);
+
+//       // Set minimum loading time of 500ms
+//       const minLoadTime = new Promise((resolve) => setTimeout(resolve, 500));
+
+//       const url = `${API_URL}/posts/${postId}`;
+//       const fetchPromise = fetch(url)
+//         .then((response) => {
+//           if (!response.ok)
+//             throw new Error(`HTTP error! Status: ${response.status}`);
+//           return response.json();
+//         })
+//         .then((data) => {
+//           // Handle both possible response formats
+//           const postData = data.post || data;
+//           if (postData) {
+//             setPost(postData);
+//             initializeReactionsAndVotes(postData);
+//           } else {
+//             throw new Error("Post not found");
+//           }
+//         });
+
+//       // Wait for both the minimum time and the fetch to complete
+//       await Promise.all([minLoadTime, fetchPromise]);
+//     } catch (err) {
+//       console.error("Error fetching post:", err);
+//       setError(err.message);
+//     } finally {
+//       setLoading(false);
+//       setSkeletonLoading(false);
+//     }
+//   };
+
+//   const initializeReactionsAndVotes = (postData) => {
+//     const reactionsObj = {};
+//     const userReactionsObj = {};
+
+//     reactionsObj[postData._id] = {};
+//     userReactionsObj[postData._id] = {};
+
+//     if (Array.isArray(postData.reactions)) {
+//       postData.reactions.forEach((reaction) => {
+//         reactionsObj[postData._id][reaction.emoji] =
+//           (reactionsObj[postData._id][reaction.emoji] || 0) + 1;
+//         if (reaction.user_id === userId) {
+//           userReactionsObj[postData._id][reaction.emoji] = true;
+//         }
+//       });
+//     }
+
+//     const netVotes =
+//       postData.votes?.reduce((sum, vote) => sum + (vote.vote || 0), 0) || 0;
+
+//     setReactions(reactionsObj);
+//     setVotes({ [postData._id]: netVotes });
+//     setUserReactions(userReactionsObj);
+//   };
+
+//   const handleOpenEditor = () => {
+//     setPostToEdit(post);
+//     setOpenEditor(true);
+//   };
+
+//   const handleCloseEditor = () => {
+//     setOpenEditor(false);
+//     setPostToEdit(null);
+//   };
+
+//   const handlePostUpdated = (updatedPost) => {
+//     setPost(updatedPost);
+//     handleCloseEditor();
+//     showNotification("Post updated successfully", "success");
+//   };
+
+
+//   const handleReactionToggle = async (emoji, postId) => {
+//     const currentReaction = Object.keys(userReactions[postId] || {}).find(
+//       (key) => userReactions[postId][key]
+//     ); // Find the user's current reaction
+//     const hasReaction = currentReaction === emoji; // Check if the clicked emoji is the current reaction
+  
+//     try {
+//       const url = `${API_URL}/api/posts/${postId}/reactions`;
+//       let method = "POST";
+  
+//       // If the user already has this reaction, remove it; otherwise, replace the current reaction
+//       if (hasReaction) {
+//         method = "DELETE";
+//       } else if (currentReaction) {
+//         // Remove the current reaction before adding the new one
+//         await fetch(`${API_URL}/api/posts/${postId}/reactions`, {
+//           method: "DELETE",
+//           headers: { "Content-Type": "application/json" },
+//           body: JSON.stringify({ user_id: userId, emoji: currentReaction }),
+//         });
+//         // Adjust the reaction count for the removed reaction
+//         setReactions((prev) => ({
+//           ...prev,
+//           [postId]: {
+//             ...prev[postId],
+//             [currentReaction]: (prev[postId]?.[currentReaction] || 1) - 1,
+//           },
+//         }));
+//       }
+  
+//       // Add the new reaction if it's not the same as the current one
+//       if (!hasReaction) {
+//         const response = await fetch(url, {
+//           method,
+//           headers: { "Content-Type": "application/json" },
+//           body: JSON.stringify({ user_id: userId, emoji }),
+//         });
+  
+//         if (!response.ok)
+//           throw new Error(`Failed to ${hasReaction ? "remove" : "add"} reaction`);
+  
+//         // Update reactions count
+//         setReactions((prev) => ({
+//           ...prev,
+//           [postId]: {
+//             ...prev[postId],
+//             [emoji]: (prev[postId]?.[emoji] || 0) + 1,
+//           },
+//         }));
+//       }
+  
+//       // Update userReactions state to allow only one reaction
+//       setUserReactions((prev) => {
+//         const updatedReactions = {};
+//         if (!hasReaction) {
+//           updatedReactions[emoji] = true; // Set only the new reaction
+//         }
+//         return {
+//           ...prev,
+//           [postId]: updatedReactions,
+//         };
+//       });
+  
+//       showNotification(
+//         hasReaction
+//           ? `Removed ${emoji} reaction`
+//           : `Added ${emoji} reaction`
+//           , "success"
+//       );
+//     } catch (err) {
+//       console.error("Error toggling reaction:", err);
+//       showNotification("Failed to update reaction", "error");
+//       fetchPost(); // Re-fetch to restore state on error
+//     }
+//     handleCloseReactionMenu();
+//   };
+//   // const handleReactionToggle = async (emoji, postId) => {
+//   //   const hasReaction = userReactions[postId]?.[emoji];
+
+//   //   try {
+//   //     const url = `${API_URL}/api/posts/${postId}/reactions`;
+//   //     const method = hasReaction ? "DELETE" : "POST";
+//   //     const response = await fetch(url, {
+//   //       method,
+//   //       headers: { "Content-Type": "application/json" },
+//   //       body: JSON.stringify({ user_id: userId, emoji }),
+//   //     });
+
+//   //     if (!response.ok)
+//   //       throw new Error(`Failed to ${hasReaction ? "remove" : "add"} reaction`);
+
+//   //     setReactions((prev) => ({
+//   //       ...prev,
+//   //       [postId]: {
+//   //         ...prev[postId],
+//   //         [emoji]: hasReaction
+//   //           ? (prev[postId]?.[emoji] || 1) - 1
+//   //           : (prev[postId]?.[emoji] || 0) + 1,
+//   //       },
+//   //     }));
+
+//   //     setUserReactions((prev) => ({
+//   //       ...prev,
+//   //       [postId]: { ...prev[postId], [emoji]: !hasReaction },
+//   //     }));
+
+//   //     showNotification(
+//   //       hasReaction ? `Removed ${emoji} reaction` : `Added ${emoji} reaction`,
+//   //       "success"
+//   //     );
+//   //   } catch (err) {
+//   //     console.error("Error toggling reaction:", err);
+//   //     showNotification("Failed to update reaction", "error");
+//   //     fetchPost();
+//   //   }
+//   //   handleCloseReactionMenu();
+//   // };
+
+//   const handleVote = async (postId, voteValue) => {
+//     try {
+//       const response = await fetch(`${API_URL}/api/posts/${postId}/votes`, {
+//         method: "POST",
+//         headers: { "Content-Type": "application/json" },
+//         body: JSON.stringify({ user_id: userId, vote: voteValue }),
+//       });
+
+//       if (!response.ok) throw new Error("Failed to submit vote");
+
+//       const result = await response.json();
+//       setVotes((prev) => ({ ...prev, [postId]: result.data.netVotes || 0 }));
+
+//       showNotification(
+//         voteValue === 1 ? "Upvoted successfully!" : "Downvoted successfully!",
+//         "success"
+//       );
+//     } catch (error) {
+//       console.error("Error submitting vote:", error);
+//       showNotification("Failed to submit vote", "error");
+//     }
+//   };
+
+//   const handleDelete = async (postId) => {
+//     try {
+//       const response = await fetch(`${API_URL}/posts/${postId}`, {
+//         method: "DELETE",
+//         headers: { "Content-Type": "application/json" },
+//       });
+
+//       if (!response.ok) throw new Error("Delete failed");
+
+//       showNotification("Post deleted successfully", "success");
+      
+//       // Navigate back after successful deletion
+//       setTimeout(() => {
+//         router.push("/");
+//       }, 1500);
+//     } catch (err) {
+//       console.error("Error deleting post:", err);
+//       showNotification("Failed to delete post", "error");
+//     }
+//   };
+
+//   const showNotification = (message, severity) => {
+//     setNotification({ open: true, message, severity });
+//   };
+
+//   const handleCloseNotification = () => {
+//     setNotification((prev) => ({ ...prev, open: false }));
+//   };
+
+//   const handleOpenReactionMenu = (event) => {
+//     event.stopPropagation();
+//     setReactionMenuAnchorEl(event.currentTarget);
+//   };
+
+//   const handleCloseReactionMenu = () => {
+//     setReactionMenuAnchorEl(null);
+//   };
+
+//   const handleShare = () => {
+//     navigator.clipboard.writeText(`${window.location.origin}/current_post/${postId}`);
+//     showNotification("Link copied to clipboard", "success");
+//   };
+
+//   // Skeleton loading component
+//   const SkeletonPostCard = () => (
+//     <Card
+//       style={{
+//         marginBottom: "24px",
+//         borderRadius: "12px",
+//         boxShadow: "0 4px 8px rgba(95, 150, 230, 0.1)",
+//         maxWidth: "800px",
+//         margin: "0 auto",
+//       }}
+//     >
+//       <CardHeader
+//         avatar={<Skeleton variant="circular" width={40} height={40} />}
+//         title={<Skeleton variant="text" width="60%" height={24} />}
+//         subheader={<Skeleton variant="text" width="40%" height={20} />}
+//       />
+//       <CardContent>
+//         <Skeleton
+//           variant="text"
+//           width="90%"
+//           height={32}
+//           style={{ marginBottom: "16px" }}
+//         />
+//         <Skeleton variant="text" width="100%" height={20} />
+//         <Skeleton variant="text" width="100%" height={20} />
+//         <Skeleton variant="text" width="100%" height={20} />
+//         <Skeleton variant="text" width="90%" height={20} />
+//         <Skeleton variant="text" width="80%" height={20} />
+//       </CardContent>
+//       <Skeleton
+//         variant="rectangular"
+//         width="100%"
+//         height={300}
+//         style={{ marginBottom: "16px" }}
+//       />
+//       <CardActions style={{ justifyContent: "space-between", padding: "16px" }}>
+//         <Box style={{ display: "flex", alignItems: "center" }}>
+//           <Skeleton
+//             variant="circular"
+//             width={32}
+//             height={32}
+//             style={{ marginRight: "16px" }}
+//           />
+//           <Skeleton
+//             variant="circular"
+//             width={32}
+//             height={32}
+//             style={{ marginRight: "16px" }}
+//           />
+//           <Skeleton
+//             variant="rectangular"
+//             width={80}
+//             height={32}
+//             style={{ borderRadius: "16px" }}
+//           />
+//         </Box>
+//         <Skeleton variant="circular" width={32} height={32} />
+//       </CardActions>
+//     </Card>
+//   );
+
+//   // Loading state with skeleton
+//   if (skeletonLoading) {
+//     return (
+//       <Box
+//         style={{
+//           padding: "24px",
+//           maxWidth: "800px",
+//           margin: "0 auto",
+//         }}
+//       >
+//         <SkeletonPostCard />
+//       </Box>
+//     );
+//   }
+
+//   // Error state with modern styling
+//   if (error) {
+//     return (
+//       <Box
+//         style={{
+//           textAlign: "center",
+//           padding: "48px",
+//           borderRadius: "16px",
+//           boxShadow: "0 4px 12px rgba(95, 150, 230, 0.1)",
+//           maxWidth: "600px",
+//           margin: "64px auto",
+//         }}
+//       >
+//         <Typography
+//           variant="h5"
+//           style={{ color: "#EF4444", marginBottom: "24px", fontWeight: 600 }}
+//         >
+//           Something went wrong
+//         </Typography>
+//         <Typography
+//           variant="body1"
+//           style={{ color: "#607080", marginBottom: "32px" }}
+//         >
+//           {error}
+//         </Typography>
+//         <Button
+//           variant="contained"
+//           onClick={() => router.push("/")}
+//           style={{
+//             marginRight: "16px",
+//             padding: "8px 32px",
+//             background: "#607080",
+//             color: "white",
+//             border: "none",
+//             borderRadius: "8px",
+//             fontWeight: 500,
+//             cursor: "pointer",
+//           }}
+//         >
+//           Go back
+//         </Button>
+//         <Button
+//           variant="contained"
+//           onClick={fetchPost}
+//           style={{
+//             padding: "8px 32px",
+//             background: "linear-gradient(90deg, #4776E6, #8E54E9)",
+//             color: "white",
+//             border: "none",
+//             borderRadius: "8px",
+//             fontWeight: 500,
+//             cursor: "pointer",
+//             boxShadow: "0 4px 10px rgba(71, 118, 230, 0.3)",
+//           }}
+//         >
+//           Try Again
+//         </Button>
+//       </Box>
+//     );
+//   }
+
+//   // If no post found
+//   if (!post) {
+//     return (
+//       <Box
+//         style={{
+//           textAlign: "center",
+//           padding: "48px",
+//           borderRadius: "16px",
+//           boxShadow: "0 4px 12px rgba(95, 150, 230, 0.1)",
+//           maxWidth: "600px",
+//           margin: "64px auto",
+//         }}
+//       >
+//         <Typography
+//           variant="h5"
+//           style={{
+//             marginBottom: "24px",
+//             fontWeight: 600,
+//             background: "linear-gradient(90deg, #4776E6, #8E54E9)",
+//             WebkitBackgroundClip: "text",
+//             WebkitTextFillColor: "transparent",
+//           }}
+//         >
+//           Post not found
+//         </Typography>
+//         <Button
+//           variant="contained"
+//           onClick={() => router.push("/")}
+//           style={{
+//             padding: "8px 32px",
+//             background: "linear-gradient(90deg, #4776E6, #8E54E9)",
+//             color: "white",
+//             border: "none",
+//             borderRadius: "8px",
+//             fontWeight: 500,
+//             cursor: "pointer",
+//             boxShadow: "0 4px 10px rgba(71, 118, 230, 0.3)",
+//           }}
+//         >
+//           Go back to Home
+//         </Button>
+//       </Box>
+//     );
+//   }
+
+//   return (
+//     <Box
+//       style={{
+//         padding: "24px",
+//         maxWidth: "800px",
+//         margin: "0 auto",
+//       }}
+//     >
+//       <Button
+//         onClick={() => router.back()}
+//         style={{
+//           marginBottom: "24px",
+//           color: "#4776E6",
+//           display: "flex",
+//           alignItems: "center",
+//           gap: "4px",
+//         }}
+//       >
+//         ← Back
+//       </Button>
+
+//       <Card
+//         style={{
+//           overflow: "hidden",
+//           borderRadius: "12px",
+//           boxShadow: "0 4px 12px rgba(95, 150, 230, 0.1)",
+//         }}
+//       >
+//         <CardHeader
+//           avatar={
+//             <Avatar
+//               src={`http://localhost:5000/uploads/${
+//                 post.board?.image?.filename || post.club?.image?.filename
+//               }`}
+//               style={{
+//                 width: "40px",
+//                 height: "40px",
+//                 border: "1px solid white",
+//               }}
+//             >
+//               {post.board?.name?.[0] || post.club?.name?.[0] || "A"}
+//             </Avatar>
+//           }
+//           action={
+//             <Box>
+//               <Tooltip title="Edit">
+//                 <IconButton
+//                   onClick={handleOpenEditor}
+//                   style={{
+//                     color: "#4776E6",
+//                     marginRight: "4px",
+//                     padding: "8px",
+//                   }}
+//                 >
+//                   <EditIcon fontSize="small" />
+//                 </IconButton>
+//               </Tooltip>
+//               <Tooltip title="Delete">
+//                 <IconButton
+//                   onClick={() => handleDelete(post._id)}
+//                   style={{
+//                     color: "#EF4444",
+//                     padding: "8px",
+//                   }}
+//                 >
+//                   <DeleteIcon fontSize="small" />
+//                 </IconButton>
+//               </Tooltip>
+//             </Box>
+//           }
+//           title={
+//             <Typography variant="subtitle2" style={{ fontWeight: 600 }}>
+//               {post.board?.name || post.club?.name || "Anonymous"}
+//             </Typography>
+//           }
+//           subheader={
+//             <Typography variant="caption" style={{ color: "#607080" }}>
+//               {new Date(post.created_at).toLocaleDateString("en-US", {
+//                 year: "numeric",
+//                 month: "short",
+//                 day: "numeric",
+//                 hour: "2-digit",
+//                 minute: "2-digit",
+//               })}
+//             </Typography>
+//           }
+//           style={{
+//             borderBottom: "1px solid rgba(0, 0, 0, 0.05)",
+//             padding: "16px",
+//           }}
+//         />
+
+//         <CardContent
+//           style={{
+//             padding: "24px 16px",
+//           }}
+//         >
+//           <Typography
+//             variant="h5"
+//             style={{
+//               marginBottom: "16px",
+//               fontWeight: 600,
+//               color: "#2A3B4F",
+//             }}
+//           >
+//             {post.title}
+//           </Typography>
+
+//           <Typography
+//             component="div"
+//             dangerouslySetInnerHTML={{ __html: post.content }}
+//             style={{
+//               color: "#2A3B4F",
+//               lineHeight: 1.6,
+//               fontSize: "1.05rem",
+//             }}
+//           />
+//         </CardContent>
+
+//         {post.files?.length > 0 && (
+//           <Box
+//             style={{
+//               borderTop: "1px solid rgba(0, 0, 0, 0.05)",
+//               borderBottom: "1px solid rgba(0, 0, 0, 0.05)",
+//             }}
+//           >
+//             <Carousel
+//               showArrows={true}
+//               showThumbs={false}
+//               infiniteLoop={true}
+//               showStatus={false}
+//               swipeable={true}
+//               emulateTouch={true}
+//             >
+//               {post.files.map((file, index) => (
+//                 <Box key={index} style={{ height: "400px" }}>
+//                   <CardMedia
+//                     component="img"
+//                     alt={`Post image ${index + 1}`}
+//                     src={`${API_URL2}/${file.filename}`}
+//                     style={{
+//                       width: "100%",
+//                       height: "100%",
+//                       objectFit: "contain",
+//                     }}
+//                   />
+//                 </Box>
+//               ))}
+//             </Carousel>
+//           </Box>
+//         )}
+
+//         <CardActions
+//           style={{
+//             justifyContent: "space-between",
+//             padding: "16px",
+//           }}
+//         >
+//           <Box style={{ display: "flex", alignItems: "center" }}>
+//             <Tooltip title="Like">
+//               <IconButton
+//                 onClick={() => handleVote(post._id, 1)}
+//                 style={{
+//                   color: votes[post._id] > 0 ? "#4776E6" : "#607080",
+//                   padding: "8px",
+//                 }}
+//               >
+//                 <ThumbUp fontSize="small" />
+//               </IconButton>
+//             </Tooltip>
+//             <Typography
+//               variant="body2"
+//               style={{
+//                 fontWeight: 600,
+//                 margin: "0 4px",
+//                 color:
+//                   votes[post._id] > 0
+//                     ? "#4776E6"
+//                     : votes[post._id] < 0
+//                     ? "#EF4444"
+//                     : "#607080",
+//               }}
+//             >
+//               {votes[post._id]}
+//             </Typography>
+//             <Tooltip title="Dislike">
+//               <IconButton
+//                 onClick={() => handleVote(post._id, -1)}
+//                 style={{
+//                   color: votes[post._id] < 0 ? "#EF4444" : "#607080",
+//                   padding: "8px",
+//                 }}
+//               >
+//                 <ThumbDown fontSize="small" />
+//               </IconButton>
+//             </Tooltip>
+
+//             <Button
+//               startIcon={<CommentIcon fontSize="small" />}
+//               onClick={handleOpenReactionMenu}
+//               style={{
+//                 marginLeft: "8px",
+//                 borderRadius: "16px",
+//                 padding: "4px 12px",
+//                 color: "#4776E6",
+//                 backgroundColor: "transparent",
+//                 border: "none",
+//                 cursor: "pointer",
+//                 fontSize: "0.8rem",
+//               }}
+//             >
+//               React
+//             </Button>
+//           </Box>
+
+//           <Tooltip title="Share">
+//             <IconButton
+//               onClick={handleShare}
+//               style={{
+//                 color: "#8E54E9",
+//                 padding: "8px",
+//               }}
+//             >
+//               <ShareIcon fontSize="small" />
+//             </IconButton>
+//           </Tooltip>
+//         </CardActions>
+
+//         {Object.keys(reactions[post._id] || {}).length > 0 && (
+//           <Box
+//             style={{
+//               padding: "0 16px 16px 16px",
+//               display: "flex",
+//               flexWrap: "wrap",
+//               gap: "6px",
+//             }}
+//           >
+//             {Object.entries(reactions[post._id] || {}).map(
+//               ([emoji, count]) =>
+//                 count > 0 && (
+//                   <Tooltip
+//                     key={emoji}
+//                     title={`${count} ${emoji}`}
+//                     placement="top"
+//                   >
+//                     <Button
+//                       size="small"
+//                       onClick={() => handleReactionToggle(emoji, post._id)}
+//                       style={{
+//                         borderRadius: "12px",
+//                         minWidth: "auto",
+//                         padding: "2px 12px",
+//                         fontSize: "0.75rem",
+//                         backgroundColor: userReactions[post._id]?.[emoji]
+//                           ? "rgba(71, 118, 230, 0.2)"
+//                           : "rgba(95, 150, 230, 0.1)",
+//                         color: userReactions[post._id]?.[emoji]
+//                           ? "#4776E6"
+//                           : "#2A3B4F",
+//                         border: userReactions[post._id]?.[emoji]
+//                           ? "1px solid #4776E6"
+//                           : "1px solid rgba(95, 150, 230, 0.2)",
+//                       }}
+//                     >
+//                       {emoji} {count}
+//                     </Button>
+//                   </Tooltip>
+//                 )
+//             )}
+//           </Box>
+//         )}
+//       </Card>
+
+//       <Menu
+//         anchorEl={reactionMenuAnchorEl}
+//         open={Boolean(reactionMenuAnchorEl)}
+//         onClose={handleCloseReactionMenu}
+//         PaperProps={{
+//           style: {
+//             borderRadius: "8px",
+//             boxShadow: "0 8px 16px rgba(0, 0, 0, 0.1)",
+//           },
+//         }}
+//       >
+//         <Box
+//           style={{
+//             display: "flex",
+//             padding: "12px",
+//             width: "250px",
+//             flexWrap: "wrap",
+//             justifyContent: "center",
+//             gap: "6px",
+//           }}
+//         >
+//           {EMOJIS.map((emoji) => (
+//             <IconButton
+//               key={emoji}
+//               onClick={() => handleReactionToggle(emoji, post._id)}
+//               style={{
+//                 fontSize: "20px",
+//                 backgroundColor: userReactions[post._id]?.[emoji]
+//                   ? "rgba(71, 118, 230, 0.1)"
+//                   : "transparent",
+//                 border: userReactions[post._id]?.[emoji]
+//                   ? "2px solid #4776E6"
+//                   : "1px solid rgba(0, 0, 0, 0.05)",
+//                 borderRadius: "6px",
+//                 padding: "8px",
+//                 transition: "all 0.2s ease",
+//                 "&:hover": {
+//                   transform: "scale(1.1)",
+//                   backgroundColor: "rgba(71, 118, 230, 0.05)",
+//                 },
+//               }}
+//             >
+//               {emoji}
+//             </IconButton>
+//           ))}
+//         </Box>
+//       </Menu>
+
+//       {openEditor && (
+//         <PostEditor
+//           boardId={post.board_id}
+//           clubId={post.club_id}
+//           onPostCreated={handlePostUpdated}
+//           onClose={handleCloseEditor}
+//           postToEdit={postToEdit}
+//         />
+//       )}
+
+//       <Snackbar
+//         open={notification.open}
+//         autoHideDuration={4000}
+//         onClose={handleCloseNotification}
+//         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+//       >
+//         <Alert
+//           onClose={handleCloseNotification}
+//           severity={notification.severity}
+//           variant="filled"
+//           style={{
+//             borderRadius: "6px",
+//             boxShadow: "0 8px 16px rgba(0, 0, 0, 0.1)",
+//             backgroundColor:
+//               notification.severity === "error"
+//                 ? "#EF4444"
+//                 : notification.severity === "success"
+//                 ? "#388E3C"
+//                 : "#1976d2",
+//           }}
+//         >
+//           {notification.message}
+//         </Alert>
+//       </Snackbar>
+//     </Box>
+//   );
+// };
+
+// export default SinglePostPage;
+
+
 "use client";
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { fetchUserData } from "@/utils/auth";
 import {
-  Card,
-  CardContent,
-  CardMedia,
-  Typography,
-  Button,
   Box,
-  Divider,
   IconButton,
-  CircularProgress,
-  Alert,
-  Snackbar,
+  Typography,
+  Card,
+  CardHeader,
+  CardMedia,
+  CardContent,
+  CardActions,
   Avatar,
-  Tooltip,
+  Button,
+  CircularProgress,
+  Snackbar,
+  Alert,
   Menu,
-  Badge,
+  Tooltip,
+  Dialog,
+  Skeleton,
 } from "@mui/material";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import ThumbUpIcon from "@mui/icons-material/ThumbUp";
-import ThumbDownIcon from "@mui/icons-material/ThumbDown";
+import {
+  ThumbUp,
+  ThumbDown,
+  Comment as CommentIcon,
+  Share as ShareIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+} from "@mui/icons-material";
 import { Carousel } from "react-responsive-carousel";
 import "react-responsive-carousel/lib/styles/carousel.min.css";
+import { fetchUserData } from "@/utils/auth";
+import PostEditor from "../../../components/posts/PostEditor";
 
-// Modern UI Design System
-const theme = {
-  colors: {
-    primary: {
-      main: "#4776E6",
-      light: "#6a98ff",
-      dark: "#3a5fc0",
-      gradient: "linear-gradient(45deg, #4776E6 0%, #8E54E9 100%)",
-    },
-    secondary: "#8E54E9",
-    background: {
-      default: "#f8faff",
-      card: "#ffffff",
-      sidebar: "rgba(245, 247, 250, 0.7)",
-    },
-    text: {
-      primary: "#2A3B4F",
-      secondary: "#607080",
-    },
-    accent: {
-      blue: "#1976d2",
-      green: "#388e3c",
-      red: "#d32f2f",
-      purple: "#7b1fa2",
-    },
-    borders: {
-      light: "rgba(95, 150, 230, 0.15)",
-    },
-    action: {
-      selected: "rgba(95, 150, 230, 0.2)",
-      hover: "rgba(95, 150, 230, 0.1)",
-    },
-  },
-  shadows: {
-    card: "0 4px 12px rgba(95, 150, 230, 0.1)",
-    cardHover: "0 12px 20px rgba(95, 150, 230, 0.2)",
-    button: "0 4px 10px rgba(71, 118, 230, 0.3)",
-    buttonHover: "0 6px 15px rgba(71, 118, 230, 0.4)",
-    input: "0 2px 8px rgba(95, 150, 230, 0.1)",
-    inputFocus: "0 4px 15px rgba(95, 150, 230, 0.2)",
-  },
-  typography: {
-    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-  },
-  shape: {
-    borderRadius: 8,
-    cardBorderRadius: 16,
-    buttonBorderRadius: 8,
-  },
-  spacing: {
-    cardPadding: 24,
-    pagePadding: 32,
-  },
-};
-
+const API_URL = "http://localhost:5000/api";
+const API_URL2 = "http://localhost:5000/uploads";
 const EMOJIS = ["👍", "❤️", "😂", "🔥", "😢", "👏"];
-const API_URL = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api`;
-const API_URL2 = `${process.env.NEXT_PUBLIC_BACKEND_URL}/uploads`;
 
-export default function PostPage() {
+const SinglePostPage = () => {
   const params = useParams();
   const router = useRouter();
   const postId = params.post_id;
+
   const [post, setPost] = useState(null);
+  const [reactions, setReactions] = useState({});
+  const [votes, setVotes] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [currentUser, setCurrentUser] = useState(null);
-  const [userId, setUserId] = useState(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [userReactions, setUserReactions] = useState({});
   const [notification, setNotification] = useState({
     open: false,
     message: "",
-    severity: "success",
+    severity: "info",
   });
-  const [reactions, setReactions] = useState({});
-  const [votes, setVotes] = useState(0);
-  const [userReactions, setUserReactions] = useState({});
   const [reactionMenuAnchorEl, setReactionMenuAnchorEl] = useState(null);
-
-  // Check if user has permission to edit/delete this post
-  const hasPostPermission = () => {
-    if (!post || !currentUser) return false;
-    
-    // Admins can edit/delete any post
-    if (isAdmin) return true;
-
-    // Users can edit/delete their own posts
-    if (post.created_by === userId) return true;
-
-    return false;
-  };
+  const [userId, setUserId] = useState(null);
+  const [openEditor, setOpenEditor] = useState(false);
+  const [postToEdit, setPostToEdit] = useState(null);
+  const [skeletonLoading, setSkeletonLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        
-        // Fetch user data
-        const userData = await fetchUserData();
-        if (userData) {
-          setCurrentUser(userData.userData);
-          setUserId(userData.userId);
-          setIsAdmin(userData.userRole === "super_admin");
-        }
-
-        // Fetch post details
-        const response = await fetch(`${API_URL}/posts/${postId}`);
-        if (!response.ok) throw new Error('Failed to fetch post');
-        
-        const result = await response.json();
-        if (!result) throw new Error('Post not found');
-        
-        setPost(result);
-        
-        // Process reactions
-        const reactionsObj = {};
-        if (Array.isArray(result.reactions)) {
-          result.reactions.forEach((reaction) => {
-            reactionsObj[reaction.emoji] = (reactionsObj[reaction.emoji] || 0) + 1;
-          });
-        }
-        setReactions(reactionsObj);
-        
-        // Process votes
-        let voteCount = 0;
-        if (Array.isArray(result.votes)) {
-          result.votes.forEach((vote) => {
-            voteCount += vote.vote || 0;
-          });
-        }
-        setVotes(voteCount);
-        
-        // Process user reactions
-        const userReactionsObj = {};
-        if (Array.isArray(result.reactions)) {
-          result.reactions.forEach((reaction) => {
-            if (reaction.user_id === userId) {
-              userReactionsObj[reaction.emoji] = true;
-            }
-          });
-        }
-        setUserReactions(userReactionsObj);
-        
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        setError(error.message);
-        setLoading(false);
-        setNotification({
-          open: true,
-          message: "Failed to load post",
-          severity: "error"
-        });
+    async function loadUserData() {
+      const result = await fetchUserData();
+      if (result) {
+        setUserId(result.userId);
       }
-    };
-
-    if (postId) {
-      fetchData();
     }
+    loadUserData();
+    fetchPost();
   }, [postId]);
 
-  const handleDelete = async () => {
+
+  useEffect(() => {
+    if(reactions)
+    {
+      console.log(reactions);
+    }
+  }, [reactions]);
+  const fetchPost = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/posts/${postId}`, {
-        method: 'DELETE'
-      });
-      
-      if (!response.ok) throw new Error('Failed to delete post');
-      
-      router.push('/posts');
-      setNotification({
-        open: true,
-        message: "Post deleted successfully",
-        severity: "success"
-      });
-    } catch (error) {
-      console.error('Error deleting post:', error);
-      setNotification({
-        open: true,
-        message: error.message || "Failed to delete post",
-        severity: "error"
-      });
+      setLoading(true);
+      setSkeletonLoading(true);
+
+      // Set minimum loading time of 500ms
+      const minLoadTime = new Promise((resolve) => setTimeout(resolve, 500));
+
+      const url = `${API_URL}/posts/${postId}`;
+      const fetchPromise = fetch(url)
+        .then((response) => {
+          if (!response.ok)
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          return response.json();
+        })
+        .then((data) => {
+          // Handle both possible response formats
+          const postData = data.post || data;
+          if (postData) {
+            setPost(postData);
+            console.log(postData);
+            
+            initializeReactionsAndVotes(postData);
+          } else {
+            throw new Error("Post not found");
+          }
+        });
+
+      // Wait for both the minimum time and the fetch to complete
+      await Promise.all([minLoadTime, fetchPromise]);
+    } catch (err) {
+      console.error("Error fetching post:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+      setSkeletonLoading(false);
     }
   };
 
-  const handleEdit = () => {
-    router.push(`/edit_post/${postId}`);
+  const initializeReactionsAndVotes = (postData) => {
+    const reactionsObj = {};
+    const userReactionsObj = {};
+
+    reactionsObj[postData._id] = {};
+    userReactionsObj[postData._id] = {};
+
+    console.log(postData);
+    if (Array.isArray(postData.reactions)) {
+      postData.reactions.forEach((reaction) => {
+        reactionsObj[postData._id][reaction.emoji] =
+          (reactionsObj[postData._id][reaction.emoji] || 0) + 1;
+
+        
+        if (reaction.user_id === userId) {
+          userReactionsObj[postData._id][reaction.emoji] = true;
+        }
+      });
+    }
+
+    const netVotes =
+      postData.votes?.reduce((sum, vote) => sum + (vote.vote || 0), 0) || 0;
+
+    setReactions(reactionsObj);
+    setVotes({ [postData._id]: netVotes });
+    setUserReactions(userReactionsObj);
+  };
+
+  const handleOpenEditor = () => {
+    setPostToEdit(post);
+    setOpenEditor(true);
+  };
+
+
+
+  const handleCloseEditor = () => {
+    setOpenEditor(false);
+    setPostToEdit(null);
+  };
+
+  const handlePostUpdated = (updatedPost) => {
+    setPost(updatedPost);
+    handleCloseEditor();
+    showNotification("Post updated successfully", "success");
+  };
+
+
+  const handleReactionToggle = async (emoji, postId) => {
+    const currentReaction = Object.keys(userReactions[postId] || {}).find(
+      (key) => userReactions[postId][key]
+    ); // Find the user's current reaction
+    const hasReaction = currentReaction === emoji; // Check if the clicked emoji is the current reaction
+  
+    try {
+      const url = `${API_URL}/api/posts/${postId}/reactions`;
+      const method = hasReaction ? "DELETE" : "POST";
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: userId, emoji }),
+      });
+
+      if (!response.ok)
+        throw new Error(`Failed to ${hasReaction ? "remove" : "add"} reaction`);
+
+
+      setReactions((prev) => ({
+        ...prev,
+        [postId]: {
+          ...prev[postId],
+          [emoji]: hasReaction
+            ? (prev[postId]?.[emoji] || 1) - 1
+            : (prev[postId]?.[emoji] || 0) + 1,
+        },
+      }));
+
+      setUserReactions((prev) => ({
+        ...prev,
+        [postId]: { ...prev[postId], [emoji]: !hasReaction },
+      }));
+
+     showNotification(
+        hasReaction
+          ? `Removed ${emoji} reaction`
+          : `Added ${emoji} reaction`
+          , "success"
+      );
+    } catch (err) {
+      console.error("Error toggling reaction:", err);
+      showNotification("Failed to update reaction", "error");
+      fetchPost(); // Re-fetch to restore state on error
+    }
+    handleCloseReactionMenu();
+  };
+  // const handleReactionToggle = async (emoji, postId) => {
+  //   const hasReaction = userReactions[postId]?.[emoji];
+
+  //   try {
+  //     const url = `${API_URL}/api/posts/${postId}/reactions`;
+  //     const method = hasReaction ? "DELETE" : "POST";
+  //     const response = await fetch(url, {
+  //       method,
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ user_id: userId, emoji }),
+  //     });
+
+  //     if (!response.ok)
+  //       throw new Error(`Failed to ${hasReaction ? "remove" : "add"} reaction`);
+
+  //     setReactions((prev) => ({
+  //       ...prev,
+  //       [postId]: {
+  //         ...prev[postId],
+  //         [emoji]: hasReaction
+  //           ? (prev[postId]?.[emoji] || 1) - 1
+  //           : (prev[postId]?.[emoji] || 0) + 1,
+  //       },
+  //     }));
+
+  //     setUserReactions((prev) => ({
+  //       ...prev,
+  //       [postId]: { ...prev[postId], [emoji]: !hasReaction },
+  //     }));
+
+  //     showNotification(
+  //       hasReaction ? `Removed ${emoji} reaction` : `Added ${emoji} reaction`,
+  //       "success"
+  //     );
+  //   } catch (err) {
+  //     console.error("Error toggling reaction:", err);
+  //     showNotification("Failed to update reaction", "error");
+  //     fetchPost();
+  //   }
+  //   handleCloseReactionMenu();
+  // };
+
+  const handleVote = async (postId, voteValue) => {
+    try {
+      const response = await fetch(`${API_URL}/api/posts/${postId}/votes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: userId, vote: voteValue }),
+      });
+
+      if (!response.ok) throw new Error("Failed to submit vote");
+
+      const result = await response.json();
+      setVotes((prev) => ({ ...prev, [postId]: result.data.netVotes || 0 }));
+
+      showNotification(
+        voteValue === 1 ? "Upvoted successfully!" : "Downvoted successfully!",
+        "success"
+      );
+    } catch (error) {
+      console.error("Error submitting vote:", error);
+      showNotification("Failed to submit vote", "error");
+    }
+  };
+
+  const handleDelete = async (postId) => {
+    try {
+      const response = await fetch(`${API_URL}/posts/${postId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!response.ok) throw new Error("Delete failed");
+
+      showNotification("Post deleted successfully", "success");
+      
+      // Navigate back after successful deletion
+      setTimeout(() => {
+        router.push("/");
+      }, 1500);
+    } catch (err) {
+      console.error("Error deleting post:", err);
+      showNotification("Failed to delete post", "error");
+    }
+  };
+
+  const showNotification = (message, severity) => {
+    setNotification({ open: true, message, severity });
   };
 
   const handleCloseNotification = () => {
-    setNotification({ ...notification, open: false });
+    setNotification((prev) => ({ ...prev, open: false }));
   };
 
   const handleOpenReactionMenu = (event) => {
+    event.stopPropagation();
     setReactionMenuAnchorEl(event.currentTarget);
   };
 
@@ -228,598 +1192,506 @@ export default function PostPage() {
     setReactionMenuAnchorEl(null);
   };
 
-  const handleReactionToggle = async (emoji) => {
-    try {
-      const hasReaction = userReactions[emoji];
-      
-      if (hasReaction) {
-        // Remove reaction
-        const response = await fetch(`${API_URL}/api/posts/${postId}/reactions`, {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            user_id: userId,
-            emoji,
-          }),
-        });
-
-        if (!response.ok) throw new Error('Failed to remove reaction');
-
-        setReactions(prev => ({
-          ...prev,
-          [emoji]: (prev[emoji] || 0) - 1
-        }));
-
-        setUserReactions(prev => ({
-          ...prev,
-          [emoji]: false
-        }));
-      } else {
-        // Add reaction
-        const response = await fetch(`${API_URL}/api/posts/${postId}/reactions`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            user_id: userId,
-            emoji,
-          }),
-        });
-
-        if (!response.ok) throw new Error('Failed to add reaction');
-
-        setReactions(prev => ({
-          ...prev,
-          [emoji]: (prev[emoji] || 0) + 1
-        }));
-
-        setUserReactions(prev => ({
-          ...prev,
-          [emoji]: true
-        }));
-      }
-    } catch (error) {
-      console.error('Error toggling reaction:', error);
-      setNotification({
-        open: true,
-        message: "Failed to update reaction",
-        severity: "error"
-      });
-    } finally {
-      handleCloseReactionMenu();
-    }
+  const handleShare = () => {
+    navigator.clipboard.writeText(`${window.location.origin}/current_post/${postId}`);
+    showNotification("Link copied to clipboard", "success");
   };
 
-  const handleVote = async (voteValue) => {
-    try {
-      const response = await fetch(`${API_URL}/api/posts/${postId}/votes`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          user_id: userId,
-          vote: voteValue,
-        }),
-      });
-
-      if (!response.ok) throw new Error('Failed to submit vote');
-
-      const result = await response.json();
-      setVotes(result.newVoteCount || 0);
-
-      setNotification({
-        open: true,
-        message: voteValue === 1 ? "Upvoted successfully!" : "Downvoted successfully!",
-        severity: "success"
-      });
-    } catch (error) {
-      console.error('Error submitting vote:', error);
-      setNotification({
-        open: true,
-        message: "Failed to submit vote",
-        severity: "error"
-      });
-    }
-  };
-
-  if (loading) {
-    return (
-      <Box sx={{ 
-        display: 'flex', 
-        flexDirection: 'column',
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        mt: 8,
-        height: '50vh'
-      }}>
-        <CircularProgress 
-          size={60}
-          sx={{ 
-            color: theme.colors.primary.main
-          }} 
+  // Skeleton loading component
+  const SkeletonPostCard = () => (
+    <Card
+      style={{
+        marginBottom: "24px",
+        borderRadius: "12px",
+        boxShadow: "0 4px 8px rgba(95, 150, 230, 0.1)",
+        maxWidth: "800px",
+        margin: "0 auto",
+      }}
+    >
+      <CardHeader
+        avatar={<Skeleton variant="circular" width={40} height={40} />}
+        title={<Skeleton variant="text" width="60%" height={24} />}
+        subheader={<Skeleton variant="text" width="40%" height={20} />}
+      />
+      <CardContent>
+        <Skeleton
+          variant="text"
+          width="90%"
+          height={32}
+          style={{ marginBottom: "16px" }}
         />
-        <Typography 
-          variant="h6" 
-          sx={{ 
-            mt: 3, 
-            fontFamily: theme.typography.fontFamily,
-            color: theme.colors.text.primary,
-            fontWeight: 500 
-          }}
-        >
-          Loading post...
-        </Typography>
+        <Skeleton variant="text" width="100%" height={20} />
+        <Skeleton variant="text" width="100%" height={20} />
+        <Skeleton variant="text" width="100%" height={20} />
+        <Skeleton variant="text" width="90%" height={20} />
+        <Skeleton variant="text" width="80%" height={20} />
+      </CardContent>
+      <Skeleton
+        variant="rectangular"
+        width="100%"
+        height={300}
+        style={{ marginBottom: "16px" }}
+      />
+      <CardActions style={{ justifyContent: "space-between", padding: "16px" }}>
+        <Box style={{ display: "flex", alignItems: "center" }}>
+          <Skeleton
+            variant="circular"
+            width={32}
+            height={32}
+            style={{ marginRight: "16px" }}
+          />
+          <Skeleton
+            variant="circular"
+            width={32}
+            height={32}
+            style={{ marginRight: "16px" }}
+          />
+          <Skeleton
+            variant="rectangular"
+            width={80}
+            height={32}
+            style={{ borderRadius: "16px" }}
+          />
+        </Box>
+        <Skeleton variant="circular" width={32} height={32} />
+      </CardActions>
+    </Card>
+  );
+
+  // Loading state with skeleton
+  if (skeletonLoading) {
+    return (
+      <Box
+        style={{
+          padding: "24px",
+          maxWidth: "800px",
+          margin: "0 auto",
+        }}
+      >
+        <SkeletonPostCard />
       </Box>
     );
   }
 
+  // Error state with modern styling
   if (error) {
     return (
-      <Box sx={{ 
-        p: 4, 
-        display: 'flex', 
-        flexDirection: 'column', 
-        alignItems: 'center',
-        bgcolor: theme.colors.background.default,
-        minHeight: '100vh'
-      }}>
-        <Alert 
-          severity="error" 
-          sx={{ 
-            mb: 3, 
-            width: '100%', 
-            maxWidth: 700,
-            borderRadius: theme.shape.borderRadius,
-            boxShadow: theme.shadows.card
-          }}
+      <Box
+        style={{
+          textAlign: "center",
+          padding: "48px",
+          borderRadius: "16px",
+          boxShadow: "0 4px 12px rgba(95, 150, 230, 0.1)",
+          maxWidth: "600px",
+          margin: "64px auto",
+        }}
+      >
+        <Typography
+          variant="h5"
+          style={{ color: "#EF4444", marginBottom: "24px", fontWeight: 600 }}
+        >
+          Something went wrong
+        </Typography>
+        <Typography
+          variant="body1"
+          style={{ color: "#607080", marginBottom: "32px" }}
         >
           {error}
-        </Alert>
-        <Button 
-          variant="contained" 
-          onClick={() => router.push('/posts')}
-          startIcon={<ArrowBackIcon />}
-          sx={{
-            background: theme.colors.primary.gradient,
-            color: 'white',
-            textTransform: 'none',
+        </Typography>
+        <Button
+          variant="contained"
+          onClick={() => router.push("/")}
+          style={{
+            marginRight: "16px",
+            padding: "8px 32px",
+            background: "#607080",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
             fontWeight: 500,
-            borderRadius: theme.shape.buttonBorderRadius,
-            boxShadow: theme.shadows.button,
-            padding: '10px 24px',
-            '&:hover': {
-              boxShadow: theme.shadows.buttonHover,
-              transform: 'translateY(-2px)',
-            },
-            transition: 'all 0.3s ease'
+            cursor: "pointer",
           }}
         >
-          Back to Posts
+          Go back
+        </Button>
+        <Button
+          variant="contained"
+          onClick={fetchPost}
+          style={{
+            padding: "8px 32px",
+            background: "linear-gradient(90deg, #4776E6, #8E54E9)",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+            fontWeight: 500,
+            cursor: "pointer",
+            boxShadow: "0 4px 10px rgba(71, 118, 230, 0.3)",
+          }}
+        >
+          Try Again
         </Button>
       </Box>
     );
   }
 
+  // If no post found
   if (!post) {
     return (
-      <Box sx={{ 
-        p: 4, 
-        display: 'flex', 
-        flexDirection: 'column', 
-        alignItems: 'center',
-        bgcolor: theme.colors.background.default,
-        minHeight: '100vh'
-      }}>
-        <Alert 
-          severity="warning" 
-          sx={{ 
-            mb: 3, 
-            width: '100%', 
-            maxWidth: 700,
-            borderRadius: theme.shape.borderRadius,
-            boxShadow: theme.shadows.card
+      <Box
+        style={{
+          textAlign: "center",
+          padding: "48px",
+          borderRadius: "16px",
+          boxShadow: "0 4px 12px rgba(95, 150, 230, 0.1)",
+          maxWidth: "600px",
+          margin: "64px auto",
+        }}
+      >
+        <Typography
+          variant="h5"
+          style={{
+            marginBottom: "24px",
+            fontWeight: 600,
+            background: "linear-gradient(90deg, #4776E6, #8E54E9)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
           }}
         >
           Post not found
-        </Alert>
-        <Button 
-          variant="contained" 
-          onClick={() => router.push('/posts')}
-          startIcon={<ArrowBackIcon />}
-          sx={{
-            background: theme.colors.primary.gradient,
-            color: 'white',
-            textTransform: 'none',
+        </Typography>
+        <Button
+          variant="contained"
+          onClick={() => router.push("/")}
+          style={{
+            padding: "8px 32px",
+            background: "linear-gradient(90deg, #4776E6, #8E54E9)",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
             fontWeight: 500,
-            borderRadius: theme.shape.buttonBorderRadius,
-            boxShadow: theme.shadows.button,
-            padding: '10px 24px',
-            '&:hover': {
-              boxShadow: theme.shadows.buttonHover,
-              transform: 'translateY(-2px)',
-            },
-            transition: 'all 0.3s ease'
+            cursor: "pointer",
+            boxShadow: "0 4px 10px rgba(71, 118, 230, 0.3)",
           }}
         >
-          Back to Posts
+          Go back to Home
         </Button>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ 
-      p: 4, 
-      bgcolor: theme.colors.background.default,
-      minHeight: '100vh',
-      fontFamily: theme.typography.fontFamily
-    }}>
+    <Box
+      style={{
+        padding: "24px",
+        maxWidth: "800px",
+        margin: "0 auto",
+      }}
+    >
       <Button
-        startIcon={<ArrowBackIcon />}
-        onClick={() => router.push('/posts')}
-        sx={{ 
-          mb: 4,
-          color: theme.colors.text.primary,
-          fontWeight: 500,
-          textTransform: 'none',
-          borderRadius: theme.shape.buttonBorderRadius,
-          '&:hover': {
-            backgroundColor: 'rgba(71, 118, 230, 0.08)',
-          },
-          transition: 'all 0.3s ease'
+        onClick={() => router.back()}
+        style={{
+          marginBottom: "24px",
+          color: "#4776E6",
+          display: "flex",
+          alignItems: "center",
+          gap: "4px",
         }}
       >
-        Back to All Posts
+        ← Back
       </Button>
 
-      <Card 
-        sx={{ 
-          mb: 4, 
-          borderRadius: theme.shape.cardBorderRadius, 
-          boxShadow: theme.shadows.card,
-          maxWidth: 900,
-          margin: '0 auto',
-          overflow: 'hidden',
-          transition: 'all 0.3s ease',
-          borderTop: `4px solid ${theme.colors.primary.main}`,
-          '&:hover': {
-            boxShadow: theme.shadows.cardHover,
-            transform: 'translateY(-8px)',
-          }
+      <Card
+        style={{
+          overflow: "hidden",
+          borderRadius: "12px",
+          boxShadow: "0 4px 12px rgba(95, 150, 230, 0.1)",
         }}
       >
-        <CardContent sx={{ padding: 3 }}>
-          <Box sx={{ 
-            display: "flex", 
-            justifyContent: "space-between", 
-            alignItems: "center", 
-            mb: 3 
-          }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <Avatar
-                src={post.user?.avatar || "/default-avatar.jpg"}
-                sx={{ 
-                  width: 50, 
-                  height: 50,
-                  border: `2px solid ${theme.colors.borders.light}`
-                }}
-              >
-                {post.user?.name ? post.user.name.charAt(0) : "U"}
-              </Avatar>
-              <Box>
-                <Typography 
-                  variant="subtitle1" 
-                  sx={{
-                    fontWeight: 600,
-                    color: theme.colors.text.primary,
-                    fontSize: '1rem'
+        <CardHeader
+          avatar={
+            <Avatar
+              src={`http://localhost:5000/uploads/${
+                post.board?.image?.filename || post.club?.image?.filename
+              }`}
+              style={{
+                width: "40px",
+                height: "40px",
+                border: "1px solid white",
+              }}
+            >
+              {post.board?.name?.[0] || post.club?.name?.[0] || "A"}
+            </Avatar>
+          }
+          action={
+            <Box>
+              <Tooltip title="Edit">
+                <IconButton
+                  onClick={handleOpenEditor}
+                  style={{
+                    color: "#4776E6",
+                    marginRight: "4px",
+                    padding: "8px",
                   }}
                 >
-                  {post.user?.name || "Unknown User"}
-                </Typography>
-                <Typography 
-                  variant="body2" 
-                  sx={{
-                    color: theme.colors.text.secondary,
-                    fontSize: '0.825rem'
+                  <EditIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Delete">
+                <IconButton
+                  onClick={() => handleDelete(post._id)}
+                  style={{
+                    color: "#EF4444",
+                    padding: "8px",
                   }}
                 >
-                  {new Date(post.created_at).toLocaleString()}
-                </Typography>
-              </Box>
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
             </Box>
-            
-            {hasPostPermission() && (
-              <Box>
-                <Tooltip title="Edit Post">
-                  <IconButton 
-                    onClick={handleEdit} 
-                    sx={{
-                      color: theme.colors.primary.main,
-                      '&:hover': {
-                        backgroundColor: theme.colors.action.hover,
-                      }
-                    }}
-                  >
-                    <EditIcon />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Delete Post">
-                  <IconButton 
-                    onClick={handleDelete} 
-                    sx={{
-                      color: theme.colors.accent.red,
-                      '&:hover': {
-                        backgroundColor: 'rgba(211, 47, 47, 0.1)',
-                      }
-                    }}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </Tooltip>
-              </Box>
-            )}
-          </Box>
+          }
+          title={
+            <Typography variant="subtitle2" style={{ fontWeight: 600 }}>
+              {post.board?.name || post.club?.name || "Anonymous"}
+            </Typography>
+          }
+          subheader={
+            <Typography variant="caption" style={{ color: "#607080" }}>
+              {new Date(post.created_at).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </Typography>
+          }
+          style={{
+            borderBottom: "1px solid rgba(0, 0, 0, 0.05)",
+            padding: "16px",
+          }}
+        />
 
-          <Typography 
+        <CardContent
+          style={{
+            padding: "24px 16px",
+          }}
+        >
+          <Typography
             variant="h5"
-            component="h1" 
-            sx={{ 
-              mb: 2,
+            style={{
+              marginBottom: "16px",
               fontWeight: 600,
-              backgroundImage: theme.colors.primary.gradient,
-              backgroundClip: 'text',
-              textFillColor: 'transparent',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              fontSize: '1.5rem'
+              color: "#2A3B4F",
             }}
           >
             {post.title}
           </Typography>
 
-          <Divider sx={{ my: 3, borderColor: theme.colors.borders.light }} />
-
-          <Typography 
-            variant="body1" 
-            sx={{ 
-              mb: 4,
-              color: theme.colors.text.primary,
+          <Typography
+            component="div"
+            dangerouslySetInnerHTML={{ __html: post.content }}
+            style={{
+              color: "#2A3B4F",
               lineHeight: 1.6,
-              fontSize: '1rem'
+              fontSize: "1.05rem",
+            }}
+          />
+        </CardContent>
+
+        {post.files?.length > 0 && (
+          <Box
+            style={{
+              borderTop: "1px solid rgba(0, 0, 0, 0.05)",
+              borderBottom: "1px solid rgba(0, 0, 0, 0.05)",
             }}
           >
-            {post.content}
-          </Typography>
-
-          {post.files && post.files.length > 0 && (
-            <Box sx={{ mb: 4 }}>
-              <Typography 
-                variant="h6" 
-                sx={{ 
-                  mb: 2,
-                  fontWeight: 600,
-                  color: theme.colors.text.primary,
-                  fontSize: '1.125rem'
-                }}
-              >
-                Attachments
-              </Typography>
-              <Carousel
-                showArrows={true}
-                showThumbs={false}
-                infiniteLoop={true}
-                showStatus={false}
-                swipeable={true}
-                emulateTouch={true}
-                autoPlay={false}
-                dynamicHeight={true}
-                className="custom-carousel"
-                sx={{ borderRadius: theme.shape.borderRadius }}
-              >
-                {post.files.map((file, index) => (
-                  <div key={index}>
-                    {file.mimetype?.startsWith('image/') ? (
-                      <CardMedia
-                        component="img"
-                        sx={{
-                          height: 400,
-                          objectFit: "contain",
-                          borderRadius: theme.shape.borderRadius,
-                          backgroundColor: 'rgba(250, 250, 255, 0.8)'
-                        }}
-                        image={`${API_URL2}/${file.filename}`}
-                        alt={file.originalname || `Attachment ${index + 1}`}
-                      />
-                    ) : file.mimetype?.startsWith('video/') ? (
-                      <video
-                        controls
-                        style={{
-                          width: "100%",
-                          maxHeight: "400px",
-                          borderRadius: theme.shape.borderRadius,
-                        }}
-                      >
-                        <source
-                          src={`${API_URL2}/${file.filename}`}
-                          type={file.mimetype}
-                        />
-                        Your browser does not support the video tag.
-                      </video>
-                    ) : (
-                      <Box
-                        sx={{
-                          height: 200,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          backgroundColor: theme.colors.background.sidebar,
-                          borderRadius: theme.shape.borderRadius,
-                          border: `1px dashed ${theme.colors.borders.light}`
-                        }}
-                      >
-                        <Typography 
-                          variant="body1"
-                          sx={{
-                            color: theme.colors.text.primary,
-                            fontWeight: 500
-                          }}
-                        >
-                          {file.originalname || `File ${index + 1}`}
-                        </Typography>
-                      </Box>
-                    )}
-                  </div>
-                ))}
-              </Carousel>
-            </Box>
-          )}
-
-          {/* Reactions and Voting Section */}
-          <Box sx={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center',
-            borderTop: `1px solid ${theme.colors.borders.light}`,
-            pt: 2,
-            mt: 3
-          }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Button
-                onClick={handleOpenReactionMenu}
-                sx={{
-                  borderRadius: "20px",
-                  textTransform: "none",
-                  minWidth: "auto",
-                  color: theme.colors.text.primary,
-                  fontSize: '0.875rem',
-                  fontWeight: 500,
-                  padding: '6px 16px',
-                  backgroundColor: theme.colors.action.hover,
-                  '&:hover': {
-                    backgroundColor: theme.colors.action.selected,
-                  },
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                😊 React
-              </Button>
-
-              <Box sx={{ display: "flex", gap: 0.5 }}>
-                {Object.entries(reactions)
-                  .filter(([emoji, count]) => count > 0)
-                  .map(([emoji, count]) => (
-                    <Tooltip key={emoji} title={`${count} ${emoji}`}>
-                      <Button
-                        size="small"
-                        sx={{
-                          minWidth: "auto",
-                          padding: "3px 10px",
-                          borderRadius: "16px",
-                          fontSize: "0.75rem",
-                          fontWeight: 500,
-                          color: theme.colors.text.primary,
-                          backgroundColor: userReactions[emoji] 
-                            ? theme.colors.action.selected 
-                            : theme.colors.action.hover,
-                          '&:hover': {
-                            backgroundColor: theme.colors.action.selected,
-                          },
-                          transition: 'all 0.2s ease'
-                        }}
-                        onClick={() => handleReactionToggle(emoji)}
-                      >
-                        <span>{emoji}</span>
-                        <span style={{ marginLeft: "4px" }}>{count}</span>
-                      </Button>
-                    </Tooltip>
-                  ))}
-              </Box>
-            </Box>
-
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Tooltip title="Upvote">
-                <IconButton
-                  onClick={() => handleVote(1)}
-                  sx={{
-                    color: theme.colors.primary.main,
-                    '&:hover': {
-                      backgroundColor: theme.colors.action.hover,
-                      transform: 'translateY(-2px)',
-                    },
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  <ThumbUpIcon />
-                </IconButton>
-              </Tooltip>
-
-              <Typography
-                variant="body2"
-                sx={{ 
-                  mx: 1, 
-                  color: theme.colors.text.primary,
-                  fontWeight: 600,
-                  fontSize: '0.95rem'
-                }}
-              >
-                {votes}
-              </Typography>
-
-              <Tooltip title="Downvote">
-                <IconButton
-                  onClick={() => handleVote(-1)}
-                  sx={{
-                    color: theme.colors.text.secondary,
-                    '&:hover': {
-                      backgroundColor: theme.colors.action.hover,
-                      transform: 'translateY(2px)',
-                    },
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  <ThumbDownIcon />
-                </IconButton>
-              </Tooltip>
-            </Box>
+            <Carousel
+              showArrows={true}
+              showThumbs={false}
+              infiniteLoop={true}
+              showStatus={false}
+              swipeable={true}
+              emulateTouch={true}
+            >
+              {post.files.map((file, index) => (
+                <Box key={index} style={{ height: "400px" }}>
+                  <CardMedia
+                    component="img"
+                    alt={`Post image ${index + 1}`}
+                    src={`${API_URL2}/${file.filename}`}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "contain",
+                    }}
+                  />
+                </Box>
+              ))}
+            </Carousel>
           </Box>
-        </CardContent>
+        )}
+
+        <CardActions
+          style={{
+            justifyContent: "space-between",
+            padding: "16px",
+          }}
+        >
+          <Box style={{ display: "flex", alignItems: "center" }}>
+            <Tooltip title="Like">
+              <IconButton
+                onClick={() => handleVote(post._id, 1)}
+                style={{
+                  color: votes[post._id] > 0 ? "#4776E6" : "#607080",
+                  padding: "8px",
+                }}
+              >
+                <ThumbUp fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Typography
+              variant="body2"
+              style={{
+                fontWeight: 600,
+                margin: "0 4px",
+                color:
+                  votes[post._id] > 0
+                    ? "#4776E6"
+                    : votes[post._id] < 0
+                    ? "#EF4444"
+                    : "#607080",
+              }}
+            >
+              {votes[post._id]}
+            </Typography>
+            <Tooltip title="Dislike">
+              <IconButton
+                onClick={() => handleVote(post._id, -1)}
+                style={{
+                  color: votes[post._id] < 0 ? "#EF4444" : "#607080",
+                  padding: "8px",
+                }}
+              >
+                <ThumbDown fontSize="small" />
+              </IconButton>
+            </Tooltip>
+
+            <Button
+              startIcon={<CommentIcon fontSize="small" />}
+              onClick={handleOpenReactionMenu}
+              style={{
+                marginLeft: "8px",
+                borderRadius: "16px",
+                padding: "4px 12px",
+                color: "#4776E6",
+                backgroundColor: "transparent",
+                border: "none",
+                cursor: "pointer",
+                fontSize: "0.8rem",
+              }}
+            >
+              React
+            </Button>
+          </Box>
+
+          <Tooltip title="Share">
+            <IconButton
+              onClick={handleShare}
+              style={{
+                color: "#8E54E9",
+                padding: "8px",
+              }}
+            >
+              <ShareIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </CardActions>
+
+        {Object.keys(reactions[post._id] || {}).length > 0 && (
+          <Box
+            style={{
+              padding: "0 16px 16px 16px",
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "6px",
+            }}
+          >
+            {Object.entries(reactions[post._id] || {}).map(
+              ([emoji, count]) =>
+                count > 0 && (
+                  <Tooltip
+                    key={emoji}
+                    title={`${count} ${emoji}`}
+                    placement="top"
+                  >
+                    <Button
+                      size="small"
+                      onClick={() => handleReactionToggle(emoji, post._id)}
+                      style={{
+                        borderRadius: "12px",
+                        minWidth: "auto",
+                        padding: "2px 12px",
+                        fontSize: "0.75rem",
+                        backgroundColor: userReactions[post._id]?.[emoji]
+                          ? "rgba(71, 118, 230, 0.2)"
+                          : "rgba(95, 150, 230, 0.1)",
+                        color: userReactions[post._id]?.[emoji]
+                          ? "#4776E6"
+                          : "#2A3B4F",
+                        border: userReactions[post._id]?.[emoji]
+                          ? "1px solid #4776E6"
+                          : "1px solid rgba(95, 150, 230, 0.2)",
+                      }}
+                    >
+                      {emoji} {count}
+                    </Button>
+                  </Tooltip>
+                )
+            )}
+          </Box>
+        )}
       </Card>
 
-      {/* Reaction Menu */}
       <Menu
         anchorEl={reactionMenuAnchorEl}
         open={Boolean(reactionMenuAnchorEl)}
         onClose={handleCloseReactionMenu}
-        sx={{
-          "& .MuiPaper-root": {
-            backgroundColor: theme.colors.background.card,
-            boxShadow: theme.shadows.cardHover,
-            borderRadius: theme.shape.borderRadius,
-            padding: '8px',
+        PaperProps={{
+          style: {
+            borderRadius: "8px",
+            boxShadow: "0 8px 16px rgba(0, 0, 0, 0.1)",
           },
         }}
       >
-        <Box sx={{ display: "flex", padding: "8px" }}>
+        <Box
+          style={{
+            display: "flex",
+            padding: "12px",
+            width: "250px",
+            flexWrap: "wrap",
+            justifyContent: "center",
+            gap: "6px",
+          }}
+        >
           {EMOJIS.map((emoji) => (
             <IconButton
               key={emoji}
-              onClick={() => handleReactionToggle(emoji)}
-              sx={{
-                fontSize: "1.25rem",
-                margin: '0 2px',
-                backgroundColor: userReactions[emoji]
-                  ? theme.colors.action.selected
+              onClick={() => handleReactionToggle(emoji, post._id)}
+              style={{
+                fontSize: "20px",
+                backgroundColor: userReactions[post._id]?.[emoji]
+                  ? "rgba(71, 118, 230, 0.1)"
                   : "transparent",
+                border: userReactions[post._id]?.[emoji]
+                  ? "2px solid #4776E6"
+                  : "1px solid rgba(0, 0, 0, 0.05)",
+                borderRadius: "6px",
+                padding: "8px",
+                transition: "all 0.2s ease",
                 "&:hover": {
-                  backgroundColor: theme.colors.action.hover,
-                  transform: 'scale(1.1)',
+                  transform: "scale(1.1)",
+                  backgroundColor: "rgba(71, 118, 230, 0.05)",
                 },
-                transition: 'all 0.2s ease'
               }}
             >
               {emoji}
@@ -828,20 +1700,35 @@ export default function PostPage() {
         </Box>
       </Menu>
 
+      {openEditor && (
+        <PostEditor
+          boardId={post.board_id}
+          clubId={post.club_id}
+          onPostCreated={handlePostUpdated}
+          onClose={handleCloseEditor}
+          postToEdit={postToEdit}
+        />
+      )}
+
       <Snackbar
         open={notification.open}
         autoHideDuration={4000}
         onClose={handleCloseNotification}
-        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
         <Alert
           onClose={handleCloseNotification}
           severity={notification.severity}
           variant="filled"
-          sx={{ 
-            width: "100%",
-            borderRadius: theme.shape.borderRadius,
-            boxShadow: theme.shadows.card
+          style={{
+            borderRadius: "6px",
+            boxShadow: "0 8px 16px rgba(0, 0, 0, 0.1)",
+            backgroundColor:
+              notification.severity === "error"
+                ? "#EF4444"
+                : notification.severity === "success"
+                ? "#388E3C"
+                : "#1976d2",
           }}
         >
           {notification.message}
@@ -849,5 +1736,6 @@ export default function PostPage() {
       </Snackbar>
     </Box>
   );
-}
+};
 
+export default SinglePostPage;

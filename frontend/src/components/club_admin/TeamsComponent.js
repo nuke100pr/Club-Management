@@ -109,18 +109,17 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   },
 }));
 
-export default function BoardPrivileges({ boardId }) {
+export default function BoardPrivileges({ clubId }) {
   const [privileges, setPrivileges] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  console.log(boardId);
 
   useEffect(() => {
     const fetchPrivileges = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`http://localhost:5000/misc/misc/board/${boardId}`);
+        const response = await fetch(`http://localhost:5000/misc/misc/club/${clubId}`);
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -140,10 +139,10 @@ export default function BoardPrivileges({ boardId }) {
       }
     };
 
-    if (boardId) {
+    if (clubId) {
       fetchPrivileges();
     }
-  }, [boardId]);
+  }, [clubId]);
 
   if (loading) {
     return (
@@ -166,7 +165,7 @@ export default function BoardPrivileges({ boardId }) {
     return (
       <Alert severity="info" sx={{ mb: 2, borderRadius: 2 }}>
         <AlertTitle>Info</AlertTitle>
-        No privileges found for this board
+        No privileges found for this club
       </Alert>
     );
   }

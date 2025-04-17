@@ -3,7 +3,9 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import BanChecker from "@/components/BanChecker";
-import { ThemeProvider } from '@/context/ThemeContext';
+import CollapsibleNavBar from "@/components/navigationBar";
+import { ThemeProvider } from "@/context/ThemeContext";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -43,11 +45,12 @@ export default function RootLayout({
       >
         <BanChecker />
         <ThemeProvider>
-        {/* <Navbar /> */}
-        <main className="pt-0">
-          {/* pt-16 adds padding-top that matches navbar height */}
-          {children}
-        </main>
+          {/* <Navbar /> */}
+          <main className="pt-0">
+            {/* pt-16 adds padding-top that matches navbar height */}
+{children}
+          </main>
+          <CollapsibleNavBar />
         </ThemeProvider>
       </body>
     </html>

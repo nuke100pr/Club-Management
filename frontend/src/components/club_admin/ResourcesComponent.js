@@ -44,7 +44,7 @@ const getTagColor = (index) => {
   return colors[index % colors.length];
 };
 
-export default function ResourcesPage({ boardId = null, searchQuery = "" }) {
+export default function ResourcesPage({ clubId = null, searchQuery = "" }) {
   const theme = useTheme();
   const [loading, setLoading] = useState(true);
   const [allResources, setAllResources] = useState([]);
@@ -60,8 +60,8 @@ export default function ResourcesPage({ boardId = null, searchQuery = "" }) {
     userBoardsWithResourcePermission,
     setUserBoardsWithResourcePermission,
   ] = useState([]);
-  const [selectedBoard, setSelectedBoard] = useState(boardId);
-  const [selectedClub, setSelectedClub] = useState(null);
+
+  const [selectedClub, setSelectedClub] = useState(clubId);
 
   useEffect(() => {
     async function loadUserData() {
@@ -85,7 +85,7 @@ export default function ResourcesPage({ boardId = null, searchQuery = "" }) {
           const boardsWithPermission = Object.keys(
             result.userData.data.boards
           ).filter(
-            (boardId) => result.userData.data.boards[boardId].resources === true
+            (clubId) => result.userData.data.boards[clubId].resources === true
           );
           setUserBoardsWithResourcePermission(boardsWithPermission);
         }
@@ -105,8 +105,8 @@ export default function ResourcesPage({ boardId = null, searchQuery = "" }) {
     }
 
     if (resource.board_id) {
-      const boardId = resource.board_id._id || resource.board_id;
-      if (userBoardsWithResourcePermission.includes(boardId)) {
+      const clubId = resource.board_id._id || resource.board_id;
+      if (userBoardsWithResourcePermission.includes(clubId)) {
         return true;
       }
     }
@@ -118,8 +118,8 @@ export default function ResourcesPage({ boardId = null, searchQuery = "" }) {
     if (isSuperAdmin) {
       return true;
     }
-    if (boardId) {
-      if (userBoardsWithResourcePermission.includes(boardId)) {
+    if (clubId) {
+      if (userBoardsWithResourcePermission.includes(clubId)) {
         return true;
       }
       return isSuperAdmin;
@@ -128,10 +128,10 @@ export default function ResourcesPage({ boardId = null, searchQuery = "" }) {
   };
 
   const getDefaultClubOrBoardId = () => {
-    if (boardId) {
+    if (clubId) {
       return {
         type: "board",
-        id: boardId,
+        id: clubId,
       };
     }
     if (userClubsWithResourcePermission.length > 0) {
@@ -160,8 +160,8 @@ export default function ResourcesPage({ boardId = null, searchQuery = "" }) {
         const minLoadingTime = 500; // Minimum 2.5 seconds to show skeleton
 
         let url = "http://localhost:5000/resources/api/resource";
-        if (boardId) {
-          url += `?board_id=${boardId}`;
+        if (clubId) {
+          url += `?board_id=${clubId}`;
         }
 
         const response = await fetch(url);
@@ -204,7 +204,7 @@ export default function ResourcesPage({ boardId = null, searchQuery = "" }) {
     };
 
     fetchResources();
-  }, [boardId]);
+  }, [clubId]);
 
   useEffect(() => {
     let result = allResources;
@@ -234,14 +234,14 @@ export default function ResourcesPage({ boardId = null, searchQuery = "" }) {
             url: resource.url,
           })
           .catch((error) => console.error("Error sharing:", error));
-      } else {
+      } else if (navigator.clipboard?.writeText) {
         navigator.clipboard
           .writeText(resource.url)
           .then(() => alert("Link copied to clipboard: " + resource.url))
           .catch((err) => console.error("Failed to copy link: ", err));
+      } else {
+        alert("Sharing and clipboard not supported in this browser.");
       }
-    } else {
-      console.error("Sharing is not supported in this environment");
     }
   };
 
@@ -571,14 +571,7 @@ export default function ResourcesPage({ boardId = null, searchQuery = "" }) {
         existingResource={editingResource}
         onCreateResource={handleCreateResource}
         onUpdateResource={handleUpdateResource}
-        board_id={selectedBoard}
         club_id={selectedClub}
-        defaultBoardId={
-          defaultContext?.type === "board" ? defaultContext.id : null
-        }
-        defaultClubId={
-          defaultContext?.type === "club" ? defaultContext.id : null
-        }
         userId={userId}
       />
 

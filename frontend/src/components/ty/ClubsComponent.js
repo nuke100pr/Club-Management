@@ -9,6 +9,7 @@ import {
   Button,
   Alert,
   CircularProgress,
+  Stack,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 
@@ -99,7 +100,6 @@ const ClubsList = ({ boardId, userId, searchQuery = "" }) => {
     }
   };
 
-
   // Filter clubs based on searchQuery
   const filteredClubs = clubs.filter((club) => {
     if (!searchQuery) return true;
@@ -145,14 +145,9 @@ const ClubsList = ({ boardId, userId, searchQuery = "" }) => {
                 sx={{
                   p: 2,
                   height: "100%",
-                  cursor: "pointer",
-                  transition: "transform 0.2s, box-shadow 0.2s",
-                  "&:hover": {
-                    transform: "translateY(-4px)",
-                    boxShadow: theme.shadows[4],
-                  },
+                  display: "flex",
+                  flexDirection: "column",
                 }}
-                onClick={() => handleClick(`/current_club/${club._id}`)}
               >
                 <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                   <Avatar
@@ -187,37 +182,55 @@ const ClubsList = ({ boardId, userId, searchQuery = "" }) => {
                   {club.description || "No description available."}
                 </Typography>
 
-                {userId && (
+                <Stack spacing={1} sx={{ mt: "auto" }}>
                   <Button
-                    variant={club.isFollowing ? "contained" : "outlined"}
+                    variant="contained"
                     fullWidth
                     color="primary"
-                    onClick={(e) =>
-                      club.isFollowing
-                        ? handleUnfollowClub(club._id, e)
-                        : handleFollowClub(club._id, e)
-                    }
+                    onClick={() => handleClick(`/current_club/${club._id}`)}
                     sx={{
                       borderRadius: 2,
                       textTransform: "none",
-                      mt: "auto",
-                      borderColor: "#1976d2",
-                      color: club.isFollowing ? "#fff" : "#1976d2",
-                      backgroundColor: club.isFollowing
-                        ? "#1976d2"
-                        : "transparent",
+                      backgroundColor: "#1976d2",
                       "&:hover": {
-                        backgroundColor: club.isFollowing
-                          ? "#1565c0"
-                          : "transparent",
-                        borderColor: "#1976d2",
-                        opacity: 0.8,
+                        backgroundColor: "#1565c0",
                       },
                     }}
                   >
-                    {club.isFollowing ? "Unfollow Club" : "Follow Club"}
+                    View Club
                   </Button>
-                )}
+
+                  {userId && (
+                    <Button
+                      variant={club.isFollowing ? "contained" : "outlined"}
+                      fullWidth
+                      color="primary"
+                      onClick={(e) =>
+                        club.isFollowing
+                          ? handleUnfollowClub(club._id, e)
+                          : handleFollowClub(club._id, e)
+                      }
+                      sx={{
+                        borderRadius: 2,
+                        textTransform: "none",
+                        borderColor: "#1976d2",
+                        color: club.isFollowing ? "#fff" : "#1976d2",
+                        backgroundColor: club.isFollowing
+                          ? "#1976d2"
+                          : "transparent",
+                        "&:hover": {
+                          backgroundColor: club.isFollowing
+                            ? "#1565c0"
+                            : "transparent",
+                          borderColor: "#1976d2",
+                          opacity: 0.8,
+                        },
+                      }}
+                    >
+                      {club.isFollowing ? "Unfollow Club" : "Follow Club"}
+                    </Button>
+                  )}
+                </Stack>
               </Card>
             </Grid>
           ))}

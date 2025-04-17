@@ -1,29 +1,57 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
-  Grid,
-  IconButton,
-  Drawer,
+  Typography,
+  LinearProgress,
   useMediaQuery,
-  Fab,
-  Badge,
+  Divider,
 } from "@mui/material";
-import MenuIcon from "@mui/icons-material/Menu";
-import NotificationsIcon from "@mui/icons-material/Notifications";
-import CloseIcon from "@mui/icons-material/Close";
-import LeftSidebar from "../../components/finalpage/LeftSidebar";
-import RightSidebar from "../../components/finalpage/RightSidebar";
 import PostFeed from "../../components/finalpage/PostFeed";
-import Notifications from "../../components/finalpage/Notifications";
 import { useTheme } from "@mui/material/styles";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 export default function Home() {
-  const [leftOpen, setLeftOpen] = useState(false);
-  const [rightOpen, setRightOpen] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const theme = useTheme(); // Get theme from parent context
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
+
+  // Determining dark mode from theme
+  const isDarkMode = theme.palette.mode === "dark";
+
+  // Simulate loading state
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 2000); // Extended for ultra-premium feeling
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Update time every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Format date and time
+  const formatDate = (date) => {
+    const options = {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    };
+    return date.toLocaleDateString(undefined, options);
+  };
+
+  const formatTime = (date) => {
+    const options = { hour: "2-digit", minute: "2-digit", second: "2-digit" };
+    return date.toLocaleTimeString(undefined, options);
+  };
 
   // Style to hide scrollbars while maintaining functionality
   const hideScrollbarStyle = {
@@ -32,225 +60,326 @@ export default function Home() {
       // Chrome, Safari, newer Edge
       display: "none",
     },
-    "-ms-overflow-style": "none", // IE and older Edge
+    msOverflowStyle: "none", // IE and older Edge
     overflowY: "auto", // Keep scrolling functionality
+  };
+
+  const gradientBorder = {
+    position: "relative",
+    "&::before": {
+      content: '""',
+      position: "absolute",
+      inset: 0,
+      borderRadius: "inherit",
+      padding: "2px", // Thicker premium border
+      background: "linear-gradient(135deg, #4776E6 0%, #8E54E9 100%)",
+      WebkitMask:
+        "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+      WebkitMaskComposite: "xor",
+      maskComposite: "exclude",
+      pointerEvents: "none",
+    },
+  };
+
+  const ultraPremiumGlassEffect = {
+    backdropFilter: "blur(20px)", // Ultra premium blur
+    WebkitBackdropFilter: "blur(20px)",
+    background: isDarkMode
+      ? "rgba(18, 18, 28, 0.55)" // More transparent for higher-end feel
+      : "rgba(255, 255, 255, 0.55)",
+    boxShadow: isDarkMode
+      ? "0 15px 50px rgba(0, 0, 0, 0.3), 0 5px 15px rgba(0, 0, 0, 0.25)" // Enhanced premium shadow
+      : "0 15px 50px rgba(0, 0, 0, 0.18), 0 5px 15px rgba(0, 0, 0, 0.12)",
+    borderRadius: 4, // More rounded corners
+  };
+
+  const sidebarStyle = {
+    ...ultraPremiumGlassEffect,
+    ...gradientBorder,
+    width: { md: "220px", lg: "250px" },
+    height: "calc(100vh - 32px)", // Almost full height with margin
+    p: 3,
+    m: 2,
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "space-between",
+  };
+
+  // Handle responsive layout
+  const layoutContent = () => {
+    if (isSmallScreen) {
+      // Mobile layout
+      return (
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            width: "100%",
+            height: "100vh",
+            p: 2,
+          }}
+        >
+          {/* Logo and time at top for mobile */}
+          <Box
+            sx={{
+              ...ultraPremiumGlassEffect,
+              ...gradientBorder,
+              p: 2,
+              mb: 2,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 800,
+                letterSpacing: 1,
+                background: "linear-gradient(135deg, #4776E6 0%, #8E54E9 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+                textFillColor: "transparent",
+              }}
+            >
+              LIFE ON CAMPUS
+            </Typography>
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              {formatTime(currentTime)}
+            </Typography>
+          </Box>
+
+          {/* Centered post feed */}
+          <Box
+            sx={{
+              ...ultraPremiumGlassEffect,
+              ...gradientBorder,
+              flexGrow: 1,
+              width: "100%",
+              overflowY: "auto",
+              ...hideScrollbarStyle,
+            }}
+          >
+            <ErrorBoundary>
+            <PostFeed />
+            </ErrorBoundary>
+          </Box>
+        </Box>
+      );
+    } else {
+      // Desktop/tablet layout with sidebars
+      return (
+        <Box
+          sx={{
+            display: "flex",
+            width: "100%",
+            height: "100vh",
+            justifyContent: "center",
+          }}
+        >
+          {/* Left sidebar with logo and branding */}
+          <Box sx={{ ...sidebarStyle }}>
+            <Box>
+              <Typography
+                variant="h4"
+                sx={{
+                  fontWeight: 800,
+                  letterSpacing: 1.2,
+                  background:
+                    "linear-gradient(135deg, #4776E6 0%, #8E54E9 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                  textFillColor: "transparent",
+                  mb: 2,
+                }}
+              >
+                LIFE ON CAMPUS
+              </Typography>
+              <Divider
+                sx={{
+                  my: 2,
+                  background:
+                    "linear-gradient(90deg, rgba(71,118,230,0.5) 0%, rgba(142,84,233,0.5) 100%)",
+                  height: "2px",
+                  border: "none",
+                }}
+              />
+              <Typography
+                variant="body1"
+                sx={{ fontWeight: 500, opacity: 0.9, mb: 1 }}
+              >
+                Your premium campus experience
+              </Typography>
+              <Typography variant="body2" sx={{ opacity: 0.7 }}>
+                Stay connected with everything happening around your campus
+              </Typography>
+            </Box>
+
+            <Box>
+              <Typography
+                variant="overline"
+                sx={{ opacity: 0.7, letterSpacing: 2 }}
+              >
+                Version 1.0.0
+              </Typography>
+            </Box>
+          </Box>
+
+          {/* Centered post feed with proper height */}
+          <Box
+            sx={{
+              width: "100%",
+              maxWidth: { sm: "450px", md: "480px", lg: "520px" },
+              height: "calc(100vh - 32px)",
+              m: 2,
+              ...ultraPremiumGlassEffect,
+              ...gradientBorder,
+              overflowY: "auto",
+              ...hideScrollbarStyle,
+            }}
+          >
+            <PostFeed />
+          </Box>
+
+          {/* Right sidebar with date/time */}
+          <Box sx={{ ...sidebarStyle }}>
+            <Box>
+              <Typography
+                variant="overline"
+                sx={{ opacity: 0.7, letterSpacing: 2 }}
+              >
+                CURRENT TIME
+              </Typography>
+              <Typography
+                variant="h4"
+                sx={{ fontWeight: 700, letterSpacing: 0.5, mt: 1 }}
+              >
+                {formatTime(currentTime)}
+              </Typography>
+              <Divider
+                sx={{
+                  my: 2,
+                  background:
+                    "linear-gradient(90deg, rgba(142,84,233,0.5) 0%, rgba(71,118,230,0.5) 100%)",
+                  height: "2px",
+                  border: "none",
+                }}
+              />
+              <Typography
+                variant="body1"
+                sx={{ fontWeight: 500, opacity: 0.9 }}
+              >
+                {formatDate(currentTime)}
+              </Typography>
+            </Box>
+
+            <Box>
+              <Typography
+                variant="body2"
+                sx={{ opacity: 0.7, fontStyle: "italic" }}
+              >
+                "Make every moment on campus count"
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+      );
+    }
   };
 
   return (
     <Box
       sx={{
-        display: "flex",
-        flexDirection: "column",
         height: "100vh",
-        bgcolor: theme.palette.background.default,
+        background: isDarkMode
+          ? "radial-gradient(circle at 10% 20%, rgb(21, 26, 40) 0%, rgb(10, 12, 24) 90.1%)"
+          : "radial-gradient(circle at 10% 20%, rgb(248, 249, 252) 0%, rgb(230, 235, 248) 90.1%)",
+        color: isDarkMode ? "#eaecef" : "inherit",
+        transition: "all 0.4s ease",
+        overflow: "hidden", // Prevent outer scrolling
       }}
     >
-      {/* Mobile header with burger buttons */}
-      {isMobile && (
+      {/* Loading overlay */}
+      {isLoading && (
         <Box
           sx={{
-            position: "sticky",
+            position: "fixed",
             top: 0,
-            zIndex: theme.zIndex.drawer + 1,
-            backgroundColor: theme.palette.background.paper,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: isDarkMode
+              ? "rgba(10, 12, 24, 0.98)"
+              : "rgba(255, 255, 255, 0.98)",
+            zIndex: 9999,
             display: "flex",
-            justifyContent: "space-between",
+            flexDirection: "column",
+            justifyContent: "center",
             alignItems: "center",
-            p: 1,
-            borderBottom: "1px solid",
-            borderColor: theme.palette.divider,
-            boxShadow: 1,
+            gap: 3,
           }}
         >
-          <IconButton
-            edge="start"
-            color="white"
-            aria-label="menu"
-            onClick={() => setLeftOpen(true)}
+          <Typography
+            variant="h3"
+            sx={{
+              fontWeight: 800,
+              letterSpacing: 1.2,
+              mb: 1,
+              background: "linear-gradient(135deg, #4776E6 0%, #8E54E9 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+              textFillColor: "transparent",
+            }}
           >
-            <MenuIcon />
-          </IconButton>
-          <IconButton
-            edge="end"
-            color="blue"
-            aria-label="menu"
-            onClick={() => setRightOpen(true)}
+            LIFE ON CAMPUS
+          </Typography>
+
+          <Box sx={{ width: "280px", position: "relative" }}>
+            {/* Premium gradient border around progress bar */}
+            <Box
+              sx={{
+                position: "absolute",
+                top: -3,
+                left: -3,
+                right: -3,
+                bottom: -3,
+                borderRadius: "12px",
+                background: "linear-gradient(135deg, #4776E6 0%, #8E54E9 100%)",
+                opacity: 0.7,
+                filter: "blur(4px)",
+              }}
+            />
+
+            <LinearProgress
+              sx={{
+                height: 12,
+                borderRadius: 6,
+                position: "relative",
+                backgroundColor: isDarkMode
+                  ? "rgba(255,255,255,0.1)"
+                  : "rgba(0,0,0,0.1)",
+                "& .MuiLinearProgress-bar": {
+                  background:
+                    "linear-gradient(135deg, #4776E6 0%, #8E54E9 100%)",
+                },
+              }}
+            />
+          </Box>
+
+          <Typography
+            variant="body1"
+            sx={{ mt: 2, fontWeight: 500, letterSpacing: 0.5 }}
           >
-            <MenuIcon />
-          </IconButton>
+            Preparing your ultra-premium experience
+          </Typography>
         </Box>
       )}
 
-      {/* Main Content */}
-      <Box
-        sx={{
-          flexGrow: 1,
-          py: 3,
-          px: { xs: 1, sm: 2 },
-          overflowY: "auto",
-        }}
-      >
-        <Box
-          sx={{
-            maxWidth: 1128,
-            mx: "auto",
-          }}
-        >
-          <Grid container spacing={2}>
-            {/* Left Sidebar */}
-            {!isMobile && (
-              <Grid item xs={12} md={3} lg={2.5}>
-                <Box
-                  sx={{
-                    position: "sticky",
-                    top: 16,
-                    bgcolor: theme.palette.background.paper,
-                    borderRadius: 1,
-                    boxShadow: 1,
-                    overflow: "hidden",
-                    mb: 2,
-                  }}
-                >
-                  <LeftSidebar />
-                </Box>
-              </Grid>
-            )}
-
-            {/* Main Feed */}
-            <Grid item xs={12} md={isMobile ? 12 : 6} lg={isMobile ? 12 : 6}>
-              <Box
-                sx={{
-                  bgcolor: theme.palette.background.paper,
-                  borderRadius: 1,
-                  boxShadow: 1,
-                }}
-              >
-                <PostFeed />
-              </Box>
-            </Grid>
-
-            {/* Right Sidebar */}
-            {!isMobile && (
-              <Grid item md={3} lg={3.5}>
-                <Box
-                  sx={{
-                    position: "sticky",
-                    top: 16,
-                    height: "fit-content", // This is important
-                    maxHeight: "calc(100vh - 32px)",
-                    bgcolor: theme.palette.background.paper,
-                    borderRadius: 1,
-                    boxShadow: 1,
-                    overflow: "hidden",
-                    mb: 2,
-                  }}
-                >
-                  <RightSidebar />
-                </Box>
-              </Grid>
-            )}
-          </Grid>
-        </Box>
-      </Box>
-
-      {/* Floating Notifications Button */}
-      <Fab
-        color="primary"
-        aria-label="notifications"
-        onClick={() => setNotificationsOpen(true)}
-        sx={{
-          position: "fixed",
-          bottom: 20,
-          right: 20,
-          zIndex: 1000,
-          background: "linear-gradient(135deg, #4776E6 0%, #8E54E9 100%)",
-        }}
-      >
-        <Badge badgeContent={3} color="error">
-          <NotificationsIcon />
-        </Badge>
-      </Fab>
-
-      {/* Mobile Drawers */}
-      <Drawer
-        anchor="left"
-        open={leftOpen}
-        onClose={() => setLeftOpen(false)}
-        PaperProps={{
-          sx: {
-            ...hideScrollbarStyle,
-            width: 280,
-            marginTop: isMobile ? 5 : 0,
-            height: isMobile ? "calc(100% - 48px)" : "100%",
-            bgcolor: theme.palette.background.paper,
-          },
-        }}
-      >
-        <Box sx={{ p: 2 }}>
-          <LeftSidebar />
-        </Box>
-      </Drawer>
-
-      <Drawer
-        anchor="right"
-        open={rightOpen}
-        onClose={() => setRightOpen(false)}
-        PaperProps={{
-          sx: {
-            ...hideScrollbarStyle,
-            width: 280,
-            marginTop: isMobile ? 5 : 0,
-            height: isMobile ? "calc(100% - 48px)" : "100%",
-            bgcolor: theme.palette.background.paper,
-          },
-        }}
-      >
-        <Box sx={{ p: 2 }}>
-          <RightSidebar />
-        </Box>
-      </Drawer>
-
-      {/* Notifications Drawer - now coming from bottom on mobile */}
-      <Drawer
-        anchor={isMobile ? "bottom" : "right"}
-        open={notificationsOpen}
-        onClose={() => setNotificationsOpen(false)}
-        PaperProps={{
-          sx: {
-            ...hideScrollbarStyle,
-            width: isMobile ? "100%" : 350,
-            height: isMobile ? "80%" : "100%",
-            borderTopLeftRadius: isMobile ? 16 : 0,
-            borderTopRightRadius: isMobile ? 16 : 0,
-            bgcolor: theme.palette.background.paper,
-          },
-        }}
-      >
-        <Box
-          sx={{
-            position: "sticky",
-            top: 0,
-            bgcolor: theme.palette.background.paper,
-            zIndex: 1,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            p: 2,
-            borderBottom: "1px solid",
-            borderColor: theme.palette.divider,
-          }}
-        >
-          <Box sx={{ fontWeight: "bold" }}>Notifications</Box>
-          <IconButton
-            size="small"
-            onClick={() => setNotificationsOpen(false)}
-            aria-label="close notifications"
-          >
-            <CloseIcon />
-          </IconButton>
-        </Box>
-        <Notifications />
-      </Drawer>
+      {/* Main layout with sidebars */}
+      {layoutContent()}
     </Box>
   );
 }

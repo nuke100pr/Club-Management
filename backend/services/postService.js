@@ -85,17 +85,20 @@ const getPosts = async (query = {}, page = 1, limit = 10) => {
 
       // Get board information if board_id exists
       let boardInfo = null;
-      if (post.board_id && post.board_id.toString().trim() !== '') {
+      if (post.board_id && post.board_id.toString().trim() !== "") {
         try {
           boardInfo = await BoardService.fetchBoardById(post.board_id);
         } catch (error) {
-          console.error(`Error fetching board with ID ${post.board_id}:`, error);
+          console.error(
+            `Error fetching board with ID ${post.board_id}:`,
+            error
+          );
         }
       }
 
       // Get club information if club_id exists
       let clubInfo = null;
-      if (post.club_id && post.club_id.toString().trim() !== '') {
+      if (post.club_id && post.club_id.toString().trim() !== "") {
         try {
           clubInfo = await ClubService.fetchClubById(post.club_id);
         } catch (error) {
@@ -110,7 +113,7 @@ const getPosts = async (query = {}, page = 1, limit = 10) => {
         downvotes,
         netVotes,
         board: boardInfo,
-        club: clubInfo
+        club: clubInfo,
       };
     })
   );
@@ -146,7 +149,7 @@ const getPostById = async (postId) => {
 
   // Get board information if board_id exists
   let boardInfo = null;
-  if (post.board_id && post.board_id.toString().trim() !== '') {
+  if (post.board_id && post.board_id.toString().trim() !== "") {
     try {
       boardInfo = await BoardService.fetchBoardById(post.board_id);
     } catch (error) {
@@ -156,7 +159,7 @@ const getPostById = async (postId) => {
 
   // Get club information if club_id exists
   let clubInfo = null;
-  if (post.club_id && post.club_id.toString().trim() !== '') {
+  if (post.club_id && post.club_id.toString().trim() !== "") {
     try {
       clubInfo = await ClubService.fetchClubById(post.club_id);
     } catch (error) {
@@ -166,15 +169,14 @@ const getPostById = async (postId) => {
 
   return {
     ...post,
-    reactions: reactionCounts,
+    reactionCount: reactionCounts,
     upvotes,
     downvotes,
     netVotes,
     board: boardInfo,
-    club: clubInfo
+    club: clubInfo,
   };
 };
-
 
 const deletePost = async (postId, userId) => {
   // Find the post and make sure it exists
@@ -182,8 +184,6 @@ const deletePost = async (postId, userId) => {
   if (!post) {
     throw new Error("Post not found");
   }
-
-
 
   // Delete files from filesystem and database
   if (post.files && post.files.length > 0) {
@@ -199,7 +199,6 @@ const deletePost = async (postId, userId) => {
       }
     }
   }
-
 
   // Delete the post
   await Post.findByIdAndDelete(postId);
@@ -328,15 +327,23 @@ const getVotes = async (postId) => {
   };
 };
 
-const updatePost = async (postId, title, content, newFiles, userId, clubId, boardId) => {
+const updatePost = async (
+  postId,
+  title,
+  content,
+  newFiles,
+  userId,
+  clubId,
+  boardId
+) => {
   // Find the post and verify ownership
   const post = await Post.findById(postId);
   if (!post) {
-    throw new Error('Post not found');
+    throw new Error("Post not found");
   }
 
   if (post.created_by.toString() !== userId) {
-    throw new Error('Unauthorized: You can only update your own posts');
+    throw new Error("Unauthorized: You can only update your own posts");
   }
 
   // Process new files
@@ -361,10 +368,12 @@ const updatePost = async (postId, title, content, newFiles, userId, clubId, boar
       files: updatedFiles,
       club_id: clubId,
       board_id: boardId,
-      updated_at: new Date()
+      updated_at: new Date(),
     },
     { new: true }
-  ).populate('files').populate('created_by', 'username profile_pic');
+  )
+    .populate("files")
+    .populate("created_by", "username profile_pic");
 
   return updatedPost;
 };
@@ -381,5 +390,5 @@ module.exports = {
   removeVote,
   getReactions,
   getVotes,
-  updatePost // Add this line
+  updatePost, // Add this line
 };

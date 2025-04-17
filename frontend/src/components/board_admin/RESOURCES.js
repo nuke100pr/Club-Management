@@ -437,21 +437,26 @@ export default function ResourcesPage({ boardId = null }) {
   }, [searchTerm, allResources, selectedKeywords]);
 
   const shareResource = (resource) => {
-    if (navigator.share) {
-      navigator
-        .share({
-          title: resource.title,
-          text: resource.description,
-          url: resource.url,
-        })
-        .catch((error) => console.error("Error sharing:", error));
-    } else {
-      navigator.clipboard
-        .writeText(resource.url)
-        .then(() => alert("Link copied to clipboard: " + resource.url))
-        .catch((err) => console.error("Failed to copy link: ", err));
+    if (typeof window !== "undefined" && typeof navigator !== "undefined") {
+      if (navigator.share) {
+        navigator
+          .share({
+            title: resource.title,
+            text: resource.description,
+            url: resource.url,
+          })
+          .catch((error) => console.error("Error sharing:", error));
+      } else if (navigator.clipboard?.writeText) {
+        navigator.clipboard
+          .writeText(resource.url)
+          .then(() => alert("Link copied to clipboard: " + resource.url))
+          .catch((err) => console.error("Failed to copy link: ", err));
+      } else {
+        alert("Sharing not supported in this browser.");
+      }
     }
   };
+  
 
   const handleEdit = async (resourceId) => {
     try {

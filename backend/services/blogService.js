@@ -99,7 +99,7 @@ const getAllBlogs = async (filters = {}) => {
 
 const getBlogById = async (id) => {
   try {
-    const blog = await Blogs.findById(id);
+    const blog = await Blogs.findById(id).populate("image");
     if (!blog) {
       throw new Error("Blog not found");
     }

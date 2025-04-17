@@ -133,16 +133,19 @@ export default function GeminiPage() {
   };
 
   const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text)
-      .then(() => {
-        setSnackbarMessage('Copied to clipboard');
-        setSnackbarOpen(true);
-      })
-      .catch(() => {
-        setSnackbarMessage('Failed to copy to clipboard');
-        setSnackbarOpen(true);
-      });
+    if (typeof window !== "undefined" && typeof navigator !== "undefined") {
+      navigator.clipboard.writeText(text)
+        .then(() => {
+          setSnackbarMessage('Copied to clipboard');
+          setSnackbarOpen(true);
+        })
+        .catch(() => {
+          setSnackbarMessage('Failed to copy to clipboard');
+          setSnackbarOpen(true);
+        });
+    }
   };
+  
 
   const loadHistoryItem = (item) => {
     setQuery(item.query);

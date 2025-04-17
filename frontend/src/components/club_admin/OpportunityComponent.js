@@ -496,7 +496,7 @@ const OpportunityCard = ({
 };
 
 export default function OpportunitiesPage({
-  boardId = null,
+  clubId = null,
   searchQuery = "",
 }) {
   const theme = useTheme();
@@ -518,8 +518,8 @@ export default function OpportunitiesPage({
     userBoardsWithOpportunityPermission,
     setUserBoardsWithOpportunityPermission,
   ] = useState([]);
-  const [selectedBoard, setSelectedBoard] = useState(boardId);
-  const [selectedClub, setSelectedClub] = useState(null);
+
+  const [selectedClub, setSelectedClub] = useState(clubId);
   const [loading, setLoading] = useState(false); // Changed to false since we use showSkeleton state instead
   const [isLoadingData, setIsLoadingData] = useState(true); // New state to track actual data loading
   const [error, setError] = useState(null);
@@ -552,18 +552,18 @@ export default function OpportunitiesPage({
           const boardsWithPermission = Object.keys(
             result.userData.data.boards
           ).filter(
-            (boardId) =>
-              result.userData.data.boards[boardId].opportunities === true
+            (clubId) =>
+              result.userData.data.boards[clubId].opportunities === true
           );
           setUserBoardsWithOpportunityPermission(boardsWithPermission);
-          if (boardsWithPermission.length > 0 && !boardId) {
+          if (boardsWithPermission.length > 0 && !clubId) {
             setSelectedBoard(boardsWithPermission[0]);
           }
         }
       }
     }
     loadUserData();
-  }, [boardId]);
+  }, [clubId]);
 
   const hasOpportunityPermission = (opportunity) => {
     if (isSuperAdmin) return true;
@@ -576,8 +576,8 @@ export default function OpportunitiesPage({
     }
 
     if (opportunity.board_id) {
-      const boardId = opportunity.board_id._id || opportunity.board_id;
-      if (userBoardsWithOpportunityPermission.includes(boardId)) {
+      const clubId = opportunity.board_id._id || opportunity.board_id;
+      if (userBoardsWithOpportunityPermission.includes(clubId)) {
         return true;
       }
     }
@@ -586,8 +586,8 @@ export default function OpportunitiesPage({
   };
 
   const canCreateOpportunities = () => {
-    if (boardId) {
-      if (userBoardsWithOpportunityPermission.includes(boardId)) {
+    if (clubId) {
+      if (userBoardsWithOpportunityPermission.includes(clubId)) {
         return true;
       }
       return isSuperAdmin;
@@ -600,10 +600,10 @@ export default function OpportunitiesPage({
   };
 
   const getDefaultClubOrBoardId = () => {
-    if (boardId) {
+    if (clubId) {
       return {
         type: "board",
-        id: boardId,
+        id: clubId,
       };
     }
     if (userClubsWithOpportunityPermission.length > 0) {
@@ -631,8 +631,8 @@ export default function OpportunitiesPage({
         const startTime = Date.now();
 
         let url = "http://localhost:5000/opportunities";
-        if (boardId) {
-          url += `?board_id=${boardId}`;
+        if (clubId) {
+          url += `?board_id=${clubId}`;
         }
 
         const response = await fetch(url);
@@ -666,7 +666,7 @@ export default function OpportunitiesPage({
     };
 
     fetchOpportunities();
-  }, [boardId]);
+  }, [clubId]);
 
   useEffect(() => {
     let result = allOpportunities;
@@ -867,7 +867,6 @@ export default function OpportunitiesPage({
         handleClose={handleDialogClose}
         onSuccess={handleCreateOpportunity}
         initialData={editingOpportunity}
-        boardId={selectedBoard}
         clubId={selectedClub}
         creatorId={userId}
       />

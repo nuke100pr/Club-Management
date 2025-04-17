@@ -112,7 +112,7 @@ io.on("connection", (socket) => {
 app.set("io", io);
 
 // Routes
-app.use("/notify",notificationRoutes)
+app.use("/notify", notificationRoutes); // app.use("/notify",authMiddleware,notificationRoutes);
 app.use("/api", postRoutes);
 app.use("/api/messages", messageRoutes);
 

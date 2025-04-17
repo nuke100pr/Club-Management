@@ -39,7 +39,7 @@ const API_URL = "http://localhost:5000/api";
 const API_URL2 = "http://localhost:5000/uploads";
 const EMOJIS = ["👍", "❤️", "😂", "🔥", "😢", "👏"];
 
-const Posts = ({ boardId, clubId, searchQuery = "" }) => {
+const Posts = ({ clubId, searchQuery = "" }) => {
   const router = useRouter();
   const [posts, setPosts] = useState([]);
   const [filteredPosts, setFilteredPosts] = useState([]);
@@ -84,7 +84,7 @@ const Posts = ({ boardId, clubId, searchQuery = "" }) => {
         if (result.userData?.data?.boards) {
           setUserBoardsWithPostPermission(
             Object.keys(result.userData.data.boards).filter(
-              (boardId) => result.userData.data.boards[boardId].posts === true
+              (clubId) => result.userData.data.boards[clubId].posts === true
             )
           );
         }
@@ -97,8 +97,8 @@ const Posts = ({ boardId, clubId, searchQuery = "" }) => {
   useEffect(() => {
     let filtered = [...posts];
 
-    if (boardId) {
-      filtered = filtered.filter((post) => post?.board_id === boardId);
+    if (clubId) {
+      filtered = filtered.filter((post) => post?.board_id === clubId);
     }
 
     if (searchQuery) {
@@ -114,7 +114,7 @@ const Posts = ({ boardId, clubId, searchQuery = "" }) => {
 
     setFilteredPosts(filtered);
     console.log(filtered);
-  }, [posts, boardId, searchQuery]);
+  }, [posts, clubId, searchQuery]);
 
   const hasPostPermission = (post) => {
     if (isSuperAdmin || post.user_id === userId) return true;
@@ -125,8 +125,8 @@ const Posts = ({ boardId, clubId, searchQuery = "" }) => {
     }
 
     if (post?.board_id) {
-      const boardId = post?.board_id?._id || post?.board_id;
-      if (userBoardsWithPostPermission.includes(boardId)) return true;
+      const clubId = post?.board_id?._id || post?.board_id;
+      if (userBoardsWithPostPermission.includes(clubId)) return true;
     }
 
     return false;
@@ -136,8 +136,8 @@ const Posts = ({ boardId, clubId, searchQuery = "" }) => {
     if (isSuperAdmin) {
       return true;
     }
-    return boardId
-      ? userBoardsWithPostPermission.includes(boardId) || isSuperAdmin
+    return clubId
+      ? userBoardsWithPostPermission.includes(clubId) || isSuperAdmin
       : false;
   };
 
@@ -149,8 +149,8 @@ const Posts = ({ boardId, clubId, searchQuery = "" }) => {
       // Set minimum loading time of 2 seconds
       const minLoadTime = new Promise((resolve) => setTimeout(resolve, 500));
 
-      const url = boardId
-        ? `${API_URL}/posts?board_id=${boardId}`
+      const url = clubId
+        ? `${API_URL}/posts?club_id=${clubId}`
         : `${API_URL}/posts`;
       const fetchPromise = fetch(url)
         .then((response) => {
@@ -499,7 +499,7 @@ const Posts = ({ boardId, clubId, searchQuery = "" }) => {
       >
         {searchQuery
           ? "No posts match your search"
-          : boardId
+          : clubId
           ? "No posts in this board"
           : "No posts available"}
       </Typography>
@@ -772,20 +772,10 @@ const Posts = ({ boardId, clubId, searchQuery = "" }) => {
                         typeof window !== "undefined" &&
                         typeof navigator !== "undefined"
                       ) {
-                        navigator.clipboard
-                          .writeText(
-                            `${window.location.origin}/post/${post._id}`
-                          )
-                          .then(() => {
-                            showNotification(
-                              "Link copied to clipboard",
-                              "success"
-                            );
-                          })
-                          .catch((err) => {
-                            console.error("Failed to copy link:", err);
-                            showNotification("Failed to copy link", "error");
-                          });
+                        navigator.clipboard.writeText(
+                          `${window.location.origin}/post/${post._id}`
+                        );
+                        showNotification("Link copied to clipboard", "success");
                       }
                     }}
                     style={{
@@ -925,7 +915,6 @@ const Posts = ({ boardId, clubId, searchQuery = "" }) => {
 
       {openEditor && (
         <PostEditor
-          boardId={boardId}
           clubId={clubId}
           onPostCreated={handlePostCreated}
           onClose={handleCloseEditor}

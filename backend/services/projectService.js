@@ -270,6 +270,9 @@ const addProjectMember = async (projectId, userId) => {
 };
 
 const removeProjectMember = async (projectId, userId) => {
+
+  console.log(projectId);
+  console.log(userId);
   try {
     const member = await ProjectMembers.findOneAndDelete({
       project_id: projectId,

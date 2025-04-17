@@ -93,22 +93,6 @@ export default function Notifications() {
         pb: 1,
         mb: 1
       }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Badge badgeContent={unreadCount} color="error">
-            <NotificationsIcon color="primary" />
-          </Badge>
-          <Typography variant="h6" fontWeight="bold">
-            Notifications
-          </Typography>
-        </Box>
-        <Box>
-          <IconButton size="small" onClick={markAllAsRead} title="Mark all as read">
-            <DoneAllIcon fontSize="small" />
-          </IconButton>
-          <IconButton size="small" title="More options">
-            <MoreHorizIcon fontSize="small" />
-          </IconButton>
-        </Box>
       </Box>
       
       {/* Notification Items */}

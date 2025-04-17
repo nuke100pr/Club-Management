@@ -85,7 +85,7 @@ const createOpportunity = async (opportunityData, imageFile) => {
 
 const getAllOpportunities = async (filters = {}) => {
   try {
-    return await Opportunities.find(filters).exec();
+    return await Opportunities.find(filters).populate("image").exec();
   } catch (error) {
     throw new Error(`Error fetching opportunities: ${error.message}`);
   }

@@ -13,6 +13,7 @@ export function registerServiceWorker() {
         // Listen for messages from the service worker
         navigator.serviceWorker.addEventListener('message', event => {
           if (event.data.type === 'USER_BANNED') {
+
             // Delete auth token
             localStorage.removeItem('auth_token');
             

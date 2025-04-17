@@ -56,11 +56,16 @@ const Posts = ({ searchQuery = "" }) => {
   const [skeletonLoading, setSkeletonLoading] = useState(true);
 
   // Define theme-specific colors
-  const cardBgColor = theme.palette.mode === 'dark' ? theme.palette.background.paper : '#fff';
-  const cardBorderColor = theme.palette.mode === 'dark' ? alpha(theme.palette.divider, 0.2) : 'rgba(0, 0, 0, 0.05)';
-  const cardShadow = theme.palette.mode === 'dark' 
-    ? '0 4px 8px rgba(0, 0, 0, 0.25)' 
-    : '0 4px 8px rgba(95, 150, 230, 0.1)';
+  const cardBgColor =
+    theme.palette.mode === "dark" ? theme.palette.background.paper : "#fff";
+  const cardBorderColor =
+    theme.palette.mode === "dark"
+      ? alpha(theme.palette.divider, 0.2)
+      : "rgba(0, 0, 0, 0.05)";
+  const cardShadow =
+    theme.palette.mode === "dark"
+      ? "0 4px 8px rgba(0, 0, 0, 0.25)"
+      : "0 4px 8px rgba(95, 150, 230, 0.1)";
   const textPrimaryColor = theme.palette.text.primary;
   const textSecondaryColor = theme.palette.text.secondary;
   const gradientText = {
@@ -80,9 +85,9 @@ const Posts = ({ searchQuery = "" }) => {
     }
     loadUserData();
     fetchPosts();
-    
+
     // Add global style to hide scrollbars
-    const style = document.createElement('style');
+    const style = document.createElement("style");
     style.textContent = `
       * {
         -ms-overflow-style: none;  /* IE and Edge */
@@ -93,7 +98,7 @@ const Posts = ({ searchQuery = "" }) => {
       }
     `;
     document.head.appendChild(style);
-    
+
     return () => {
       document.head.removeChild(style);
     };
@@ -355,7 +360,11 @@ const Posts = ({ searchQuery = "" }) => {
       >
         <Typography
           variant="h5"
-          sx={{ color: theme.palette.error.main, marginBottom: "24px", fontWeight: 600 }}
+          sx={{
+            color: theme.palette.error.main,
+            marginBottom: "24px",
+            fontWeight: 600,
+          }}
         >
           Something went wrong
         </Typography>
@@ -407,12 +416,10 @@ const Posts = ({ searchQuery = "" }) => {
         sx={{
           marginBottom: "24px",
           fontWeight: 600,
-          ...gradientText
+          ...gradientText,
         }}
       >
-        {searchQuery
-          ? "No posts match your search"
-          : "No posts available"}
+        {searchQuery ? "No posts match your search" : "No posts available"}
       </Typography>
     </Box>
   );
@@ -440,9 +447,10 @@ const Posts = ({ searchQuery = "" }) => {
                 backgroundColor: cardBgColor,
                 transition: "all 0.3s ease",
                 "&:hover": {
-                  boxShadow: theme.palette.mode === 'dark' 
-                    ? '0 8px 16px rgba(0, 0, 0, 0.3)' 
-                    : '0 8px 16px rgba(95, 150, 230, 0.2)',
+                  boxShadow:
+                    theme.palette.mode === "dark"
+                      ? "0 8px 16px rgba(0, 0, 0, 0.3)"
+                      : "0 8px 16px rgba(95, 150, 230, 0.2)",
                   transform: "translateY(-4px)",
                 },
               }}
@@ -464,12 +472,18 @@ const Posts = ({ searchQuery = "" }) => {
                   </Avatar>
                 }
                 title={
-                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: textPrimaryColor }}>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ fontWeight: 600, color: textPrimaryColor }}
+                  >
                     {post.board?.name || post.club?.name || "Anonymous"}
                   </Typography>
                 }
                 subheader={
-                  <Typography variant="caption" sx={{ color: textSecondaryColor }}>
+                  <Typography
+                    variant="caption"
+                    sx={{ color: textSecondaryColor }}
+                  >
                     {new Date(post.created_at).toLocaleDateString("en-US", {
                       year: "numeric",
                       month: "short",
@@ -500,7 +514,7 @@ const Posts = ({ searchQuery = "" }) => {
                   sx={{
                     marginBottom: "12px",
                     fontWeight: 600,
-                    ...gradientText
+                    ...gradientText,
                   }}
                 >
                   {post.title}
@@ -579,7 +593,10 @@ const Posts = ({ searchQuery = "" }) => {
                 sx={{
                   justifyContent: "space-between",
                   padding: "12px 16px",
-                  borderTop: post.files?.length === 0 ? `1px solid ${cardBorderColor}` : 'none',
+                  borderTop:
+                    post.files?.length === 0
+                      ? `1px solid ${cardBorderColor}`
+                      : "none",
                 }}
               >
                 <Box sx={{ display: "flex", alignItems: "center" }}>
@@ -590,7 +607,8 @@ const Posts = ({ searchQuery = "" }) => {
                         handleVote(post._id, 1);
                       }}
                       sx={{
-                        color: votes[post._id] > 0 ? "#4776E6" : textSecondaryColor,
+                        color:
+                          votes[post._id] > 0 ? "#4776E6" : textSecondaryColor,
                         padding: "8px",
                       }}
                     >
@@ -619,7 +637,10 @@ const Posts = ({ searchQuery = "" }) => {
                         handleVote(post._id, -1);
                       }}
                       sx={{
-                        color: votes[post._id] < 0 ? theme.palette.error.main : textSecondaryColor,
+                        color:
+                          votes[post._id] < 0
+                            ? theme.palette.error.main
+                            : textSecondaryColor,
                         padding: "8px",
                       }}
                     >
@@ -652,10 +673,25 @@ const Posts = ({ searchQuery = "" }) => {
                   <IconButton
                     onClick={(e) => {
                       e.stopPropagation();
-                      navigator.clipboard.writeText(
-                        `${window.location.origin}/post/${post._id}`
-                      );
-                      showNotification("Link copied to clipboard", "success");
+                      if (
+                        typeof window !== "undefined" &&
+                        typeof navigator !== "undefined"
+                      ) {
+                        navigator.clipboard
+                          .writeText(
+                            `${window.location.origin}/post/${post._id}`
+                          )
+                          .then(() => {
+                            showNotification(
+                              "Link copied to clipboard",
+                              "success"
+                            );
+                          })
+                          .catch((err) => {
+                            console.error("Failed to copy link:", err);
+                            showNotification("Failed to copy link", "error");
+                          });
+                      }
                     }}
                     sx={{
                       color: "#8E54E9",
@@ -703,7 +739,10 @@ const Posts = ({ searchQuery = "" }) => {
                                 : textPrimaryColor,
                               border: userReactions[post._id]?.[emoji]
                                 ? "1px solid #4776E6"
-                                : `1px solid ${alpha(theme.palette.divider, 0.2)}`,
+                                : `1px solid ${alpha(
+                                    theme.palette.divider,
+                                    0.2
+                                  )}`,
                             }}
                           >
                             {emoji} {count}
@@ -727,7 +766,7 @@ const Posts = ({ searchQuery = "" }) => {
             borderRadius: "8px",
             boxShadow: "0 8px 16px rgba(0, 0, 0, 0.1)",
             backgroundColor: cardBgColor,
-          }
+          },
         }}
       >
         <Box

@@ -73,9 +73,8 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = () => {
-    // Redirect to Google OAuth endpoint
-    window.location.href = "http://localhost:5000/users/auth/google";
- };
+    window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/users/auth/google`;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -97,9 +96,8 @@ export default function LoginPage() {
     setMessage({ type: "", text: "" });
 
     try {
-      // Login request
-      const response = await fetch("http://localhost:5000/users/auth/login", {
-       method: "POST",
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users/auth/login`, {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
@@ -119,7 +117,7 @@ export default function LoginPage() {
         const cookieOptions = {
           secure: process.env.NODE_ENV === "production",
           sameSite: "strict",
-          expires: 30*10000
+          expires: 30
         };
 
         Cookies.set("auth_token", data.token, cookieOptions);

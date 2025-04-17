@@ -11,6 +11,9 @@ import GroupsIcon from '@mui/icons-material/Groups';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import SettingsIcon from '@mui/icons-material/Settings';
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
+import LogoutIcon from '@mui/icons-material/Logout';
+import { useRouter } from 'next/navigation';
+import Cookies from 'js-cookie';
 
 const sidebarItems = [
   { label: 'Events', path: '/events', icon: <EventIcon /> },
@@ -28,39 +31,44 @@ const sidebarItems = [
 
 export default function LeftSidebar() {
   const theme = useTheme();
+  const router = useRouter();
+  
+  const handleLogout = () => {
+    // Remove the auth_token cookie
+    Cookies.remove('auth_token');
+    // Redirect to login page
+    router.push('/login');
+  };
   
   return (
     <Box
       sx={{
-        width: 250,
+        width: '100%',
         height: '100%',
-        background: theme.palette.mode === 'dark' 
-          ? 'linear-gradient(135deg, #4776E6 0%, #8E54E9 100%)' 
-          : 'linear-gradient(135deg, #4776E6 0%, #8E54E9 100%)',
-        borderRight: `1px solid ${theme.palette.divider}`,
+        backgroundColor: theme.palette.background.paper, // Changed from gradient to solid background
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between', // This will push the logout button to the bottom
       }}
     >
       <List
         sx={{
+          width: '100%',
+          padding: 1,
+          overflow: 'auto',
           '& .MuiListItemButton-root': {
             borderRadius: 1,
             mb: 0.5,
             '&:hover': {
-              backgroundColor: theme.palette.mode === 'dark' 
-                ? 'rgba(255, 255, 255, 0.1)' 
-                : 'rgba(0, 0, 0, 0.04)',
+              filter: 'brightness(1.1)',
             },
           },
           '& .MuiListItemIcon-root': {
-            color: theme.palette.mode === 'dark' 
-              ? theme.palette.common.white 
-              : theme.palette.common.white,
+            color: theme.palette.common.white,
             minWidth: 40,
           },
           '& .MuiListItemText-primary': {
-            color: theme.palette.mode === 'dark' 
-              ? theme.palette.common.white 
-              : theme.palette.common.white,
+            color: theme.palette.common.white,
             fontWeight: 500,
           },
         }}
@@ -70,9 +78,10 @@ export default function LeftSidebar() {
             <ListItemButton 
               component="a"
               sx={{
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                background: 'linear-gradient(135deg, #4776E6 0%, #8E54E9 100%)', // Kept the gradient for tabs
                 '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                  background: 'linear-gradient(135deg, #4776E6 0%, #8E54E9 100%)', // Kept gradient on hover
+                  boxShadow: '0 2px 5px rgba(0, 0, 0, 0.2)', // Added subtle shadow on hover
                 },
               }}
             >
@@ -81,6 +90,25 @@ export default function LeftSidebar() {
             </ListItemButton>
           </Link>
         ))}
+      </List>
+      
+      {/* Logout Button */}
+      <List sx={{ padding: 1 }}>
+        <ListItemButton 
+          onClick={handleLogout}
+          sx={{
+            background: 'linear-gradient(135deg, #4776E6 0%, #8E54E9 100%)', // Kept gradient for logout button
+            '&:hover': {
+              background: 'linear-gradient(135deg, #4776E6 0%, #8E54E9 100%)', // Kept gradient on hover
+              boxShadow: '0 2px 5px rgba(0, 0, 0, 0.2)', // Added subtle shadow on hover
+            },
+          }}
+        >
+          <ListItemIcon>
+            <LogoutIcon sx={{ color: theme.palette.common.white }} />
+          </ListItemIcon>
+          <ListItemText primary="Logout" sx={{ color: theme.palette.common.white }} />
+        </ListItemButton>
       </List>
     </Box>
   );
