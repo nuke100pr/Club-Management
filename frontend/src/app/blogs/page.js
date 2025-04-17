@@ -1,3 +1,5 @@
+
+
 "use client";
 import { useState, useEffect } from "react";
 import {
@@ -15,18 +17,21 @@ import {
   Fab,
   Chip,
 } from "@mui/material";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import BlogCreateForm from "../../components/blogs/BlogCreateForm";
-import SearchBar from "../../components/blogs/SearchBar";
+import SearchBar from "../../components/blogs/SearchBar"; // Updated import
 import { fetchUserData } from "@/utils/auth";
 import { useRouter } from "next/navigation";
 import ShareIcon from "@mui/icons-material/Share";
 import UniversalShareMenu from "../../components/shared/UniversalShareMenu";
+
+// Define filters for blogs
+const filters = ["My Clubs", "My Boards"];
+
 export default function BLOGS() {
   const [blogs, setBlogs] = useState([]);
   const [filteredBlogs, setFilteredBlogs] = useState([]);
@@ -39,29 +44,15 @@ export default function BLOGS() {
   const [userData, setUserData] = useState(null);
   const [userId, setUserId] = useState(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-  const [userClubsWithBlogPermission, setUserClubsWithBlogPermission] = useState(
-    []
-  );
+  const [userClubsWithBlogPermission, setUserClubsWithBlogPermission] = useState([]);
   const [shareMenuAnchorEl, setShareMenuAnchorEl] = useState(null);
-const [blogToShare, setBlogToShare] = useState(null);
-  const [userBoardsWithBlogPermission, setUserBoardsWithBlogPermission] =
-    useState([]);
+  const [blogToShare, setBlogToShare] = useState(null);
+  const [userBoardsWithBlogPermission, setUserBoardsWithBlogPermission] = useState([]);
   const [selectedClubId, setSelectedClubId] = useState(null);
   const [selectedBoardId, setSelectedBoardId] = useState(null);
+  const [selectedFilters, setSelectedFilters] = useState({});
   const router = useRouter();
-  useEffect(() => {
-    const handleBackButton = (e) => {
-      e.preventDefault();
-      router.push("/home");
-    };
-  
-    window.history.pushState(null, "", window.location.pathname);
-    window.addEventListener("popstate", handleBackButton);
-  
-    return () => {
-      window.removeEventListener("popstate", handleBackButton);
-    };
-  }, [router]);
+
   // Fetch user data on mount
   useEffect(() => {
     async function loadUserData() {
@@ -74,9 +65,9 @@ const [blogToShare, setBlogToShare] = useState(null);
 
         // Extract clubs with blogs permission
         if (result.userData?.data?.clubs) {
-          const clubsWithPermission = Object.keys(
-            result.userData.data.clubs
-          ).filter((clubId) => result.userData.data.clubs[clubId].blogs === true);
+          const clubsWithPermission = Object.keys(result.userData.data.clubs).filter(
+            (clubId) => result.userData.data.clubs[clubId].blogs === true
+          );
           setUserClubsWithBlogPermission(clubsWithPermission);
 
           // Set the first club as default if available
@@ -87,9 +78,7 @@ const [blogToShare, setBlogToShare] = useState(null);
 
         // Extract boards with blogs permission
         if (result.userData?.data?.boards) {
-          const boardsWithPermission = Object.keys(
-            result.userData.data.boards
-          ).filter(
+          const boardsWithPermission = Object.keys(result.userData.data.boards).filter(
             (boardId) => result.userData.data.boards[boardId].blogs === true
           );
           setUserBoardsWithBlogPermission(boardsWithPermission);
@@ -127,16 +116,18 @@ const [blogToShare, setBlogToShare] = useState(null);
 
     return false;
   };
+
   const handleShareClick = (event, blog) => {
     event.stopPropagation();
     setShareMenuAnchorEl(event.currentTarget);
     setBlogToShare(blog);
   };
-  
+
   const handleCloseShareMenu = () => {
     setShareMenuAnchorEl(null);
     setBlogToShare(null);
   };
+
   // Check if user can create blogs
   const canCreateBlogs = () => {
     return (
@@ -173,7 +164,7 @@ const [blogToShare, setBlogToShare] = useState(null);
             tags: blog.tags || [],
             image: blog.image
               ? {
-                  url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/uploads/${blog.image.filename}`,
+                  url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/Uploads/${blog.image.filename}`,
                   alt: blog.title,
                 }
               : { url: "/api/placeholder/800/500", alt: "Blog image" },
@@ -201,24 +192,53 @@ const [blogToShare, setBlogToShare] = useState(null);
     fetchBlogs();
   }, []);
 
+  // Handle filter changes
+  const handleFilterChange = (event) => {
+    setSelectedFilters((prev) => ({
+      ...prev,
+      [event.target.name]: event.target.checked,
+    }));
+  };
+
+  // Clear all filters
+  const clearFilters = () => {
+    setSelectedFilters({});
+  };
+
   // Add filtering effect
   useEffect(() => {
-    if (!searchQuery) {
-      setFilteredBlogs(blogs);
-      return;
+    const lowercaseQuery = searchQuery.toLowerCase();
+    const hasActiveFilters = Object.values(selectedFilters).some(Boolean);
+
+    let filtered = blogs;
+
+    // Apply search query filtering
+    if (searchQuery) {
+      filtered = filtered.filter(
+        (blog) =>
+          blog.title.toLowerCase().includes(lowercaseQuery) ||
+          blog.introduction.toLowerCase().includes(lowercaseQuery) ||
+          (blog.tags &&
+            blog.tags.some((tag) => tag.toLowerCase().includes(lowercaseQuery)))
+      );
     }
 
-    const lowercaseQuery = searchQuery.toLowerCase();
-    const filtered = blogs.filter(
-      (blog) =>
-        blog.title.toLowerCase().includes(lowercaseQuery) ||
-        blog.introduction.toLowerCase().includes(lowercaseQuery) ||
-        (blog.tags &&
-          blog.tags.some((tag) => tag.toLowerCase().includes(lowercaseQuery)))
-    );
+    // Apply filter-based filtering
+    if (hasActiveFilters) {
+      filtered = filtered.filter((blog) => {
+        const matchesClubFilter = selectedFilters["My Clubs"]
+          ? blog.club_id && userClubsWithBlogPermission.includes(blog.club_id._id || blog.club_id)
+          : true;
+        const matchesBoardFilter = selectedFilters["My Boards"]
+          ? blog.board_id && userBoardsWithBlogPermission.includes(blog.board_id._id || blog.board_id)
+          : true;
+
+        return matchesClubFilter && matchesBoardFilter;
+      });
+    }
 
     setFilteredBlogs(filtered);
-  }, [searchQuery, blogs]);
+  }, [searchQuery, blogs, selectedFilters, userClubsWithBlogPermission, userBoardsWithBlogPermission]);
 
   const handleDelete = async (blogId) => {
     try {
@@ -344,7 +364,7 @@ const [blogToShare, setBlogToShare] = useState(null);
                 createdAt: new Date(updatedBlog.createdAt).toLocaleDateString(),
                 image: updatedBlog.image
                   ? {
-                      url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/uploads/${updatedBlog.image.filename}`,
+                      url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/Uploads/${updatedBlog.image.filename}`,
                       alt: updatedBlog.title,
                     }
                   : { url: "/api/placeholder/800/500", alt: "Blog image" },
@@ -372,7 +392,7 @@ const [blogToShare, setBlogToShare] = useState(null);
           views: Math.floor(Math.random() * 5000),
           image: updatedBlog.image
             ? {
-                url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/uploads/${updatedBlog.image.filename}`,
+                url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/Uploads/${updatedBlog.image.filename}`,
                 alt: updatedBlog.title,
               }
             : { url: "/api/placeholder/800/500", alt: "Blog image" },
@@ -430,61 +450,22 @@ const [blogToShare, setBlogToShare] = useState(null);
 
   return (
     <Box
-  sx={{
-    backgroundColor: '#f9fafe',
-    minHeight: '100vh',
-    p: { xs: 2, md: 4 },
-  }}
->
-  <Container maxWidth="xl">
-    {/* Header Section */}
-    <Box sx={{ 
-      mb: 5, 
-      display: 'flex', 
-      flexDirection: { xs: 'column', md: 'row' }, 
-      justifyContent: 'space-between',
-      alignItems: { xs: 'flex-start', md: 'center' },
-      gap: 2,
-      position: 'relative'
-    }}>
-      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-        <IconButton 
-          onClick={() => router.push("/home")}
-          sx={{ 
-            backgroundColor: 'white',
-            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.08)',
-            mr: 2,
-            '&:hover': {
-              backgroundColor: '#f0f4ff',
-            }
-          }}
-        >
-          <ArrowBackIcon sx={{ color: '#4776E6' }} />
-        </IconButton>
-        
-        <Typography
-          variant="h4"
-          component="h1"
-          sx={{
-            fontWeight: 700,
-            background: 'linear-gradient(45deg, #4776E6 0%, #8E54E9 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            letterSpacing: '-0.5px',
-          }}
-        >
-          Latest Blog Posts
-        </Typography>
-      </Box>
-      
-      <Box sx={{ width: { xs: '100%', md: '40%' } }}>
+      sx={{
+        backgroundColor: '#f9fafe',
+        minHeight: '100vh',
+        p: { xs: 2, md: 4 },
+      }}
+    >
+      <Container maxWidth="xl">
+        {/* Search Bar */}
         <SearchBar
           searchQuery={searchQuery}
           onSearchChange={handleSearchChange}
+          selectedFilters={selectedFilters}
+          onFilterChange={handleFilterChange}
+          clearFilters={clearFilters}
         />
-      </Box>
-    </Box>
-        
+
         {/* Blog Grid */}
         {filteredBlogs.length === 0 ? (
           <Box sx={{ 
@@ -686,50 +667,50 @@ const [blogToShare, setBlogToShare] = useState(null);
 
                     {/* Blog Info */}
                     <Stack
-  direction="row"
-  justifyContent="space-between"
-  alignItems="center"
-  sx={{ mb: 'auto', mt: 2 }}
->
-  <Stack direction="row" alignItems="center" spacing={0.5}>
-    <CalendarTodayIcon
-      sx={{ color: '#8E54E9', fontSize: '0.9rem' }}
-    />
-    <Typography
-      variant="caption"
-      sx={{ color: '#607080', fontSize: '0.75rem' }}
-    >
-      {blog.createdAt}
-    </Typography>
-  </Stack>
+                      direction="row"
+                      justifyContent="space-between"
+                      alignItems="center"
+                      sx={{ mb: 'auto', mt: 2 }}
+                    >
+                      <Stack direction="row" alignItems="center" spacing={0.5}>
+                        <CalendarTodayIcon
+                          sx={{ color: '#8E54E9', fontSize: '0.9rem' }}
+                        />
+                        <Typography
+                          variant="caption"
+                          sx={{ color: '#607080', fontSize: '0.75rem' }}
+                        >
+                          {blog.createdAt}
+                        </Typography>
+                      </Stack>
 
-  <Stack direction="row" alignItems="center" spacing={1.5}>
-    <Stack direction="row" alignItems="center" spacing={0.5}>
-      <VisibilityIcon
-        sx={{ color: '#4776E6', fontSize: '0.9rem' }}
-      />
-      <Typography
-        variant="caption"
-        sx={{ color: '#607080', fontSize: '0.75rem', fontWeight: 500 }}
-      >
-        {blog.views.toLocaleString()}
-      </Typography>
-    </Stack>
-    
-    <IconButton
-      onClick={(e) => handleShareClick(e, blog)}
-      size="small"
-      sx={{
-        color: '#4776E6',
-        padding: 0,
-        height: 20,
-        width: 20,
-      }}
-    >
-      <ShareIcon sx={{ fontSize: '1rem' }} />
-    </IconButton>
-  </Stack>
-</Stack>
+                      <Stack direction="row" alignItems="center" spacing={1.5}>
+                        <Stack direction="row" alignItems="center" spacing={0.5}>
+                          <VisibilityIcon
+                            sx={{ color: '#4776E6', fontSize: '0.9rem' }}
+                          />
+                          <Typography
+                            variant="caption"
+                            sx={{ color: '#607080', fontSize: '0.75rem', fontWeight: 500 }}
+                          >
+                            {blog.views.toLocaleString()}
+                          </Typography>
+                        </Stack>
+                        
+                        <IconButton
+                          onClick={(e) => handleShareClick(e, blog)}
+                          size="small"
+                          sx={{
+                            color: '#4776E6',
+                            padding: 0,
+                            height: 20,
+                            width: 20,
+                          }}
+                        >
+                          <ShareIcon sx={{ fontSize: '1rem' }} />
+                        </IconButton>
+                      </Stack>
+                    </Stack>
 
                     {/* Read More Button */}
                     <Button
@@ -811,16 +792,16 @@ const [blogToShare, setBlogToShare] = useState(null);
           board_id={selectedBoardId}
         />
         {/* Share Menu */}
-{blogToShare && (
-  <UniversalShareMenu
-    anchorEl={shareMenuAnchorEl}
-    open={Boolean(shareMenuAnchorEl)}
-    onClose={handleCloseShareMenu}
-    id={blogToShare.id}
-    title={blogToShare.title}
-    contentType="blog"
-  />
-)}
+        {blogToShare && (
+          <UniversalShareMenu
+            anchorEl={shareMenuAnchorEl}
+            open={Boolean(shareMenuAnchorEl)}
+            onClose={handleCloseShareMenu}
+            id={blogToShare.id}
+            title={blogToShare.title}
+            contentType="blog"
+          />
+        )}
       </Container>
     </Box>
   );

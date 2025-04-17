@@ -189,8 +189,6 @@ const ProjectsGrid = () => {
   const [projects, setProjects] = useState([]);
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState({
-    club: null,
-    board: null,
     status: null,
   });
   const [addProjectOpen, setAddProjectOpen] = useState(false);
@@ -419,8 +417,6 @@ const ProjectsGrid = () => {
   const filteredProjects = projects.filter(
     (project) =>
       project.title.toLowerCase().includes(search.toLowerCase()) &&
-      (!filters.club || project.club_id === filters.club) &&
-      (!filters.board || project.board_id === filters.board) &&
       (!filters.status || project.status === filters.status)
   );
 

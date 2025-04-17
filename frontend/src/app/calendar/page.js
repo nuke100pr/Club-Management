@@ -1192,11 +1192,6 @@ const CalendarView = () => {
                   </Box>
                 )}
               </CardContent>
-              <Box sx={{ p: 3, mt: "auto" }}>
-                <GradientButton fullWidth>
-                  Create New Event
-                </GradientButton>
-              </Box>
             </StyledCard>
           </Grid>
         </Grid>

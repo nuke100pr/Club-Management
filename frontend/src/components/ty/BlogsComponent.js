@@ -217,6 +217,8 @@ export default function BlogCardGrid({
   const hasBlogPermission = (blog) => {
     if (isSuperAdmin) return true;
 
+    
+
     if (blog.club_id) {
       const clubId = blog.club_id._id || blog.club_id;
       if (userClubsWithBlogPermission.includes(clubId)) {
