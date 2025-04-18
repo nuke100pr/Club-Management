@@ -1,32 +1,31 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Box, Container, Typography, Button, Chip, IconButton, Tooltip, Fab } from "@mui/material";
+import { 
+  Box, Container, Typography, Button, Chip, IconButton, 
+  Tooltip, Fab, useTheme 
+} from "@mui/material";
 import { Share as ShareIcon, Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from "@mui/icons-material";
 import SearchAndFilterBar from "../../components/resources/SearchAndFilterBar";
 import CreateResourceDialog from "../../components/resources/CreateResourceDialog";
 import UniversalShareMenu from "../../components/shared/UniversalShareMenu";
 import { fetchUserData } from "@/utils/auth";
 
-// Modern color palette based on design system
-const COLORS = {
-  primary: "#4776E6",
-  secondary: "#8E54E9",
-  background: "#f8faff",
-  cardBg: "#ffffff",
-  textPrimary: "#2A3B4F",
-  textSecondary: "#607080",
-};
-
-// Tag color palette with more vibrant colors matching design system
-const getTagColor = (index) => {
+const getTagColor = (index, theme) => {
   const colors = [
-    "#4776E6", "#8E54E9", "#1976d2", "#388e3c", 
-    "#d32f2f", "#7b1fa2", "#f57c00", "#455a64"
+    theme.palette.primary.main,
+    theme.palette.secondary.main,
+    theme.palette.info.main,
+    theme.palette.success.main,
+    theme.palette.error.main,
+    theme.palette.warning.main,
+    theme.palette.primary.dark,
+    theme.palette.secondary.dark
   ];
   return colors[index % colors.length];
 };
 
 const ResourceCards = () => {
+  const theme = useTheme();
   const [userNames, setUserNames] = useState({});
   const [allResources, setAllResources] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -42,14 +41,12 @@ const ResourceCards = () => {
   const [userBoardsWithResourcePermission, setUserBoardsWithResourcePermission] = useState([]);
   const [selectedBoard, setSelectedBoard] = useState(null);
   const [selectedClub, setSelectedClub] = useState(null);
-  // State for share menu
   const [shareMenuAnchor, setShareMenuAnchor] = useState(null);
   const [currentSharedResource, setCurrentSharedResource] = useState(null);
 
   useEffect(() => {
     async function loadUserData() {
       const result = await fetchUserData();
-
       if (result) {
         setUserData(result.userData);
         setUserId(result.userId);
@@ -70,11 +67,11 @@ const ResourceCards = () => {
     }
     loadUserData();
   }, []);
+
   const fetchUserNameById = async (userId) => {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users/${userId}/details`);
       const result = await response.json();
-      
       if (result.success && result.data) {
         return result.data.name || "Unknown User";
       }
@@ -84,23 +81,21 @@ const ResourceCards = () => {
       return "Unknown User";
     }
   };
+
   const hasResourcePermission = (resource) => {
     if (isSuperAdmin) return true;
-
     if (resource.club_id) {
       const clubId = resource.club_id._id || resource.club_id;
       if (userClubsWithResourcePermission.includes(clubId)) {
         return true;
       }
     }
-
     if (resource.board_id) {
       const boardId = resource.board_id._id || resource.board_id;
       if (userBoardsWithResourcePermission.includes(boardId)) {
         return true;
       }
     }
-
     return false;
   };
 
@@ -133,7 +128,6 @@ const ResourceCards = () => {
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/resources/api/resource`);
         const result = await response.json();
-        
         if (result.success && result.data) {
           const formattedResources = result.data.map(resource => ({
             id: resource._id,
@@ -147,21 +141,17 @@ const ResourceCards = () => {
             club_id: resource.club_id || null,
             board_id: resource.board_id || null,
           }));
-
           setAllResources(formattedResources);
         }
       } catch (error) {
         console.error("Error fetching resources:", error);
       }
     };
-
     fetchResources();
   }, []);
   
-
   useEffect(() => {
     let result = allResources;
-
     if (searchTerm.trim()) {
       const search = searchTerm.toLowerCase();
       result = result.filter(resource => 
@@ -170,48 +160,40 @@ const ResourceCards = () => {
         resource.keywords.some(keyword => keyword.toLowerCase().includes(search))
       );
     }
-
     if (selectedKeywords.length > 0) {
       result = result.filter(resource => 
         resource.keywords.some(keyword => selectedKeywords.includes(keyword))
       );
     }
-
     setFilteredResources(result);
   }, [searchTerm, allResources, selectedKeywords]);
+
   useEffect(() => {
     const fetchUserNames = async () => {
       const namePromises = allResources.map(async (resource) => {
-        // Only fetch if we don't already have this user's name and userId is not "Unknown"
         if (!userNames[resource.publishedBy] && resource.publishedBy !== "Unknown") {
           const name = await fetchUserNameById(resource.publishedBy);
           return { id: resource.publishedBy, name };
         }
         return null;
       });
-      
       const results = await Promise.all(namePromises);
       const newUserNames = { ...userNames };
-      
       results.forEach(result => {
         if (result) {
           newUserNames[result.id] = result.name;
         }
       });
-      
       setUserNames(newUserNames);
     };
-    
     fetchUserNames();
   }, [allResources]);
 
-  // Handle opening the share menu
   const handleShareClick = (event, resource) => {
     setShareMenuAnchor(event.currentTarget);
     setCurrentSharedResource(resource);
   };
 
-  // Handle closing the share menu
   const handleShareClose = () => {
     setShareMenuAnchor(null);
     setCurrentSharedResource(null);
@@ -221,7 +203,6 @@ const ResourceCards = () => {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/resources/bpi/${resourceId}`);
       const result = await response.json();
-      
       if (result.success) {
         const editResource = {
           id: result.data._id,
@@ -233,7 +214,6 @@ const ResourceCards = () => {
           club_id: result.data.club_id || null,
           board_id: result.data.board_id || null
         };
-        
         setEditingResource(editResource);
         setCreateDialogOpen(true);
       }
@@ -248,7 +228,6 @@ const ResourceCards = () => {
         method: 'DELETE'
       });
       const result = await response.json();
-      
       if (result.success) {
         setAllResources(prev => prev.filter(r => r.id !== resourceId));
         alert('Resource deleted successfully!');
@@ -285,12 +264,10 @@ const ResourceCards = () => {
 
   return (
     <Box sx={{ 
-      backgroundColor: COLORS.background, 
       minHeight: "100vh",
-      padding: "32px"
+      padding: "32px",
+      backgroundColor: theme.palette.background.default
     }}>
-
-
       <SearchAndFilterBar 
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
@@ -303,27 +280,25 @@ const ResourceCards = () => {
       />
 
       <Container maxWidth="xl" sx={{ mt: 4, mb: 4, px: 0 }}>
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-            gap: 3,
-          }}
-        >
+        <Box sx={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+          gap: 3,
+        }}>
           {filteredResources.length > 0 ? (
             filteredResources.map((resource) => (
               <Box
                 key={resource.id}
                 sx={{
-                  backgroundColor: COLORS.cardBg,
+                  backgroundColor: theme.palette.background.paper,
                   borderRadius: "16px",
                   overflow: "hidden",
-                  boxShadow: "0 4px 12px rgba(95, 150, 230, 0.1)",
+                  boxShadow: theme.shadows[2],
                   transition: "all 0.3s ease",
                   position: "relative",
-                  border: "1px solid rgba(95, 150, 230, 0.1)",
+                  border: `1px solid ${theme.palette.divider}`,
                   "&:hover": {
-                    boxShadow: "0 12px 20px rgba(95, 150, 230, 0.2)",
+                    boxShadow: theme.shadows[6],
                     transform: "translateY(-8px)",
                   },
                   display: "flex",
@@ -342,28 +317,30 @@ const ResourceCards = () => {
                     <IconButton
                       onClick={() => handleEdit(resource.id)}
                       sx={{
-                        backgroundColor: "rgba(71, 118, 230, 0.1)",
+                        backgroundColor: theme.palette.primary.light,
                         width: "32px",
                         height: "32px",
                         "&:hover": {
-                          backgroundColor: "rgba(71, 118, 230, 0.2)",
+                          backgroundColor: theme.palette.primary.main,
+                          color: theme.palette.primary.contrastText
                         }
                       }}
                     >
-                      <EditIcon sx={{ fontSize: "16px", color: COLORS.primary }} />
+                      <EditIcon sx={{ fontSize: "16px" }} />
                     </IconButton>
                     <IconButton
                       onClick={() => handleDelete(resource.id)}
                       sx={{
-                        backgroundColor: "rgba(211, 47, 47, 0.1)",
+                        backgroundColor: theme.palette.error.light,
                         width: "32px",
                         height: "32px",
                         "&:hover": {
-                          backgroundColor: "rgba(211, 47, 47, 0.2)",
+                          backgroundColor: theme.palette.error.main,
+                          color: theme.palette.error.contrastText
                         }
                       }}
                     >
-                      <DeleteIcon sx={{ fontSize: "16px", color: "#d32f2f" }} />
+                      <DeleteIcon sx={{ fontSize: "16px" }} />
                     </IconButton>
                   </Box>
                 )}
@@ -374,7 +351,7 @@ const ResourceCards = () => {
                     sx={{
                       fontSize: "1.1rem",
                       fontWeight: 600,
-                      color: COLORS.textPrimary,
+                      color: theme.palette.text.primary,
                       mb: 2,
                       mt: 3
                     }}
@@ -385,7 +362,7 @@ const ResourceCards = () => {
                   <Typography
                     variant="body2"
                     sx={{
-                      color: COLORS.textSecondary,
+                      color: theme.palette.text.secondary,
                       mb: 2,
                       lineHeight: 1.6,
                       flex: 1
@@ -402,8 +379,8 @@ const ResourceCards = () => {
                           label={tag}
                           size="small"
                           sx={{
-                            backgroundColor: `${getTagColor(index)}20`,
-                            color: getTagColor(index),
+                            backgroundColor: `${getTagColor(index, theme)}20`,
+                            color: getTagColor(index, theme),
                             borderRadius: "8px",
                             height: "22px",
                             fontSize: "0.65rem",
@@ -420,16 +397,16 @@ const ResourceCards = () => {
                       size="small"
                       onClick={() => window.open(resource.url, "_blank")}
                       sx={{
-                        background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.secondary})`,
-                        color: "white",
+                        background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                        color: theme.palette.primary.contrastText,
                         borderRadius: "8px",
                         padding: "6px 12px",
                         textTransform: "none",
                         fontSize: "0.8rem",
                         fontWeight: 500,
-                        boxShadow: "0 2px 6px rgba(71, 118, 230, 0.3)",
+                        boxShadow: theme.shadows[2],
                         "&:hover": {
-                          boxShadow: "0 4px 10px rgba(71, 118, 230, 0.4)",
+                          boxShadow: theme.shadows[4],
                           transform: "translateY(-2px)",
                         },
                         transition: "all 0.3s ease"
@@ -442,9 +419,9 @@ const ResourceCards = () => {
                       <IconButton 
                         onClick={(e) => handleShareClick(e, resource)}
                         sx={{
-                          color: COLORS.primary,
+                          color: theme.palette.primary.main,
                           "&:hover": {
-                            backgroundColor: "rgba(71, 118, 230, 0.1)",
+                            backgroundColor: theme.palette.action.hover,
                           }
                         }}
                       >
@@ -457,16 +434,16 @@ const ResourceCards = () => {
                 <Box 
                   sx={{ 
                     p: 2,
-                    borderTop: "1px solid rgba(95, 150, 230, 0.1)",
-                    backgroundColor: "rgba(95, 150, 230, 0.03)",
+                    borderTop: `1px solid ${theme.palette.divider}`,
+                    backgroundColor: theme.palette.action.hover,
                     display: "flex",
                     justifyContent: "space-between"
                   }}
                 >
-                  <Typography variant="caption" sx={{ color: COLORS.textSecondary }}>
+                  <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
                     By: {userNames[resource.publishedBy] || resource.publishedBy}
                   </Typography>
-                  <Typography variant="caption" sx={{ color: COLORS.textSecondary }}>
+                  <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
                     {new Date(resource.publishedAt).toLocaleDateString()}
                   </Typography>
                 </Box>
@@ -477,16 +454,16 @@ const ResourceCards = () => {
               sx={{ 
                 gridColumn: "1 / -1", 
                 textAlign: "center", 
-                backgroundColor: "white",
+                backgroundColor: theme.palette.background.paper,
                 borderRadius: "16px",
                 padding: 4,
-                boxShadow: "0 4px 12px rgba(95, 150, 230, 0.1)",
+                boxShadow: theme.shadows[2],
               }}
             >
               <Typography 
                 variant="h6" 
                 sx={{ 
-                  color: COLORS.textSecondary,
+                  color: theme.palette.text.secondary,
                   fontWeight: 500
                 }}
               >
@@ -497,7 +474,6 @@ const ResourceCards = () => {
         </Box>
       </Container>
 
-      {/* Universal Share Menu Component */}
       {currentSharedResource && (
         <UniversalShareMenu
           anchorEl={shareMenuAnchor}

@@ -898,7 +898,7 @@ const ForumList = ({ boards: propBoards = {}, clubs: propClubs = {} }) => {
           availableClubs={availableClubs}
         />
 
-        <Grid container spacing={3} sx={{ mt: 3 }}>
+        <Grid container spacing={8} sx={{ mt: 16 }}>
           {filteredForums.map((forum) => (
             <Grid item key={forum._id} xs={12} sm={6} md={4} lg={3}>
               <ForumCard

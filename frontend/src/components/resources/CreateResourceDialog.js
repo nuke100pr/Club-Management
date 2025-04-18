@@ -3,6 +3,7 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   TextField, Box, Button, Chip, FormControl, CircularProgress, Alert
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 
 const CreateResourceDialog = ({ 
   open, 
@@ -16,6 +17,7 @@ const CreateResourceDialog = ({
   defaultClubId,
   userId
 }) => {
+  const theme = useTheme();
   const [newResource, setNewResource] = useState({
     title: "",
     description: "",
@@ -89,7 +91,6 @@ const CreateResourceDialog = ({
       let response;
       const payload = {
         ...newResource,
-        // Ensure we're using the most up-to-date context IDs
         club_id: club_id || newResource.club_id,
         board_id: board_id || newResource.board_id
       };
@@ -222,7 +223,18 @@ const CreateResourceDialog = ({
                   }
                 }}
               />
-              <Button variant="contained" onClick={handleAddTag}>Add</Button>
+              <Button 
+                variant="contained" 
+                onClick={handleAddTag}
+                sx={{
+                  background: theme.palette.primary.main,
+                  '&:hover': {
+                    background: theme.palette.primary.dark
+                  }
+                }}
+              >
+                Add
+              </Button>
             </Box>
             <Box sx={{ mt: 1 }}>
               {newResource.tags.map((tag, index) => (
@@ -230,7 +242,12 @@ const CreateResourceDialog = ({
                   key={index}
                   label={tag}
                   onDelete={() => handleRemoveTag(tag)}
-                  sx={{ mr: 1, mt: 1 }}
+                  sx={{ 
+                    mr: 1, 
+                    mt: 1,
+                    backgroundColor: theme.palette.primary.light,
+                    color: theme.palette.primary.dark
+                  }}
                 />
               ))}
             </Box>
@@ -238,12 +255,23 @@ const CreateResourceDialog = ({
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose} disabled={isLoading}>Cancel</Button>
+        <Button 
+          onClick={handleClose} 
+          disabled={isLoading}
+          sx={{ color: theme.palette.text.secondary }}
+        >
+          Cancel
+        </Button>
         <Button 
           onClick={handleSubmitResource} 
           variant="contained" 
-          color="primary" 
           disabled={isLoading}
+          sx={{
+            background: theme.palette.primary.main,
+            '&:hover': {
+              background: theme.palette.primary.dark
+            }
+          }}
         >
           {isLoading ? <CircularProgress size={24} /> : (existingResource ? 'Update' : 'Create')}
         </Button>

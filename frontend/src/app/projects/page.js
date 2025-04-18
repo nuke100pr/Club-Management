@@ -1,25 +1,30 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, Tag, Edit2, Trash2, Plus,Share } from 'lucide-react';
+import { Calendar, Clock, Tag, Edit2, Trash2, Plus, Share } from 'lucide-react';
 import { fetchUserData } from '@/utils/auth';
 import SearchAndFilter from '../../components/projects/SearchAndFilter';
 import CreateProjectDialog from '../../components/projects/CreateProjectDialog';
 import { useRouter } from 'next/navigation';
 import UniversalShareMenu from '../../components/shared/UniversalShareMenu';
+import { useTheme } from '@mui/material/styles';
+
 // Helper function to format dates
 const formatDate = (dateString) => {
   const options = { year: 'numeric', month: 'short', day: 'numeric' };
   return new Date(dateString).toLocaleDateString('en-US', options);
 };
 
-// Tag component with a single color scheme
+// Tag component with dynamic color based on theme
 const ProjectTag = ({ tag }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+
   return (
     <span 
       className="inline-block px-2 py-1 mr-2 mb-2 text-xs rounded"
       style={{ 
-        backgroundColor: '#4776E620', 
-        color: '#4776E6', 
+        backgroundColor: isDark ? '#5d8aff30' : '#4776E620', 
+        color: isDark ? '#78a6ff' : '#4776E6', 
         fontSize: '0.65rem',
         height: '22px',
         display: 'inline-flex',
@@ -32,21 +37,57 @@ const ProjectTag = ({ tag }) => {
 };
 
 // Individual project card component
-const ProjectCard = ({ project, hasPermission, handleEdit, handleDelete, router,handleShareClick }) => {
+const ProjectCard = ({ project, hasPermission, handleEdit, handleDelete, router, handleShareClick }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+  
+  // Dynamic color values based on theme
+  const cardBg = isDark ? '#1e2a3a' : '#ffffff';
+  const cardBorder = project._id % 2 === 0 ? (isDark ? '#5d8aff' : '#4776E6') : (isDark ? '#b17eff' : '#8E54E9');
+  const cardShadow = isDark ? 'rgba(0, 10, 60, 0.3)' : 'rgba(95, 150, 230, 0.1)';
+  const cardShadowHover = isDark ? 'rgba(0, 10, 60, 0.5)' : 'rgba(95, 150, 230, 0.2)';
+  const textPrimary = isDark ? '#e0e6f0' : '#2A3B4F';
+  const textSecondary = isDark ? '#a0aec0' : '#607080';
+  const buttonBg = isDark ? '#2d3748' : '#4776E610';
+  const buttonBgHover = isDark ? '#3a4a5e' : '#4776E620';
+  const buttonColor = isDark ? '#78a6ff' : '#4776E6';
+  const buttonBorder = isDark ? '#3a4a5e' : '#4776E630';
+
+  // Status colors
+  const getStatusColors = (status) => {
+    if (status === "Running") {
+      return {
+        bg: isDark ? '#413100' : '#FFF7E0',
+        color: isDark ? '#ffc940' : '#FFB100'
+      };
+    } else if (status === "Completed") {
+      return {
+        bg: isDark ? '#0a3622' : '#E3F9E5',
+        color: isDark ? '#2ae886' : '#00B869'
+      };
+    } else {
+      return {
+        bg: isDark ? '#321b5a' : '#8E54E920', 
+        color: isDark ? '#b17eff' : '#8E54E9'
+      };
+    }
+  };
+
   return (
     <div 
-      className="bg-white rounded-2xl p-6 transition-all duration-300 h-full flex flex-col"
+      className="rounded-2xl p-6 transition-all duration-300 h-full flex flex-col"
       style={{
-        boxShadow: '0 4px 12px rgba(95, 150, 230, 0.1)',
-        borderTop: `3px solid ${project._id % 2 === 0 ? '#4776E6' : '#8E54E9'}`,
+        backgroundColor: cardBg,
+        boxShadow: `0 4px 12px ${cardShadow}`,
+        borderTop: `3px solid ${cardBorder}`,
         transform: 'translateY(0)',
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = '0 12px 20px rgba(95, 150, 230, 0.2)';
+        e.currentTarget.style.boxShadow = `0 12px 20px ${cardShadowHover}`;
         e.currentTarget.style.transform = 'translateY(-8px)';
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.boxShadow = '0 4px 12px rgba(95, 150, 230, 0.1)';
+        e.currentTarget.style.boxShadow = `0 4px 12px ${cardShadow}`;
         e.currentTarget.style.transform = 'translateY(0)';
       }}
     >
@@ -65,91 +106,87 @@ const ProjectCard = ({ project, hasPermission, handleEdit, handleDelete, router,
       <div className="flex justify-between items-start mb-2">
         <h6 
           className="text-xl font-semibold cursor-pointer" 
-          style={{ color: '#2A3B4F' }}
+          style={{ color: textPrimary }}
           onClick={() => router.push(`/current_project/${project._id}`)}
         >
           {project.title}
         </h6>
         <div className="flex">
-    <button 
-      onClick={(e) => { e.stopPropagation(); handleShareClick(e, project); }}
-      className="text-gray-500 hover:text-blue-600 mr-2"
-    >
-      <Share size={18} />
-    </button>
-    {hasPermission && (
-      <>
-        <button 
-          onClick={(e) => { e.stopPropagation(); handleEdit(project); }}
-          className="text-gray-500 hover:text-blue-600 mr-2"
-        >
-          <Edit2 size={18} />
-        </button>
-        <button 
-          onClick={(e) => { e.stopPropagation(); handleDelete(project._id); }}
-          className="text-gray-500 hover:text-red-600"
-        >
-          <Trash2 size={18} />
-        </button>
-      </>
-    )}
-  </div>
-</div>
+          <button 
+            onClick={(e) => { e.stopPropagation(); handleShareClick(e, project); }}
+            className={`hover:text-blue-600 mr-2`}
+            style={{ color: isDark ? '#a0aec0' : '#64748b' }}
+          >
+            <Share size={18} />
+          </button>
+          {hasPermission && (
+            <>
+              <button 
+                onClick={(e) => { e.stopPropagation(); handleEdit(project); }}
+                className={`hover:text-blue-600 mr-2`}
+                style={{ color: isDark ? '#a0aec0' : '#64748b' }}
+              >
+                <Edit2 size={18} />
+              </button>
+              <button 
+                onClick={(e) => { e.stopPropagation(); handleDelete(project._id); }}
+                className={`hover:text-red-600`}
+                style={{ color: isDark ? '#a0aec0' : '#64748b' }}
+              >
+                <Trash2 size={18} />
+              </button>
+            </>
+          )}
+        </div>
+      </div>
       
       {/* Status */}
-      {/* Status */}
-{project.status && (
-  <span 
-    className="inline-block px-2 py-1 mb-3 text-xs rounded"
-    style={{ 
-      backgroundColor: 
-        project.status === "Running" ? "#FFF7E0" : 
-        project.status === "Completed" ? "#E3F9E5" : 
-        '#8E54E920', 
-      color: 
-        project.status === "Running" ? "#FFB100" : 
-        project.status === "Completed" ? "#00B869" : 
-        '#8E54E9', 
-      fontSize: '0.65rem',
-      height: '22px',
-      display: 'inline-flex',
-      alignItems: 'center'
-    }}
-  >
-    {project.status}
-  </span>
-)}
+      {project.status && (
+        <span 
+          className="inline-block px-2 py-1 mb-3 text-xs rounded"
+          style={{ 
+            backgroundColor: getStatusColors(project.status).bg,
+            color: getStatusColors(project.status).color,
+            fontSize: '0.65rem',
+            height: '22px',
+            display: 'inline-flex',
+            alignItems: 'center'
+          }}
+        >
+          {project.status}
+        </span>
+      )}
       
       {/* Description */}
       <p 
         className="mb-4 text-sm flex-grow" 
-        style={{ color: '#607080' }}
+        style={{ color: textSecondary }}
       >
         {project.description}
       </p>
       
       {/* Project Dates */}
       <div className="mb-4">
-        <div className="flex items-center mb-1 text-xs" style={{ color: '#607080' }}>
+        <div className="flex items-center mb-1 text-xs" style={{ color: textSecondary }}>
           <Calendar size={14} className="mr-2" />
           <span className="mr-1">Start:</span>
-          <span className="font-medium" style={{ color: '#2A3B4F' }}>
+          <span className="font-medium" style={{ color: textPrimary }}>
             {formatDate(project.start_date)}
           </span>
         </div>
         
-        <div className="flex items-center mb-1 text-xs" style={{ color: '#607080' }}>
+        <div className="flex items-center mb-1 text-xs" style={{ color: textSecondary }}>
           <Calendar size={14} className="mr-2" />
           <span className="mr-1">End:</span>
-          <span className="font-medium" style={{ color: '#2A3B4F' }}>
+          <span className="font-medium" style={{ color: textPrimary }}>
             {formatDate(project.end_date)}
           </span>
         </div>
         
-        <div className="flex items-center text-xs" style={{ color: '#607080' }}>
+        <div className="flex items-center text-xs" style={{ color: textSecondary }}>
           <Clock size={14} className="mr-2" />
           <span className="mr-1">Posted:</span>
-          <span className="font-medium" style={{ color: '#2A3B4F' }}>
+          <span className="font-medium" style={{ color: textPrimary }}>
             {formatDate(project.created_on)}
           </span>
         </div>
@@ -167,15 +204,15 @@ const ProjectCard = ({ project, hasPermission, handleEdit, handleDelete, router,
         onClick={() => router.push(`/current_project/${project._id}`)}
         className="mt-4 text-sm font-medium py-2 px-4 rounded-lg transition-colors"
         style={{
-          backgroundColor: '#4776E610',
-          color: '#4776E6',
-          border: '1px solid #4776E630'
+          backgroundColor: buttonBg,
+          color: buttonColor,
+          border: `1px solid ${buttonBorder}`
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = '#4776E620';
+          e.currentTarget.style.backgroundColor = buttonBgHover;
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = '#4776E610';
+          e.currentTarget.style.backgroundColor = buttonBg;
         }}
       >
         View Project Details
@@ -186,6 +223,10 @@ const ProjectCard = ({ project, hasPermission, handleEdit, handleDelete, router,
 
 // Project grid component
 const ProjectsGrid = () => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+  const bgColor = isDark ? '#121a24' : '#f8faff';
+
   const [projects, setProjects] = useState([]);
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState({
@@ -235,6 +276,7 @@ const ProjectsGrid = () => {
     loadUserData();
     fetchProjects();
   }, []);
+  
   const handleShareClose = () => {
     setShareMenu({
       ...shareMenu,
@@ -242,6 +284,7 @@ const ProjectsGrid = () => {
       anchorEl: null
     });
   };
+  
   // Check if user has permission to edit/delete a project
   const hasProjectPermission = (project) => {
     // Superadmins have all permissions
@@ -310,6 +353,7 @@ const ProjectsGrid = () => {
       return null;
     }
   };
+  
   const handleShareClick = (event, project) => {
     setShareMenu({
       open: true,
@@ -318,6 +362,7 @@ const ProjectsGrid = () => {
       title: project.title
     });
   };
+  
   const createProject = async (formData) => {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/projects/`, {
@@ -422,11 +467,9 @@ const ProjectsGrid = () => {
 
   return (
     <div 
-  className="px-20 py-15 min-h-screen" // Changed from "p-8 min-h-screen"
-  style={{ backgroundColor: '#f8faff' }}
->
-
-      
+      className="px-20 py-15 min-h-screen"
+      style={{ backgroundColor: bgColor }}
+    >
       <SearchAndFilter
         onSearchChange={handleSearchChange}
         onFilterChange={handleFilterChange}
@@ -456,15 +499,16 @@ const ProjectsGrid = () => {
         createProject={createProject}
         updateProject={updateProject}
       />
+      
       {/* Universal Share Menu */}
-<UniversalShareMenu
-  anchorEl={shareMenu.anchorEl}
-  open={shareMenu.open}
-  onClose={handleShareClose}
-  id={shareMenu.id}
-  title={shareMenu.title}
-  contentType="project"
-/>
+      <UniversalShareMenu
+        anchorEl={shareMenu.anchorEl}
+        open={shareMenu.open}
+        onClose={handleShareClose}
+        id={shareMenu.id}
+        title={shareMenu.title}
+        contentType="project"
+      />
     </div>
   );
 };

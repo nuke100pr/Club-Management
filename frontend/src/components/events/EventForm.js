@@ -14,6 +14,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  useTheme,
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 
@@ -25,10 +26,10 @@ const EventForm = ({
   title = "Add New Event",
   submitButtonText = "Create Event",
   eventTypes = ["Session", "Competition", "Workshop", "Meeting"],
-  club_id = null, // Add club_id as a prop with default null
-  board_id = null, // Add board_id as a prop with default null
+  club_id = null,
+  board_id = null,
 }) => {
-  // Ensure all form fields have default values
+  const theme = useTheme();
   const [formData, setFormData] = useState({
     name: "",
     venue: "",
@@ -36,8 +37,8 @@ const EventForm = ({
     duration: "",
     description: "",
     event_type_id: eventTypes[0] || "Session",
-    club_id: club_id || "", // Use prop value or empty string
-    board_id: board_id || "", // Use prop value or empty string
+    club_id: club_id || "",
+    board_id: board_id || "",
   });
 
   const [imageFile, setImageFile] = useState(null);
@@ -45,7 +46,6 @@ const EventForm = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
-  // Add useEffect to update form data when initialData or props change
   useEffect(() => {
     if (initialData) {
       setFormData({
@@ -59,7 +59,6 @@ const EventForm = ({
         board_id: initialData.board_id || board_id || "",
       });
 
-      // Reset image-related states
       setImageFile(null);
       setImagePreview(null);
     }
@@ -73,10 +72,7 @@ const EventForm = ({
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Store the file for upload
       setImageFile(file);
-
-      // Create preview
       const reader = new FileReader();
       reader.onload = () => setImagePreview(reader.result);
       reader.readAsDataURL(file);
@@ -108,22 +104,42 @@ const EventForm = ({
         : new Date().toISOString(),
       club_id: formData.club_id || null,
       board_id: formData.board_id || null,
-      image: imageFile, // Include image file in submission
+      image: imageFile,
     };
 
     onSubmit(eventData);
   };
 
   const isFormValid = () => {
-    // Validate required fields
     return formData.name && formData.venue && formData.timestamp;
   };
 
   return (
-    <Dialog open={open} onClose={resetForm} maxWidth="sm" fullWidth>
-      <DialogTitle>{title}</DialogTitle>
+    <Dialog 
+      open={open} 
+      onClose={resetForm} 
+      maxWidth="sm" 
+      fullWidth
+      PaperProps={{
+        sx: {
+          backgroundImage: 'none',
+          backgroundColor: theme.palette.background.paper,
+        }
+      }}
+    >
+      <DialogTitle sx={{ color: theme.palette.text.primary }}>
+        {title}
+      </DialogTitle>
       <DialogContent>
-        {error && <Box sx={{ color: "error.main", mt: 2, mb: 2 }}>{error}</Box>}
+        {error && (
+          <Box sx={{ 
+            color: theme.palette.error.main, 
+            mt: 2, 
+            mb: 2 
+          }}>
+            {error}
+          </Box>
+        )}
         <Grid container spacing={2} sx={{ mt: 0.5 }}>
           <Grid item xs={12}>
             <TextField
@@ -133,6 +149,11 @@ const EventForm = ({
               value={formData.name}
               onChange={handleInputChange}
               required
+              sx={{
+                '& .MuiInputBase-root': {
+                  backgroundColor: theme.palette.background.default,
+                }
+              }}
             />
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -147,8 +168,13 @@ const EventForm = ({
               required
               InputProps={{
                 inputProps: {
-                  step: 300, // 5 min
+                  step: 300,
                 },
+              }}
+              sx={{
+                '& .MuiInputBase-root': {
+                  backgroundColor: theme.palette.background.default,
+                }
               }}
             />
           </Grid>
@@ -160,6 +186,11 @@ const EventForm = ({
               value={formData.venue}
               onChange={handleInputChange}
               required
+              sx={{
+                '& .MuiInputBase-root': {
+                  backgroundColor: theme.palette.background.default,
+                }
+              }}
             />
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -169,6 +200,11 @@ const EventForm = ({
               fullWidth
               value={formData.duration}
               onChange={handleInputChange}
+              sx={{
+                '& .MuiInputBase-root': {
+                  backgroundColor: theme.palette.background.default,
+                }
+              }}
             />
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -180,6 +216,9 @@ const EventForm = ({
                 value={formData.event_type_id}
                 label="Event Type"
                 onChange={handleInputChange}
+                sx={{
+                  backgroundColor: theme.palette.background.default,
+                }}
               >
                 {eventTypes.map((type) => (
                   <MenuItem key={type} value={type}>
@@ -198,16 +237,28 @@ const EventForm = ({
               rows={3}
               value={formData.description}
               onChange={handleInputChange}
+              sx={{
+                '& .MuiInputBase-root': {
+                  backgroundColor: theme.palette.background.default,
+                }
+              }}
             />
           </Grid>
 
-          {/* Image Upload */}
           <Grid item xs={12}>
             <Button
               component="label"
               variant="outlined"
               startIcon={<CloudUploadIcon />}
-              sx={{ mt: 1 }}
+              sx={{ 
+                mt: 1,
+                borderColor: theme.palette.divider,
+                color: theme.palette.text.secondary,
+                '&:hover': {
+                  borderColor: theme.palette.primary.main,
+                  backgroundColor: theme.palette.action.hover
+                }
+              }}
             >
               Upload Image
               <input
@@ -234,12 +285,33 @@ const EventForm = ({
         </Grid>
       </DialogContent>
       <DialogActions>
-        <Button onClick={resetForm}>Cancel</Button>
+        <Button 
+          onClick={resetForm}
+          sx={{
+            color: theme.palette.text.secondary,
+            '&:hover': {
+              color: theme.palette.text.primary
+            }
+          }}
+        >
+          Cancel
+        </Button>
         <Button
           onClick={handleSubmit}
           variant="contained"
           color="primary"
           disabled={!isFormValid() || isSubmitting}
+          sx={{
+            background: `linear-gradient(to right, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+            color: theme.palette.getContrastText(theme.palette.primary.main),
+            '&:hover': {
+              background: `linear-gradient(to right, ${theme.palette.primary.dark}, ${theme.palette.secondary.dark})`,
+            },
+            '&.Mui-disabled': {
+              background: theme.palette.action.disabledBackground,
+              color: theme.palette.action.disabled
+            }
+          }}
         >
           {isSubmitting ? "Submitting..." : submitButtonText}
         </Button>

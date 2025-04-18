@@ -19,6 +19,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import CloseIcon from "@mui/icons-material/Close";
 import TuneIcon from "@mui/icons-material/Tune";
+import { useTheme } from "@mui/material/styles";
 
 const SearchAndFilterBar = ({
   searchTerm,
@@ -30,21 +31,17 @@ const SearchAndFilterBar = ({
   setFilterActive,
   handleFilterReset
 }) => {
+  const theme = useTheme();
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [isSticky, setIsSticky] = useState(false);
 
-  // Handle scroll event to make the search bar sticky
   useEffect(() => {
     const handleScroll = () => {
       const scrollPosition = window.scrollY;
-      // Make sticky after scrolling past a certain threshold (e.g., 100px)
       setIsSticky(scrollPosition > 100);
     };
 
-    // Add event listener
     window.addEventListener('scroll', handleScroll);
-
-    // Clean up event listener
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
@@ -67,25 +64,17 @@ const SearchAndFilterBar = ({
 
   return (
     <>
-      <Box 
-        sx={{ 
-          mb: isSticky ? 16 : 4, // Add margin bottom when sticky to prevent content jump
-          position: 'relative',
-          zIndex: 1100,
-        }}
-      >
+      <Box sx={{ mb: isSticky ? 16 : 4, position: 'relative', zIndex: 1100 }}>
         <Paper 
           elevation={isSticky ? 4 : 0} 
           sx={{ 
             borderRadius: '16px',
-            background: 'white',
-            boxShadow: isSticky 
-              ? '0 6px 16px rgba(95, 150, 230, 0.2)' 
-              : '0 4px 12px rgba(95, 150, 230, 0.1)',
+            background: theme.palette.background.paper,
+            boxShadow: isSticky ? theme.shadows[4] : theme.shadows[1],
             overflow: 'hidden',
             transition: 'all 0.3s ease',
             '&:hover': {
-              boxShadow: '0 6px 16px rgba(95, 150, 230, 0.15)',
+              boxShadow: theme.shadows[3],
             },
             position: isSticky ? 'fixed' : 'relative',
             top: isSticky ? 0 : 'auto',
@@ -112,15 +101,15 @@ const SearchAndFilterBar = ({
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <SearchIcon sx={{ color: '#4776E6', opacity: 0.8 }} />
+                    <SearchIcon sx={{ color: theme.palette.primary.main, opacity: 0.8 }} />
                   </InputAdornment>
                 ),
                 disableUnderline: true,
                 sx: { 
                   fontSize: '0.95rem',
-                  color: '#2A3B4F',
+                  color: theme.palette.text.primary,
                   '&::placeholder': {
-                    color: '#607080',
+                    color: theme.palette.text.secondary,
                     opacity: 0.7
                   }
                 }
@@ -128,14 +117,14 @@ const SearchAndFilterBar = ({
               sx={{ 
                 maxWidth: '100%',
                 '& .MuiInputBase-root': {
-                  backgroundColor: 'rgba(248, 250, 255, 0.8)',
+                  backgroundColor: theme.palette.action.hover,
                   borderRadius: '12px',
                   pl: 1,
                   height: 48,
                   transition: 'all 0.3s ease',
                   '&:hover, &:focus-within': {
-                    backgroundColor: 'rgba(248, 250, 255, 1)',
-                    boxShadow: '0 2px 8px rgba(95, 150, 230, 0.1)'
+                    backgroundColor: theme.palette.action.selected,
+                    boxShadow: theme.shadows[1]
                   }
                 }
               }}
@@ -157,20 +146,20 @@ const SearchAndFilterBar = ({
                 height: 40,
                 ...(filterActive 
                   ? {
-                      background: 'linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)',
-                      boxShadow: '0 4px 10px rgba(71, 118, 230, 0.3)',
+                      background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+                      boxShadow: theme.shadows[2],
                       '&:hover': {
-                        boxShadow: '0 6px 15px rgba(71, 118, 230, 0.4)',
-                        background: 'linear-gradient(90deg, #3a5fc0 0%, #7b46c7 100%)',
+                        boxShadow: theme.shadows[4],
+                        background: `linear-gradient(90deg, ${theme.palette.primary.dark} 0%, ${theme.palette.secondary.dark} 100%)`,
                       }
                     } 
                   : {
-                      borderColor: '#4776E6',
-                      color: '#4776E6',
+                      borderColor: theme.palette.primary.main,
+                      color: theme.palette.primary.main,
                       '&:hover': {
-                        borderColor: '#3a5fc0',
-                        color: '#3a5fc0',
-                        backgroundColor: 'rgba(71, 118, 230, 0.05)'
+                        borderColor: theme.palette.primary.dark,
+                        color: theme.palette.primary.dark,
+                        backgroundColor: theme.palette.action.hover
                       }
                     })
               }}
@@ -180,8 +169,8 @@ const SearchAndFilterBar = ({
                 <Box
                   sx={{
                     ml: 1,
-                    bgcolor: filterActive ? 'rgba(255, 255, 255, 0.8)' : '#4776E6',
-                    color: filterActive ? '#4776E6' : 'white',
+                    bgcolor: filterActive ? theme.palette.background.paper : theme.palette.primary.main,
+                    color: filterActive ? theme.palette.primary.main : theme.palette.primary.contrastText,
                     borderRadius: '50%',
                     width: 20,
                     height: 20,
@@ -198,7 +187,6 @@ const SearchAndFilterBar = ({
             </Button>
           </Box>
           
-          {/* Active Filters Display */}
           {filterActive && selectedKeywords.length > 0 && (
             <Box sx={{ px: 2, pb: 2, pt: 1, display: "flex", flexWrap: "wrap", gap: 1 }}>
               {selectedKeywords.map((keyword) => (
@@ -211,13 +199,13 @@ const SearchAndFilterBar = ({
                     if (selectedKeywords.length === 1) setFilterActive(false);
                   }}
                   sx={{
-                    backgroundColor: 'rgba(71, 118, 230, 0.1)',
-                    color: '#4776E6',
+                    backgroundColor: theme.palette.primary.light,
+                    color: theme.palette.primary.dark,
                     borderRadius: '8px',
                     '& .MuiChip-deleteIcon': {
-                      color: '#4776E6',
+                      color: theme.palette.primary.dark,
                       '&:hover': {
-                        color: '#3a5fc0',
+                        color: theme.palette.primary.main,
                       },
                     },
                   }}
@@ -228,12 +216,12 @@ const SearchAndFilterBar = ({
                 size="small"
                 onClick={handleFilterReset}
                 sx={{
-                  backgroundColor: 'rgba(71, 118, 230, 0.05)',
-                  color: '#4776E6',
+                  backgroundColor: theme.palette.action.hover,
+                  color: theme.palette.primary.main,
                   borderRadius: '8px',
                   fontWeight: 500,
                   '&:hover': {
-                    backgroundColor: 'rgba(71, 118, 230, 0.1)',
+                    backgroundColor: theme.palette.action.selected,
                   },
                 }}
               />
@@ -250,8 +238,8 @@ const SearchAndFilterBar = ({
           sx: {
             borderTopLeftRadius: 16,
             borderBottomLeftRadius: 16,
-            boxShadow: '-4px 0 20px rgba(95, 150, 230, 0.15)',
-            backgroundColor: '#f8faff'
+            boxShadow: theme.shadows[4],
+            backgroundColor: theme.palette.background.paper
           }
         }}
       >
@@ -261,7 +249,7 @@ const SearchAndFilterBar = ({
               variant="h5" 
               sx={{ 
                 fontWeight: 600,
-                background: 'linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)',
+                background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent'
               }}
@@ -273,10 +261,10 @@ const SearchAndFilterBar = ({
               size="small"
               sx={{ 
                 borderRadius: '8px',
-                backgroundColor: 'rgba(95, 150, 230, 0.1)',
-                color: '#4776E6',
+                backgroundColor: theme.palette.action.hover,
+                color: theme.palette.primary.main,
                 '&:hover': {
-                  backgroundColor: 'rgba(95, 150, 230, 0.2)',
+                  backgroundColor: theme.palette.action.selected,
                 }
               }}
             >
@@ -284,14 +272,14 @@ const SearchAndFilterBar = ({
             </IconButton>
           </Box>
           
-          <Divider sx={{ mb: 3, borderColor: 'rgba(95, 150, 230, 0.2)' }} />
+          <Divider sx={{ mb: 3, borderColor: theme.palette.divider }} />
           
           <Typography 
             variant="subtitle1" 
             sx={{ 
               mb: 2, 
               fontWeight: 500, 
-              color: '#2A3B4F' 
+              color: theme.palette.text.primary 
             }}
           >
             Keywords
@@ -307,9 +295,9 @@ const SearchAndFilterBar = ({
                       checked={selectedKeywords.includes(keyword)}
                       onChange={() => handleKeywordToggle(keyword)}
                       sx={{ 
-                        color: '#607080',
+                        color: theme.palette.text.secondary,
                         '&.Mui-checked': {
-                          color: '#4776E6',
+                          color: theme.palette.primary.main,
                         },
                         '& .MuiSvgIcon-root': { 
                           fontSize: 22
@@ -321,7 +309,7 @@ const SearchAndFilterBar = ({
                     <Typography 
                       variant="body2" 
                       sx={{ 
-                        color: selectedKeywords.includes(keyword) ? '#2A3B4F' : '#607080',
+                        color: selectedKeywords.includes(keyword) ? theme.palette.text.primary : theme.palette.text.secondary,
                         fontWeight: selectedKeywords.includes(keyword) ? 500 : 400
                       }}
                     >
@@ -334,9 +322,9 @@ const SearchAndFilterBar = ({
                     px: 1,
                     borderRadius: '8px',
                     transition: 'all 0.2s ease',
-                    bgcolor: selectedKeywords.includes(keyword) ? 'rgba(95, 150, 230, 0.08)' : 'transparent',
+                    bgcolor: selectedKeywords.includes(keyword) ? theme.palette.action.selected : 'transparent',
                     '&:hover': {
-                      bgcolor: 'rgba(95, 150, 230, 0.05)'
+                      bgcolor: theme.palette.action.hover
                     }
                   }}
                 />
@@ -352,13 +340,13 @@ const SearchAndFilterBar = ({
               sx={{ 
                 textTransform: 'none',
                 fontWeight: 500,
-                color: '#607080',
+                color: theme.palette.text.secondary,
                 '&:hover': {
-                  color: '#2A3B4F',
-                  backgroundColor: 'rgba(95, 150, 230, 0.05)'
+                  color: theme.palette.text.primary,
+                  backgroundColor: theme.palette.action.hover
                 },
                 '&.Mui-disabled': {
-                  color: 'rgba(96, 112, 128, 0.4)'
+                  color: theme.palette.text.disabled
                 }
               }}
             >
@@ -368,15 +356,15 @@ const SearchAndFilterBar = ({
               variant="contained" 
               onClick={handleFilterApply}
               sx={{ 
-                background: 'linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)',
-                boxShadow: '0 4px 10px rgba(71, 118, 230, 0.3)',
+                background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+                boxShadow: theme.shadows[2],
                 borderRadius: '8px',
                 px: 3,
                 textTransform: 'none',
                 fontWeight: 500,
                 '&:hover': {
-                  boxShadow: '0 6px 15px rgba(71, 118, 230, 0.4)',
-                  background: 'linear-gradient(90deg, #3a5fc0 0%, #7b46c7 100%)',
+                  boxShadow: theme.shadows[4],
+                  background: `linear-gradient(90deg, ${theme.palette.primary.dark} 0%, ${theme.palette.secondary.dark} 100%)`,
                   transform: 'translateY(-2px)'
                 }
               }}

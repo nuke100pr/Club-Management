@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
-  AppBar,
-  Toolbar,
   TextField,
-  InputAdornment,
-  IconButton,
   Box,
   Typography,
   Drawer,
@@ -14,12 +10,14 @@ import {
   FormGroup,
   FormControlLabel,
   Checkbox,
-  Paper
+  Paper,
+  InputAdornment,
+  IconButton,
+  useTheme
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
-import FilterListIcon from "@mui/icons-material/FilterList";
-import CloseIcon from "@mui/icons-material/Close";
 import TuneIcon from "@mui/icons-material/Tune";
+import CloseIcon from "@mui/icons-material/Close";
 
 const EventsSearchBar = ({
   searchQuery,
@@ -29,21 +27,16 @@ const EventsSearchBar = ({
   filters,
   clearFilters
 }) => {
+  const theme = useTheme();
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [isSticky, setIsSticky] = useState(false);
 
-  // Handle scroll event to make the search bar sticky
   useEffect(() => {
     const handleScroll = () => {
-      const scrollPosition = window.scrollY;
-      // Make sticky after scrolling past a certain threshold (e.g., 100px)
-      setIsSticky(scrollPosition > 100);
+      setIsSticky(window.scrollY > 100);
     };
 
-    // Add event listener
     window.addEventListener('scroll', handleScroll);
-
-    // Clean up event listener
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
@@ -57,26 +50,19 @@ const EventsSearchBar = ({
 
   return (
     <>
-      <Box 
-        sx={{ 
-          mb: isSticky ? 16 : 4, // Add margin bottom when sticky to prevent content jump
-          position: 'relative',
-          zIndex: 1100,
-        }}
-      >
+      <Box sx={{ 
+        mb: isSticky ? 16 : 4,
+        position: 'relative',
+        zIndex: theme.zIndex.appBar,
+      }}>
         <Paper 
           elevation={isSticky ? 4 : 0} 
           sx={{ 
             borderRadius: '16px',
-            background: 'white',
-            boxShadow: isSticky 
-              ? '0 6px 16px rgba(95, 150, 230, 0.2)' 
-              : '0 4px 12px rgba(95, 150, 230, 0.1)',
+            backgroundColor: theme.palette.background.paper,
+            boxShadow: theme.shadows[isSticky ? 4 : 1],
             overflow: 'hidden',
             transition: 'all 0.3s ease',
-            '&:hover': {
-              boxShadow: '0 6px 16px rgba(95, 150, 230, 0.15)',
-            },
             position: isSticky ? 'fixed' : 'relative',
             top: isSticky ? 0 : 'auto',
             left: isSticky ? 0 : 'auto',
@@ -84,15 +70,14 @@ const EventsSearchBar = ({
             width: isSticky ? 'calc(100% - 32px)' : '100%',
             maxWidth: isSticky ? '1200px' : '100%', 
             margin: isSticky ? '16px auto' : 0,
-            transform: isSticky ? 'translateY(0)' : 'none',
-            animation: isSticky ? 'slideDown 0.3s ease' : 'none',
             '@keyframes slideDown': {
               from: { transform: 'translateY(-100%)' },
               to: { transform: 'translateY(0)' }
-            }
+            },
+            animation: isSticky ? 'slideDown 0.3s ease' : 'none',
           }}
         >
-          <Toolbar sx={{ py: 0.5, px: 2 }}>
+          <Box sx={{ py: 0.5, px: 2, display: 'flex', alignItems: 'center' }}>
             <TextField
               fullWidth
               variant="standard"
@@ -102,30 +87,28 @@ const EventsSearchBar = ({
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <SearchIcon sx={{ color: '#4776E6', opacity: 0.8 }} />
+                    <SearchIcon sx={{ 
+                      color: theme.palette.primary.main, 
+                      opacity: 0.8 
+                    }} />
                   </InputAdornment>
                 ),
                 disableUnderline: true,
                 sx: { 
                   fontSize: '0.95rem',
-                  color: '#2A3B4F',
-                  '&::placeholder': {
-                    color: '#607080',
-                    opacity: 0.7
-                  }
+                  color: theme.palette.text.primary,
                 }
               }}
               sx={{ 
                 maxWidth: '100%',
                 '& .MuiInputBase-root': {
-                  backgroundColor: 'rgba(248, 250, 255, 0.8)',
+                  backgroundColor: theme.palette.action.hover,
                   borderRadius: '12px',
                   pl: 1,
                   height: 48,
                   transition: 'all 0.3s ease',
                   '&:hover, &:focus-within': {
-                    backgroundColor: 'rgba(248, 250, 255, 1)',
-                    boxShadow: '0 2px 8px rgba(95, 150, 230, 0.1)'
+                    backgroundColor: theme.palette.action.selected,
                   }
                 }
               }}
@@ -147,20 +130,19 @@ const EventsSearchBar = ({
                 height: 40,
                 ...(activeFiltersCount > 0 
                   ? {
-                      background: 'linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)',
-                      boxShadow: '0 4px 10px rgba(71, 118, 230, 0.3)',
+                      background: `linear-gradient(to right, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                      color: theme.palette.getContrastText(theme.palette.primary.main),
                       '&:hover': {
-                        boxShadow: '0 6px 15px rgba(71, 118, 230, 0.4)',
-                        background: 'linear-gradient(90deg, #3a5fc0 0%, #7b46c7 100%)',
+                        background: `linear-gradient(to right, ${theme.palette.primary.dark}, ${theme.palette.secondary.dark})`,
                       }
                     } 
                   : {
-                      borderColor: '#4776E6',
-                      color: '#4776E6',
+                      borderColor: theme.palette.primary.main,
+                      color: theme.palette.primary.main,
                       '&:hover': {
-                        borderColor: '#3a5fc0',
-                        color: '#3a5fc0',
-                        backgroundColor: 'rgba(71, 118, 230, 0.05)'
+                        borderColor: theme.palette.primary.dark,
+                        color: theme.palette.primary.dark,
+                        backgroundColor: theme.palette.action.hover
                       }
                     })
               }}
@@ -170,8 +152,8 @@ const EventsSearchBar = ({
                 <Box
                   sx={{
                     ml: 1,
-                    bgcolor: activeFiltersCount > 0 ? 'rgba(255, 255, 255, 0.8)' : '#4776E6',
-                    color: activeFiltersCount > 0 ? '#4776E6' : 'white',
+                    bgcolor: theme.palette.background.paper,
+                    color: theme.palette.primary.main,
                     borderRadius: '50%',
                     width: 20,
                     height: 20,
@@ -186,7 +168,7 @@ const EventsSearchBar = ({
                 </Box>
               )}
             </Button>
-          </Toolbar>
+          </Box>
         </Paper>
       </Box>
 
@@ -198,18 +180,23 @@ const EventsSearchBar = ({
           sx: {
             borderTopLeftRadius: 16,
             borderBottomLeftRadius: 16,
-            boxShadow: '-4px 0 20px rgba(95, 150, 230, 0.15)',
-            backgroundColor: '#f8faff'
+            backgroundColor: theme.palette.background.paper,
+            boxShadow: theme.shadows[4]
           }
         }}
       >
         <Box sx={{ width: 320, p: 3 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            mb: 3 
+          }}>
             <Typography 
               variant="h5" 
               sx={{ 
                 fontWeight: 600,
-                background: 'linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)',
+                background: `linear-gradient(to right, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent'
               }}
@@ -221,10 +208,10 @@ const EventsSearchBar = ({
               size="small"
               sx={{ 
                 borderRadius: '8px',
-                backgroundColor: 'rgba(95, 150, 230, 0.1)',
-                color: '#4776E6',
+                backgroundColor: theme.palette.action.selected,
+                color: theme.palette.text.secondary,
                 '&:hover': {
-                  backgroundColor: 'rgba(95, 150, 230, 0.2)',
+                  backgroundColor: theme.palette.action.hover,
                 }
               }}
             >
@@ -232,7 +219,10 @@ const EventsSearchBar = ({
             </IconButton>
           </Box>
           
-          <Divider sx={{ mb: 3, borderColor: 'rgba(95, 150, 230, 0.2)' }} />
+          <Divider sx={{ 
+            mb: 3, 
+            borderColor: theme.palette.divider 
+          }} />
           
           <FormControl component="fieldset" fullWidth>
             <FormGroup>
@@ -245,9 +235,9 @@ const EventsSearchBar = ({
                       onChange={onFilterChange}
                       name={filter}
                       sx={{ 
-                        color: '#607080',
+                        color: theme.palette.text.secondary,
                         '&.Mui-checked': {
-                          color: '#4776E6',
+                          color: theme.palette.primary.main,
                         },
                         '& .MuiSvgIcon-root': { 
                           fontSize: 22
@@ -259,7 +249,9 @@ const EventsSearchBar = ({
                     <Typography 
                       variant="body2" 
                       sx={{ 
-                        color: selectedFilters[filter] ? '#2A3B4F' : '#607080',
+                        color: selectedFilters[filter] 
+                          ? theme.palette.text.primary 
+                          : theme.palette.text.secondary,
                         fontWeight: selectedFilters[filter] ? 500 : 400
                       }}
                     >
@@ -272,9 +264,11 @@ const EventsSearchBar = ({
                     px: 1,
                     borderRadius: '8px',
                     transition: 'all 0.2s ease',
-                    bgcolor: selectedFilters[filter] ? 'rgba(95, 150, 230, 0.08)' : 'transparent',
+                    bgcolor: selectedFilters[filter] 
+                      ? theme.palette.action.selected 
+                      : 'transparent',
                     '&:hover': {
-                      bgcolor: 'rgba(95, 150, 230, 0.05)'
+                      bgcolor: theme.palette.action.hover
                     }
                   }}
                 />
@@ -282,7 +276,11 @@ const EventsSearchBar = ({
             </FormGroup>
           </FormControl>
           
-          <Box sx={{ mt: 4, display: 'flex', justifyContent: 'space-between' }}>
+          <Box sx={{ 
+            mt: 4, 
+            display: 'flex', 
+            justifyContent: 'space-between' 
+          }}>
             <Button 
               variant="text" 
               onClick={clearFilters}
@@ -290,13 +288,13 @@ const EventsSearchBar = ({
               sx={{ 
                 textTransform: 'none',
                 fontWeight: 500,
-                color: '#607080',
+                color: theme.palette.text.secondary,
                 '&:hover': {
-                  color: '#2A3B4F',
-                  backgroundColor: 'rgba(95, 150, 230, 0.05)'
+                  color: theme.palette.text.primary,
+                  backgroundColor: theme.palette.action.hover
                 },
                 '&.Mui-disabled': {
-                  color: 'rgba(96, 112, 128, 0.4)'
+                  color: theme.palette.text.disabled
                 }
               }}
             >
@@ -306,16 +304,14 @@ const EventsSearchBar = ({
               variant="contained" 
               onClick={toggleFilterDrawer}
               sx={{ 
-                background: 'linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)',
-                boxShadow: '0 4px 10px rgba(71, 118, 230, 0.3)',
+                background: `linear-gradient(to right, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                color: theme.palette.getContrastText(theme.palette.primary.main),
                 borderRadius: '8px',
                 px: 3,
                 textTransform: 'none',
                 fontWeight: 500,
                 '&:hover': {
-                  boxShadow: '0 6px 15px rgba(71, 118, 230, 0.4)',
-                  background: 'linear-gradient(90deg, #3a5fc0 0%, #7b46c7 100%)',
-                  transform: 'translateY(-2px)'
+                  background: `linear-gradient(to right, ${theme.palette.primary.dark}, ${theme.palette.secondary.dark})`,
                 }
               }}
             >

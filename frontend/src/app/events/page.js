@@ -15,7 +15,6 @@ import {
   Button,
   Container,
   IconButton,
-  VisibilityOutlined,
   Snackbar,
   Alert,
   Dialog,
@@ -28,6 +27,7 @@ import {
   ListItemText,
   CircularProgress,
   Tooltip,
+  useTheme,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import {
@@ -36,30 +36,28 @@ import {
   LocationOn,
   People,
   Visibility,
-  BookmarkBorder,
   CheckCircle,
   Edit,
   Delete,
   Add,
   Close,
-  Favorite,
-  FavoriteBorder,
   Star,
   StarOutline,
   OpenInNew,
   CheckCircleOutline,
+  Share,
 } from '@mui/icons-material';
 import EventsSearchBar from "../../components/events/EventsSearchBar";
 import EventForm from "../../components/events/EventForm";
 import UniversalShareMenu from "../../components/shared/UniversalShareMenu";
 
-import { Share } from '@mui/icons-material';
 const API_URL2 = `${process.env.NEXT_PUBLIC_BACKEND_URL}/uploads`;
-// Styled components based on the design system
+
+// Styled components using theme
 const StyledCard = styled(Card)(({ theme }) => ({
   borderRadius: 16,
-  backgroundColor: 'white',
-  boxShadow: '0 4px 12px rgba(95, 150, 230, 0.1)',
+  backgroundColor: theme.palette.background.paper,
+  boxShadow: theme.shadows[2],
   transition: 'all 0.3s ease',
   overflow: 'hidden',
   height: '100%',
@@ -68,75 +66,89 @@ const StyledCard = styled(Card)(({ theme }) => ({
   position: 'relative',
   '&:hover': {
     transform: 'translateY(-8px)',
-    boxShadow: '0 12px 20px rgba(95, 150, 230, 0.2)',
+    boxShadow: theme.shadows[8],
   },
   borderTop: `3px solid ${theme.palette.primary.main}`,
 }));
 
-// Enhanced EventChip with color based on event type
 const EventChip = styled(Chip)(({ theme, eventtype }) => {
   const typeColors = {
-    'Session': '#4CAF50',
-    'Competition': '#FF5722',
-    'Workshop': '#9C27B0',
-    'Meeting': '#2196F3',
-    'Masterclass': '#9C27B0',
-    'Seminar': '#03A9F4',
-    'Summit': '#1976D2'
+    'Session': theme.palette.success.main,
+    'Competition': theme.palette.error.main,
+    'Workshop': theme.palette.secondary.main,
+    'Meeting': theme.palette.info.main,
+    'Masterclass': theme.palette.secondary.main,
+    'Seminar': theme.palette.info.light,
+    'Summit': theme.palette.primary.dark
   };
   
   const color = typeColors[eventtype] || theme.palette.primary.main;
   
   return {
-    backgroundColor: `${color}15`,
+    backgroundColor: theme.palette.mode === 'dark' 
+      ? theme.palette.action.selected 
+      : `${color}15`,
     color: color,
     height: 28,
     fontSize: '0.75rem',
     borderRadius: 14,
     fontWeight: 500,
-    padding: '0 12px'
+    padding: '0 12px',
+    border: theme.palette.mode === 'dark' ? `1px solid ${color}` : 'none'
   };
 });
 
 const DurationChip = styled(Chip)(({ theme }) => ({
-  backgroundColor: 'rgba(95, 150, 230, 0.15)',
+  backgroundColor: theme.palette.mode === 'dark'
+    ? theme.palette.action.selected
+    : 'rgba(95, 150, 230, 0.15)',
   color: theme.palette.primary.main,
   height: 28,
   fontSize: '0.75rem',
   borderRadius: 14,
   fontWeight: 500,
-  padding: '0 12px'
+  padding: '0 12px',
+  border: theme.palette.mode === 'dark' ? `1px solid ${theme.palette.primary.main}` : 'none'
 }));
 
 const FollowingChip = styled(Chip)(({ theme }) => ({
-  backgroundColor: 'rgba(95, 150, 230, 0.1)',
+  backgroundColor: theme.palette.mode === 'dark'
+    ? theme.palette.action.selected
+    : 'rgba(95, 150, 230, 0.1)',
   color: theme.palette.primary.main,
   height: 28,
   fontSize: '0.75rem',
   borderRadius: 14,
   fontWeight: 500,
-  marginLeft: 12
+  marginLeft: 12,
+  border: theme.palette.mode === 'dark' ? `1px solid ${theme.palette.primary.main}` : 'none'
 }));
 
 const RegisterButton = styled(Button)(({ theme }) => ({
-  background: `linear-gradient(to right, ${theme.palette.primary.main}, #8E54E9)`,
-  color: 'white',
+  background: `linear-gradient(to right, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+  color: theme.palette.getContrastText(theme.palette.primary.main),
   fontWeight: 500,
   borderRadius: 20,
   padding: '8px 24px',
-  boxShadow: '0 4px 10px rgba(71, 118, 230, 0.3)',
+  boxShadow: theme.shadows[2],
   transition: 'all 0.3s ease',
   '&:hover': {
-    background: `linear-gradient(to right, ${theme.palette.primary.dark}, #7c46d4)`,
-    boxShadow: '0 6px 15px rgba(71, 118, 230, 0.4)',
+    background: `linear-gradient(to right, ${theme.palette.primary.dark}, ${theme.palette.secondary.dark})`,
+    boxShadow: theme.shadows[4],
     transform: 'translateY(-2px)',
   },
+  '&.Mui-disabled': {
+    background: theme.palette.action.disabledBackground,
+    color: theme.palette.action.disabled
+  }
 }));
 
 const RegistrationsChip = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
-  backgroundColor: 'rgba(95, 150, 230, 0.1)',
+  backgroundColor: theme.palette.mode === 'dark'
+    ? theme.palette.action.selected
+    : 'rgba(95, 150, 230, 0.1)',
   color: theme.palette.text.secondary,
   borderRadius: 16,
   padding: '4px 12px',
@@ -162,6 +174,7 @@ const filters = [
 ];
 
 export default function EventsPage() {
+  const theme = useTheme();
   const [selectedFilters, setSelectedFilters] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
   const [openDialog, setOpenDialog] = useState(false);
@@ -379,7 +392,6 @@ export default function EventsPage() {
   };
   const handleShareClick = (event, eventId) => {
     event.stopPropagation();
-    // Find the current event to get its title
     const currentEvent = events.find(e => e._id === eventId);
     setShareMenu({
       open: true,
@@ -602,7 +614,7 @@ export default function EventsPage() {
   return (
     <Box sx={{ 
       padding: 4, 
-      backgroundColor: '#f8faff',
+      backgroundColor: theme.palette.background.default,
       minHeight: '100vh'
     }}>
       <Container maxWidth="xl">
@@ -637,18 +649,18 @@ export default function EventsPage() {
                       <IconButton 
                         size="small" 
                         sx={{ 
-                          backgroundColor: 'white', 
-                          '&:hover': { backgroundColor: 'white' } 
+                          backgroundColor: theme.palette.background.paper, 
+                          '&:hover': { backgroundColor: theme.palette.background.paper } 
                         }}
                       >
-                        <Star style={{ color: '#ffb400' }} />
+                        <Star style={{ color: theme.palette.warning.main }} />
                       </IconButton>
                     ) : (
                       <IconButton 
                         size="small" 
                         sx={{ 
-                          backgroundColor: 'white', 
-                          '&:hover': { backgroundColor: 'white' } 
+                          backgroundColor: theme.palette.background.paper, 
+                          '&:hover': { backgroundColor: theme.palette.background.paper } 
                         }}
                       >
                         <StarOutline color="action" />
@@ -658,11 +670,11 @@ export default function EventsPage() {
                       <IconButton 
                         size="small" 
                         sx={{ 
-                          backgroundColor: 'white', 
-                          '&:hover': { backgroundColor: 'white' } 
+                          backgroundColor: theme.palette.background.paper, 
+                          '&:hover': { backgroundColor: theme.palette.background.paper } 
                         }}
                       >
-                        <CheckCircle style={{ color: '#4CAF50' }} />
+                        <CheckCircle style={{ color: theme.palette.success.main }} />
                       </IconButton>
                     )}
                   </ImageOverlayIcons>
@@ -684,13 +696,13 @@ export default function EventsPage() {
                           handleEdit(event);
                         }}
                         sx={{
-                          bgcolor: 'rgba(255,255,255,0.8)',
-                          '&:hover': { bgcolor: 'rgba(255,255,255,0.95)' },
+                          bgcolor: theme.palette.background.paper,
+                          '&:hover': { bgcolor: theme.palette.action.hover },
                           width: 32,
                           height: 32,
                         }}
                       >
-                        <Edit fontSize="small" sx={{ color: '#4776E6' }} />
+                        <Edit fontSize="small" sx={{ color: theme.palette.primary.main }} />
                       </IconButton>
                       <IconButton
                         size="small"
@@ -699,54 +711,54 @@ export default function EventsPage() {
                           handleDelete(event._id);
                         }}
                         sx={{
-                          bgcolor: 'rgba(255,255,255,0.8)',
-                          '&:hover': { bgcolor: 'rgba(255,255,255,0.95)' },
+                          bgcolor: theme.palette.background.paper,
+                          '&:hover': { bgcolor: theme.palette.action.hover },
                           width: 32,
                           height: 32,
                         }}
                       >
-                        <Delete fontSize="small" sx={{ color: '#f44336' }} />
+                        <Delete fontSize="small" sx={{ color: theme.palette.error.main }} />
                       </IconButton>
                     </Box>
                   )}
                 </Box>
                 
                 <CardContent sx={{ p: 3, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-  <Typography variant="h6" component="div" sx={{ fontWeight: 600 }}>
-    {event.name}
-  </Typography>
-  <Box sx={{ display: 'flex' }}>
-    <IconButton 
-      size="small" 
-      onClick={(e) => handleShareClick(e, event._id)}
-      sx={{
-        color: 'primary.main',
-        mr: 1,
-        '&:hover': {
-          backgroundColor: 'rgba(95, 150, 230, 0.1)'
-        }
-      }}
-    >
-      <Share fontSize="small" />
-    </IconButton>
-    <IconButton 
-    size="small" 
-    onClick={(e) => {
-      e.stopPropagation();
-      router.push(`/current_event/${event._id}`);
-    }}
-    sx={{
-      color: 'primary.main',
-      '&:hover': {
-        backgroundColor: 'rgba(95, 150, 230, 0.1)'
-      }
-    }}
-  >
-    <OpenInNew fontSize="small" />
-  </IconButton>
-  </Box>
-</Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                    <Typography variant="h6" component="div" sx={{ fontWeight: 600 }}>
+                      {event.name}
+                    </Typography>
+                    <Box sx={{ display: 'flex' }}>
+                      <IconButton 
+                        size="small" 
+                        onClick={(e) => handleShareClick(e, event._id)}
+                        sx={{
+                          color: 'primary.main',
+                          mr: 1,
+                          '&:hover': {
+                            backgroundColor: theme.palette.action.selected
+                          }
+                        }}
+                      >
+                        <Share fontSize="small" />
+                      </IconButton>
+                      <IconButton 
+                        size="small" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/current_event/${event._id}`);
+                        }}
+                        sx={{
+                          color: 'primary.main',
+                          '&:hover': {
+                            backgroundColor: theme.palette.action.selected
+                          }
+                        }}
+                      >
+                        <OpenInNew fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  </Box>
                   
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -759,13 +771,13 @@ export default function EventsPage() {
                       ) : event.board_id ? (
                         <Avatar
                           alt={event.board_id.name}
-                          sx={{ width: 28, height: 28, mr: 1.5, bgcolor: '#e0e0e0' }}
+                          sx={{ width: 28, height: 28, mr: 1.5, bgcolor: theme.palette.divider }}
                         >
                           {event?.board_id?.name?.charAt(0)}
                         </Avatar>
                       ) : (
                         <Avatar
-                          sx={{ width: 28, height: 28, mr: 1.5, bgcolor: '#e0e0e0' }}
+                          sx={{ width: 28, height: 28, mr: 1.5, bgcolor: theme.palette.divider }}
                         >
                           H
                         </Avatar>
@@ -797,47 +809,47 @@ export default function EventsPage() {
                   <Divider sx={{ mb: 2 }} />
                   
                   <Box sx={{ mb: 2 }}>
-  {event.description && (
-    <>
-      <Typography 
-        variant="body2" 
-        color="text.secondary" 
-        sx={{ 
-          fontSize: '0.85rem', 
-          lineHeight: 1.5,
-          display: '-webkit-box',
-          WebkitLineClamp: '3',
-          WebkitBoxOrient: 'vertical',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          maxHeight: '4rem'  // approximately 3 lines
-        }}
-      >
-        {event.description}
-      </Typography>
-      
-      {event.description.length > 120 && (
-        <Button 
-          variant="text" 
-          size="small" 
-          sx={{ 
-            mt: 0.5, 
-            p: 0, 
-            textTransform: 'none', 
-            fontSize: '0.8rem',
-            color: 'primary.main'
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            router.push(`/current_event/${event._id}`);
-          }}
-        >
-          Read more
-        </Button>
-      )}
-    </>
-  )}
-</Box>
+                    {event.description && (
+                      <>
+                        <Typography 
+                          variant="body2" 
+                          color="text.secondary" 
+                          sx={{ 
+                            fontSize: '0.85rem', 
+                            lineHeight: 1.5,
+                            display: '-webkit-box',
+                            WebkitLineClamp: '3',
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            maxHeight: '4rem'
+                          }}
+                        >
+                          {event.description}
+                        </Typography>
+                        
+                        {event.description.length > 120 && (
+                          <Button 
+                            variant="text" 
+                            size="small" 
+                            sx={{ 
+                              mt: 0.5, 
+                              p: 0, 
+                              textTransform: 'none', 
+                              fontSize: '0.8rem',
+                              color: 'primary.main'
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(`/current_event/${event._id}`);
+                            }}
+                          >
+                            Read more
+                          </Button>
+                        )}
+                      </>
+                    )}
+                  </Box>
                   
                   <Box sx={{ mt: 'auto' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -916,11 +928,11 @@ export default function EventsPage() {
             position: "fixed",
             bottom: 24,
             right: 24,
-            boxShadow: "0 4px 10px rgba(71, 118, 230, 0.3)",
-            background: "linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)",
-            color: "white",
+            boxShadow: theme.shadows[4],
+            background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+            color: theme.palette.getContrastText(theme.palette.primary.main),
             "&:hover": {
-              background: "linear-gradient(90deg, #3a5fc0 0%, #7b46c7 100%)",
+              background: `linear-gradient(90deg, ${theme.palette.primary.dark} 0%, ${theme.palette.secondary.dark} 100%)`,
               transform: "scale(1.05)",
             },
             transition: "all 0.2s ease",
@@ -1009,16 +1021,16 @@ export default function EventsPage() {
             )}
           </DialogContent>
         </Dialog>
+        
         <UniversalShareMenu
-  anchorEl={shareMenu.anchorEl}
-  open={shareMenu.open}
-  onClose={() => setShareMenu({ open: false, anchorEl: null, id: null, title: "", contentType: "event" })}
-  id={shareMenu.id}
-  title={shareMenu.title}
-  contentType={shareMenu.contentType}
-  // Optional: You can pass custom share text if needed
-  // customShareText={`Check out this amazing event: ${shareMenu.title}`}
-/>
+          anchorEl={shareMenu.anchorEl}
+          open={shareMenu.open}
+          onClose={() => setShareMenu({ open: false, anchorEl: null, id: null, title: "", contentType: "event" })}
+          id={shareMenu.id}
+          title={shareMenu.title}
+          contentType={shareMenu.contentType}
+        />
+        
         <Snackbar
           open={notification.open}
           autoHideDuration={4000}

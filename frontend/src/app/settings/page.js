@@ -21,7 +21,7 @@ import {
   Grid,
   IconButton,
 } from "@mui/material";
-import ThemeToggle from "../../components/ThemeToggle";
+import ThemeToggle from "../../components/themeToggle";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 
 export default function SettingsPage() {
