@@ -32,6 +32,6 @@ router.delete('/forums/:forumId/members/:userId', forumController.removeForumMem
 
 
 // Forum Utility Routes
-router.get('/forums/:forumId/membership/:userId', forumController.checkForumMembership);
+router.get('/forums/:forumId/membership/:userId', forumController.checkForumMembership); 
 
 module.exports = router;

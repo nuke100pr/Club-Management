@@ -225,11 +225,13 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
   const getMemberDisplayName = (member) => {
     return member.user_id?.name || member.name || "Unknown User";
   };
-  
+
   const getMemberEmail = (member) => {
-    return member.user_id?.email_id || member.user_id?.email || member.email || "";
+    return (
+      member.user_id?.email_id || member.user_id?.email || member.email || ""
+    );
   };
-  
+
   const getMemberId = (member) => {
     return member.user_id?._id || member._id;
   };
@@ -887,7 +889,9 @@ const ForumCard = ({
           <Button
             variant="outlined"
             color="primary"
-            onClick={() => onViewForum(forum._id)}
+            onClick={() =>
+              onViewForum(forum._id, forum.public_or_private === "private")
+            }
             sx={{
               flexGrow: 1,
               borderRadius: 2,
@@ -992,6 +996,21 @@ const ForumList = ({ clubId }) => {
     loadUserData();
   }, []);
 
+  const checkMembership = async (forumId, userId) => {
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/forums2/forums/${forumId}/membership/${userId}`
+      );
+      if (!response.ok) {
+        throw new Error("Failed to check membership");
+      }
+      return await response.json();
+    } catch (error) {
+      console.error("Error checking membership:", error);
+      return { isMember: false };
+    }
+  };
+
   const minLoadingTimeRef = useRef(Date.now() + 500);
 
   useEffect(() => {
@@ -1081,8 +1100,29 @@ const ForumList = ({ clubId }) => {
     return null;
   };
 
-  const handleViewForum = (forumId) => {
-    router.push(`/current_forum/${forumId}`);
+  const handleViewForum = async (forumId, isPrivate) => {
+    // Only check membership if userId exists
+    if (userId) {
+      const membershipStatus = await checkMembership(forumId, userId);
+
+      if (membershipStatus?.data?.isMember) {
+        // Member can access any forumc
+        console.log("kvndkv");
+        router.push(`/current_forum/${forumId}`);
+      } else if (isPrivate) {
+        // Private forum and not a member - show error message
+        // You could use a state variable to display a modal/alert here
+        alert("This is a private forum. You need to be a member to access it.");
+      } else {
+        // Public forum and not a member - redirect to a page with join option
+        router.push(`/forum_join/${forumId}`);
+      }
+    } else {
+      // Handle not logged in case
+      alert("Please log in to view forums");
+      // Optionally redirect to login
+      // router.push('/login');
+    }
   };
 
   const handleViewMembers = (forumId) => {

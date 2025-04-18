@@ -143,6 +143,7 @@ const LeftDrawer = ({ open, onClose }) => {
             <Link key={label} href={path} passHref legacyBehavior>
               <ListItemButton
                 component="a"
+                onClick={onClose}
                 sx={{
                   background:
                     "linear-gradient(135deg, #4776E6 0%, #8E54E9 100%)",

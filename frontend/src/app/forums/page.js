@@ -27,8 +27,8 @@ import {
   CircularProgress,
   Checkbox,
   InputAdornment,
-  styled,
   alpha,
+  useTheme,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -44,89 +44,9 @@ import ForumCreateDialog from "../../components/forums/ForumCreateDialog";
 import Navbar from "../../components/Navbar";
 import { fetchUserData } from "@/utils/auth";
 
-// Styled components for the premium UI
-const GradientText = styled(Typography)(({ theme }) => ({
-  background: "linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)",
-  WebkitBackgroundClip: "text",
-  WebkitTextFillColor: "transparent",
-  fontWeight: 600,
-}));
-
-const PremiumCard = styled(Card)(({ theme }) => ({
-  width: 350,
-  borderRadius: "16px",
-  boxShadow: "0 4px 12px rgba(95, 150, 230, 0.1)",
-  transition: "all 0.3s ease",
-  "&:hover": {
-    transform: "translateY(-8px)",
-    boxShadow: "0 12px 20px rgba(95, 150, 230, 0.2)",
-  },
-  borderTop: "4px solid #4776E6",
-}));
-
-const PrimaryButton = styled(Button)(({ theme }) => ({
-  background: "linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)",
-  color: "white",
-  fontWeight: 500,
-  borderRadius: "8px",
-  boxShadow: "0 4px 10px rgba(71, 118, 230, 0.3)",
-  padding: "8px 16px",
-  textTransform: "none",
-  transition: "all 0.3s ease",
-  "&:hover": {
-    background: "linear-gradient(90deg, #3a5fc0 0%, #7b3dc1 100%)",
-    boxShadow: "0 6px 15px rgba(71, 118, 230, 0.4)",
-    transform: "translateY(-2px)",
-  },
-}));
-
-const SecondaryButton = styled(Button)(({ theme }) => ({
-  color: "#4776E6",
-  borderColor: "#4776E6",
-  borderRadius: "8px",
-  padding: "8px 16px",
-  textTransform: "none",
-  transition: "all 0.3s ease",
-  "&:hover": {
-    backgroundColor: alpha("#4776E6", 0.08),
-    borderColor: "#3a5fc0",
-    transform: "translateY(-2px)",
-  },
-}));
-
-const PremiumChip = styled(Chip)(({ theme }) => ({
-  height: 22,
-  fontSize: "0.65rem",
-  backgroundColor: alpha("#4776E6", 0.1),
-  color: "#4776E6",
-  "& .MuiChip-label": {
-    padding: "0 8px",
-  },
-}));
-
-const PremiumTextField = styled(TextField)(({ theme }) => ({
-  "& .MuiOutlinedInput-root": {
-    borderRadius: "8px",
-    boxShadow: "0 2px 8px rgba(95, 150, 230, 0.1)",
-    "&:hover": {
-      boxShadow: "0 4px 15px rgba(95, 150, 230, 0.2)",
-    },
-    "&.Mui-focused": {
-      boxShadow: "0 4px 15px rgba(95, 150, 230, 0.2)",
-      borderColor: "#4776E6",
-    },
-  },
-}));
-
-const PremiumDialog = styled(Dialog)(({ theme }) => ({
-  "& .MuiPaper-root": {
-    borderRadius: "16px",
-    boxShadow: "0 8px 32px rgba(95, 150, 230, 0.2)",
-  },
-}));
-
-// ForumMembersDialog component with premium styling
+// ForumMembersDialog component with theme support
 const ForumMembersDialog = ({ open, onClose, forumId }) => {
+  const theme = useTheme();
   const [members, setMembers] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);
@@ -294,9 +214,18 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
   };
 
   return (
-    <PremiumDialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>
-        <GradientText variant="h5">Forum Members</GradientText>
+        <Typography variant="h5" sx={{ 
+          background: theme.palette.mode === 'dark' 
+            ? 'linear-gradient(90deg, #8E54E9 0%, #4776E6 100%)' 
+            : 'linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)',
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          fontWeight: 600,
+        }}>
+          Forum Members
+        </Typography>
       </DialogTitle>
       <DialogContent>
         {loading ? (
@@ -308,12 +237,12 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
             <Box sx={{ mb: 3 }}>
               <Typography
                 variant="h6"
-                sx={{ mb: 1, color: "#2A3B4F", fontWeight: 600 }}
+                sx={{ mb: 1, fontWeight: 600 }}
               >
                 Add New Members
               </Typography>
 
-              <PremiumTextField
+              <TextField
                 fullWidth
                 variant="outlined"
                 size="small"
@@ -326,6 +255,17 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
                       <SearchIcon color="primary" />
                     </InputAdornment>
                   ),
+                  sx: {
+                    borderRadius: "8px",
+                    boxShadow: theme.shadows[1],
+                    "&:hover": {
+                      boxShadow: theme.shadows[3],
+                    },
+                    "&.Mui-focused": {
+                      boxShadow: theme.shadows[3],
+                      borderColor: theme.palette.primary.main,
+                    },
+                  }
                 }}
                 sx={{ mb: 2 }}
               />
@@ -334,7 +274,7 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
                 sx={{
                   maxHeight: 200,
                   overflow: "auto",
-                  border: "1px solid #eee",
+                  border: `1px solid ${theme.palette.divider}`,
                   borderRadius: 1,
                   p: 1,
                 }}
@@ -358,7 +298,7 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
                         onClick={() => handleUserSelect(user._id)}
                         sx={{
                           "&:hover": {
-                            backgroundColor: alpha("#4776E6", 0.05),
+                            backgroundColor: alpha(theme.palette.primary.main, 0.05),
                           },
                         }}
                       >
@@ -372,8 +312,6 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
                         <ListItemText
                           primary={user.name || user._id}
                           secondary={user.email}
-                          primaryTypographyProps={{ color: "#2A3B4F" }}
-                          secondaryTypographyProps={{ color: "#607080" }}
                         />
                       </ListItem>
                     ))}
@@ -382,17 +320,36 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
               </Box>
 
               <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
-                <PrimaryButton
+                <Button
                   onClick={handleAddMember}
                   disabled={selectedUsers.length === 0 || addingMember}
-                  sx={{ minWidth: 100 }}
+                  sx={{ 
+                    minWidth: 100,
+                    background: theme.palette.mode === 'dark' 
+                      ? 'linear-gradient(90deg, #8E54E9 0%, #4776E6 100%)' 
+                      : 'linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)',
+                    color: "white",
+                    fontWeight: 500,
+                    borderRadius: "8px",
+                    boxShadow: theme.shadows[2],
+                    padding: "8px 16px",
+                    textTransform: "none",
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      background: theme.palette.mode === 'dark' 
+                        ? 'linear-gradient(90deg, #7b3dc1 0%, #3a5fc0 100%)' 
+                        : 'linear-gradient(90deg, #3a5fc0 0%, #7b3dc1 100%)',
+                      boxShadow: theme.shadows[4],
+                      transform: "translateY(-2px)",
+                    },
+                  }}
                 >
                   {addingMember ? (
                     <CircularProgress size={24} color="inherit" />
                   ) : (
                     `Add (${selectedUsers.length})`
                   )}
-                </PrimaryButton>
+                </Button>
               </Box>
             </Box>
 
@@ -400,12 +357,12 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
 
             <Typography
               variant="h6"
-              sx={{ mb: 1, color: "#2A3B4F", fontWeight: 600 }}
+              sx={{ mb: 1, fontWeight: 600 }}
             >
               Current Members ({members.length})
             </Typography>
 
-            <PremiumTextField
+            <TextField
               fullWidth
               variant="outlined"
               size="small"
@@ -418,6 +375,17 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
                     <SearchIcon color="primary" />
                   </InputAdornment>
                 ),
+                sx: {
+                  borderRadius: "8px",
+                  boxShadow: theme.shadows[1],
+                  "&:hover": {
+                    boxShadow: theme.shadows[3],
+                  },
+                  "&.Mui-focused": {
+                    boxShadow: theme.shadows[3],
+                    borderColor: theme.palette.primary.main,
+                  },
+                }
               }}
               sx={{ mb: 2 }}
             />
@@ -433,7 +401,7 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
                     <ListItem
                       sx={{
                         "&:hover": {
-                          backgroundColor: alpha("#4776E6", 0.05),
+                          backgroundColor: alpha(theme.palette.primary.main, 0.05),
                         },
                       }}
                     >
@@ -451,8 +419,6 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
                             )}
                           </>
                         }
-                        primaryTypographyProps={{ color: "#2A3B4F" }}
-                        secondaryTypographyProps={{ color: "#607080" }}
                       />
                       <ListItemSecondaryAction>
                         <IconButton
@@ -473,9 +439,26 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
         )}
       </DialogContent>
       <DialogActions>
-        <SecondaryButton onClick={onClose}>Close</SecondaryButton>
+        <Button 
+          onClick={onClose}
+          sx={{
+            color: theme.palette.primary.main,
+            borderColor: theme.palette.primary.main,
+            borderRadius: "8px",
+            padding: "8px 16px",
+            textTransform: "none",
+            transition: "all 0.3s ease",
+            "&:hover": {
+              backgroundColor: alpha(theme.palette.primary.main, 0.08),
+              borderColor: theme.palette.primary.dark,
+              transform: "translateY(-2px)",
+            },
+          }}
+        >
+          Close
+        </Button>
       </DialogActions>
-    </PremiumDialog>
+    </Dialog>
   );
 };
 
@@ -488,6 +471,7 @@ const ForumCard = ({
   onDeleteForum,
   hasPermission,
 }) => {
+  const theme = useTheme();
   const truncateText = (text, maxLength = 100) => {
     if (text.length <= maxLength) return text;
     return text.substr(0, maxLength) + "...";
@@ -532,7 +516,19 @@ const ForumCard = ({
   };
 
   return (
-    <PremiumCard>
+    <Card sx={{ 
+      width: "100%", 
+      height: "100%",
+      borderRadius: "16px",
+      boxShadow: theme.shadows[2],
+      transition: "all 0.3s ease",
+      "&:hover": {
+        transform: "translateY(-8px)",
+        boxShadow: theme.shadows[6],
+      },
+      borderTop: "4px solid",
+      borderColor: theme.palette.primary.main,
+    }}>
       <CardMedia
         component="img"
         height="160"
@@ -543,89 +539,119 @@ const ForumCard = ({
         alt={forum.title}
         sx={{ borderTopLeftRadius: "12px", borderTopRightRadius: "12px" }}
       />
-      <Box p={3}>
+      <Box p={2}>
         <Box
           sx={{
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "center",
+            alignItems: "flex-start",
             mb: 1,
           }}
         >
           <Typography
             variant="h6"
-            sx={{ flexGrow: 1, color: "#2A3B4F", fontWeight: 600 }}
+            sx={{
+              flexGrow: 1,
+              fontWeight: 600,
+              fontSize: { xs: "1rem", sm: "1.1rem", md: "1.25rem" },
+            }}
           >
             {forum.title}
           </Typography>
-          {hasPermission && (
-            <Box>
-              <IconButton
-                onClick={() => handleEdit(forum._id)}
-                color="primary"
-                size="small"
-              >
-                <EditIcon fontSize="small" />
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            {hasPermission && (
+              <>
+                <IconButton
+                  onClick={() => handleEdit(forum._id)}
+                  color="primary"
+                  size="small"
+                >
+                  <EditIcon fontSize="small" />
+                </IconButton>
+                <IconButton
+                  onClick={() => handleDelete(forum._id)}
+                  color="error"
+                  size="small"
+                >
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              </>
+            )}
+            <Tooltip
+              title={
+                forum.public_or_private === "private" ? "Private" : "Public"
+              }
+            >
+              <IconButton size="small">
+                {forum.public_or_private === "private" ? (
+                  <LockIcon fontSize="small" color="error" />
+                ) : (
+                  <PublicIcon fontSize="small" color="success" />
+                )}
               </IconButton>
-              <IconButton
-                onClick={() => handleDelete(forum._id)}
-                color="error"
-                size="small"
-              >
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </Box>
-          )}
-          <Tooltip
-            title={forum.public_or_private === "private" ? "Private" : "Public"}
-          >
-            <IconButton size="small" sx={{ ml: 1 }}>
-              {forum.public_or_private === "private" ? (
-                <LockIcon fontSize="small" color="error" />
-              ) : (
-                <PublicIcon fontSize="small" color="success" />
-              )}
-            </IconButton>
-          </Tooltip>
+            </Tooltip>
+          </Box>
         </Box>
 
         <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mb: 2 }}>
           {boardName && (
-            <PremiumChip
+            <Chip
               label={boardName}
               size="small"
               sx={{
+                height: 22,
+                fontSize: "0.65rem",
                 backgroundColor: alpha("#4CAF50", 0.1),
                 color: "#4CAF50",
+                "& .MuiChip-label": {
+                  padding: "0 8px",
+                },
               }}
             />
           )}
           {clubName && (
-            <PremiumChip
+            <Chip
               label={clubName}
               size="small"
               sx={{
+                height: 22,
+                fontSize: "0.65rem",
                 backgroundColor: alpha("#FF5722", 0.1),
                 color: "#FF5722",
+                "& .MuiChip-label": {
+                  padding: "0 8px",
+                },
               }}
             />
           )}
 
           {forum.tags &&
             forum.tags.map((tag, index) => (
-              <PremiumChip
+              <Chip
                 key={index}
                 label={tag}
                 size="small"
                 sx={{
+                  height: 22,
+                  fontSize: "0.65rem",
                   backgroundColor: alpha(getTagColor(index), 0.1),
                   color: getTagColor(index),
+                  "& .MuiChip-label": {
+                    padding: "0 8px",
+                  },
                 }}
               />
             ))}
         </Box>
 
-        <Typography variant="body2" sx={{ mb: 2, color: "#607080" }}>
+        <Typography
+          variant="body2"
+          sx={{
+            mb: 2,
+            fontSize: { xs: "0.8rem", sm: "0.875rem" },
+            minHeight: "40px",
+          }}
+        >
           {truncateText(forum.description)}
         </Typography>
 
@@ -633,7 +659,7 @@ const ForumCard = ({
           sx={{
             display: "flex",
             justifyContent: "space-between",
-            borderTop: "1px solid #eee",
+            borderTop: `1px solid ${theme.palette.divider}`,
             pt: 2,
             mb: 2,
           }}
@@ -660,32 +686,62 @@ const ForumCard = ({
         </Box>
 
         <Box sx={{ display: "flex", gap: 1 }}>
-          <PrimaryButton
-            onClick={() => onViewForum(forum._id)}
+          <Button
+            onClick={() =>
+              onViewForum(forum._id, forum.public_or_private === "private")
+            }
             sx={{
               flexGrow: 1,
               py: 1,
+              fontSize: { xs: "0.75rem", sm: "0.8rem", md: "0.875rem" },
+              background: theme.palette.mode === 'dark' 
+                ? 'linear-gradient(90deg, #8E54E9 0%, #4776E6 100%)' 
+                : 'linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)',
+              color: "white",
+              fontWeight: 500,
+              borderRadius: "8px",
+              boxShadow: theme.shadows[2],
+              textTransform: "none",
+              transition: "all 0.3s ease",
+              "&:hover": {
+                background: theme.palette.mode === 'dark' 
+                  ? 'linear-gradient(90deg, #7b3dc1 0%, #3a5fc0 100%)' 
+                  : 'linear-gradient(90deg, #3a5fc0 0%, #7b3dc1 100%)',
+                boxShadow: theme.shadows[4],
+                transform: "translateY(-2px)",
+              },
             }}
           >
             VIEW DISCUSSION
-          </PrimaryButton>
+          </Button>
 
-          <SecondaryButton
+          <Button
             onClick={() => onViewMembers(forum._id)}
             sx={{
               py: 1,
               minWidth: "auto",
+              color: theme.palette.primary.main,
+              borderColor: theme.palette.primary.main,
+              borderRadius: "8px",
+              textTransform: "none",
+              transition: "all 0.3s ease",
+              "&:hover": {
+                backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                borderColor: theme.palette.primary.dark,
+                transform: "translateY(-2px)",
+              },
             }}
           >
-            <PeopleIcon sx={{ mr: 0.5 }} fontSize="small" />
-          </SecondaryButton>
+            <PeopleIcon sx={{ fontSize: { xs: "1rem", sm: "1.25rem" } }} />
+          </Button>
         </Box>
       </Box>
-    </PremiumCard>
+    </Card>
   );
 };
 
 const ForumList = ({ boards: propBoards = {}, clubs: propClubs = {} }) => {
+  const theme = useTheme();
   const [forums, setForums] = useState([]);
   const [search, setSearch] = useState("");
   const [createForumOpen, setCreateForumOpen] = useState(false);
@@ -702,6 +758,21 @@ const ForumList = ({ boards: propBoards = {}, clubs: propClubs = {} }) => {
   const [userBoardsWithForumPermission, setUserBoardsWithForumPermission] =
     useState([]);
   const router = useRouter();
+
+  const checkMembership = async (forumId, userId) => {
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/forums2/forums/${forumId}/membership/${userId}`
+      );
+      if (!response.ok) {
+        throw new Error("Failed to check membership");
+      }
+      return await response.json();
+    } catch (error) {
+      console.error("Error checking membership:", error);
+      return { isMember: false };
+    }
+  };
 
   const sampleBoards = {
     "65f1a2b3c4d5e6f7890pqrst": "Arts & Culture",
@@ -809,8 +880,29 @@ const ForumList = ({ boards: propBoards = {}, clubs: propClubs = {} }) => {
     fetchForums();
   }, []);
 
-  const handleViewForum = (forumId) => {
-    router.push(`/current_forum/${forumId}`);
+  const handleViewForum = async (forumId, isPrivate) => {
+    // Only check membership if userId exists
+    if (userId) {
+      const membershipStatus = await checkMembership(forumId, userId);
+
+      if (membershipStatus?.data?.isMember) {
+        // Member can access any forumc
+        console.log("kvndkv");
+        router.push(`/current_forum/${forumId}`);
+      } else if (isPrivate) {
+        // Private forum and not a member - show error message
+        // You could use a state variable to display a modal/alert here
+        alert("This is a private forum. You need to be a member to access it.");
+      } else {
+        // Public forum and not a member - redirect to a page with join option
+        router.push(`/forum_join/${forumId}`);
+      }
+    } else {
+      // Handle not logged in case
+      alert("Please log in to view forums");
+      // Optionally redirect to login
+      // router.push('/login');
+    }
   };
 
   const handleViewMembers = (forumId) => {
@@ -885,9 +977,9 @@ const ForumList = ({ boards: propBoards = {}, clubs: propClubs = {} }) => {
   return (
     <Box
       sx={{
-        backgroundColor: "#f8faff",
+        backgroundColor: theme.palette.background.default,
         minHeight: "100vh",
-        p: 4,
+        p: { xs: 2, sm: 3, md: 4 },
       }}
     >
       <Box sx={{ maxWidth: 1600, mx: "auto" }}>
@@ -898,9 +990,13 @@ const ForumList = ({ boards: propBoards = {}, clubs: propClubs = {} }) => {
           availableClubs={availableClubs}
         />
 
-        <Grid container spacing={8} sx={{ mt: 16 }}>
+        <Grid 
+          container 
+          spacing={{ xs: 2, sm: 3, md: 4 }} 
+          sx={{ mt: { xs: 4, sm: 8, md: 12 } }}
+        >
           {filteredForums.map((forum) => (
-            <Grid item key={forum._id} xs={12} sm={6} md={4} lg={3}>
+            <Grid item key={forum._id} xs={12} sm={6} md={4} lg={3} xl={3}>
               <ForumCard
                 forum={forum}
                 boardName={availableBoards[forum.board_id]}
@@ -921,11 +1017,15 @@ const ForumList = ({ boards: propBoards = {}, clubs: propClubs = {} }) => {
             onClick={handleCreateForumToggle}
             sx={{
               position: "fixed",
-              bottom: 32,
-              right: 32,
-              background: "linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)",
+              bottom: { xs: 16, sm: 24, md: 32 },
+              right: { xs: 16, sm: 24, md: 32 },
+              background: theme.palette.mode === 'dark' 
+                ? 'linear-gradient(90deg, #8E54E9 0%, #4776E6 100%)' 
+                : 'linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)',
               "&:hover": {
-                background: "linear-gradient(90deg, #3a5fc0 0%, #7b3dc1 100%)",
+                background: theme.palette.mode === 'dark' 
+                  ? 'linear-gradient(90deg, #7b3dc1 0%, #3a5fc0 100%)' 
+                  : 'linear-gradient(90deg, #3a5fc0 0%, #7b3dc1 100%)',
               },
             }}
           >
@@ -933,6 +1033,7 @@ const ForumList = ({ boards: propBoards = {}, clubs: propClubs = {} }) => {
           </Fab>
         )}
 
+        {/* Keep the dialog components as they are */}
         {createForumOpen && (
           <ForumCreateDialog
             open={createForumOpen}

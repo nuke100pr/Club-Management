@@ -1,3 +1,438 @@
+// "use client";
+// import React, { useState, useEffect } from "react";
+// import {
+//   Box,
+//   Button,
+//   TextField,
+//   IconButton,
+//   Dialog,
+//   DialogTitle,
+//   DialogContent,
+//   DialogActions,
+//   Grid,
+//   FormControl,
+//   OutlinedInput,
+//   Chip,
+//   Typography,
+// } from "@mui/material";
+// import {
+//   Add as AddIcon,
+//   Image as ImageIcon,
+//   FormatBold,
+//   FormatItalic,
+//   FormatUnderlined,
+//   Link as LinkIcon,
+//   CodeOutlined,
+//   FormatListBulleted,
+//   FormatListNumbered,
+//   FormatQuote,
+//   ColorLens,
+// } from "@mui/icons-material";
+
+// // Tiptap imports
+// import { useEditor, EditorContent } from "@tiptap/react";
+// import StarterKit from "@tiptap/starter-kit";
+// import Underline from "@tiptap/extension-underline";
+// import Link from "@tiptap/extension-link";
+// import ImageExtension from "@tiptap/extension-image";
+// import TextAlign from "@tiptap/extension-text-align";
+// import Heading from "@tiptap/extension-heading";
+// import BulletList from "@tiptap/extension-bullet-list";
+// import OrderedList from "@tiptap/extension-ordered-list";
+// import ListItem from "@tiptap/extension-list-item";
+// import CodeBlock from "@tiptap/extension-code-block";
+// import Blockquote from "@tiptap/extension-blockquote";
+// import Color from "@tiptap/extension-color";
+// import TextStyle from "@tiptap/extension-text-style";
+
+// const MenuBar = ({ editor }) => {
+//   if (!editor) {
+//     return null;
+//   }
+
+//   const setLink = () => {
+//     const previousUrl = editor.getAttributes('link').href
+//     const url = window.prompt('URL', previousUrl)
+
+//     if (url === null) {
+//       return
+//     }
+
+//     if (url === '') {
+//       editor.chain().focus().extendMarkRange('link').unsetLink().run()
+//       return
+//     }
+
+//     editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+//   }
+
+//   return (
+//     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1 }}>
+//       <IconButton 
+//         onClick={() => editor.chain().focus().toggleBold().run()}
+//         color={editor.isActive('bold') ? 'primary' : 'default'}
+//       >
+//         <FormatBold />
+//       </IconButton>
+//       <IconButton 
+//         onClick={() => editor.chain().focus().toggleItalic().run()}
+//         color={editor.isActive('italic') ? 'primary' : 'default'}
+//       >
+//         <FormatItalic />
+//       </IconButton>
+//       <IconButton 
+//         onClick={() => editor.chain().focus().toggleUnderline().run()}
+//         color={editor.isActive('underline') ? 'primary' : 'default'}
+//       >
+//         <FormatUnderlined />
+//       </IconButton>
+//       <IconButton onClick={setLink}>
+//         <LinkIcon />
+//       </IconButton>
+//       <IconButton 
+//         onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+//         color={editor.isActive('codeBlock') ? 'primary' : 'default'}
+//       >
+//         <CodeOutlined />
+//       </IconButton>
+//       <IconButton 
+//         onClick={() => editor.chain().focus().toggleBulletList().run()}
+//         color={editor.isActive('bulletList') ? 'primary' : 'default'}
+//       >
+//         <FormatListBulleted />
+//       </IconButton>
+//       <IconButton 
+//         onClick={() => editor.chain().focus().toggleOrderedList().run()}
+//         color={editor.isActive('orderedList') ? 'primary' : 'default'}
+//       >
+//         <FormatListNumbered />
+//       </IconButton>
+//       <IconButton 
+//         onClick={() => editor.chain().focus().toggleBlockquote().run()}
+//         color={editor.isActive('blockquote') ? 'primary' : 'default'}
+//       >
+//         <FormatQuote />
+//       </IconButton>
+//     </Box>
+//   )
+// }
+
+// const BlogCreateForm = ({ 
+//   open, 
+//   onClose, 
+//   onSubmit, 
+//   initialData = null,
+//   club_id = null,
+//   board_id = null
+// }) => {
+//   const [title, setTitle] = useState("");
+//   const [publisher, setPublisher] = useState("");
+//   const [tags, setTags] = useState([]);
+//   const [newTag, setNewTag] = useState("");
+//   const [blogImage, setBlogImage] = useState(null);
+//   const [imagePreview, setImagePreview] = useState(null);
+
+//   // Tiptap editors
+//   const introductionEditor = useEditor({
+//     extensions: [
+//       StarterKit,
+//       Underline,
+//       Link,
+//       ImageExtension,
+//       TextAlign.configure({ types: ['heading', 'paragraph'] }),
+//       Heading,
+//       BulletList,
+//       OrderedList,
+//       ListItem,
+//       CodeBlock,
+//       Blockquote,
+//       Color,
+//       TextStyle
+//     ],
+//     content: ""
+//   });
+
+//   const mainContentEditor = useEditor({
+//     extensions: [
+//       StarterKit,
+//       Underline,
+//       Link,
+//       ImageExtension,
+//       TextAlign.configure({ types: ['heading', 'paragraph'] }),
+//       Heading,
+//       BulletList,
+//       OrderedList,
+//       ListItem,
+//       CodeBlock,
+//       Blockquote,
+//       Color,
+//       TextStyle
+//     ],
+//     content: ""
+//   });
+
+//   const conclusionEditor = useEditor({
+//     extensions: [
+//       StarterKit,
+//       Underline,
+//       Link,
+//       ImageExtension,
+//       TextAlign.configure({ types: ['heading', 'paragraph'] }),
+//       Heading,
+//       BulletList,
+//       OrderedList,
+//       ListItem,
+//       CodeBlock,
+//       Blockquote,
+//       Color,
+//       TextStyle
+//     ],
+//     content: ""
+//   });
+
+//   // Reset or populate form when initialData changes
+//   useEffect(() => {
+//     if (initialData) {
+//       setTitle(initialData.title || "");
+//       setPublisher(initialData.publisher || "");
+//       setTags(initialData.tags || []);
+      
+//       // Update Tiptap editors
+//       if (introductionEditor) {
+//         introductionEditor.commands.setContent(initialData.introduction || "");
+//       }
+//       if (mainContentEditor) {
+//         mainContentEditor.commands.setContent(initialData.mainContent || "");
+//       }
+//       if (conclusionEditor) {
+//         conclusionEditor.commands.setContent(initialData.conclusion || "");
+//       }
+
+//       setImagePreview(initialData.image || null);
+//     } else {
+//       // Reset all fields
+//       resetForm();
+//     }
+//   }, [initialData, open, introductionEditor, mainContentEditor, conclusionEditor]);
+
+//   const resetForm = () => {
+//     setTitle("");
+//     setPublisher("");
+//     setTags([]);
+//     setNewTag("");
+//     setBlogImage(null);
+//     setImagePreview(null);
+
+//     // Reset Tiptap editors
+//     if (introductionEditor) {
+//       introductionEditor.commands.clearContent();
+//     }
+//     if (mainContentEditor) {
+//       mainContentEditor.commands.clearContent();
+//     }
+//     if (conclusionEditor) {
+//       conclusionEditor.commands.clearContent();
+//     }
+//   };
+
+//   // Tag handlers
+//   const handleAddTag = (e) => {
+//     e.preventDefault();
+//     if (newTag.trim() !== "" && !tags.includes(newTag.trim())) {
+//       setTags([...tags, newTag.trim()]);
+//       setNewTag("");
+//     }
+//   };
+
+//   const handleRemoveTag = (index) => {
+//     setTags(tags.filter((_, i) => i !== index));
+//   };
+
+//   // Image upload handler
+//   const handleImageUpload = (event) => {
+//     const file = event.target.files[0];
+//     if (file) {
+//       const reader = new FileReader();
+//       reader.onloadend = () => {
+//         setBlogImage(file);
+//         setImagePreview(reader.result);
+//       };
+//       reader.readAsDataURL(file);
+//     }
+//   };
+
+//   // Submit handler
+//   const handleSubmit = (e) => {
+//     e.preventDefault();
+//     onSubmit({
+//       title,
+//       publisher,
+//       introduction: introductionEditor?.getHTML() || "",
+//       mainContent: mainContentEditor?.getHTML() || "",
+//       conclusion: conclusionEditor?.getHTML() || "",
+//       tags,
+//       blogImage,
+//       imagePreview,
+//       club_id,
+//       board_id
+//     });
+//   };
+
+//   return (
+//     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
+//       <DialogTitle>
+//         {initialData ? "Edit Blog Post" : "Create Blog Post"}
+//       </DialogTitle>
+//       <DialogContent>
+//         <form onSubmit={handleSubmit}>
+//           <Grid container spacing={3}>
+//             <Grid item xs={12}>
+//               <TextField
+//                 fullWidth
+//                 label="Blog Title"
+//                 value={title}
+//                 onChange={(e) => setTitle(e.target.value)}
+//                 required
+//               />
+//             </Grid>
+
+//             <Grid item xs={12}>
+//               <TextField
+//                 fullWidth
+//                 label="Publisher"
+//                 value={publisher}
+//                 onChange={(e) => setPublisher(e.target.value)}
+//                 required
+//               />
+//             </Grid>
+
+//             <Grid item xs={12}>
+//               <Button
+//                 variant="contained"
+//                 component="label"
+//                 startIcon={<ImageIcon />}
+//               >
+//                 Upload Blog Image
+//                 <input
+//                   type="file"
+//                   hidden
+//                   accept="image/*"
+//                   onChange={handleImageUpload}
+//                 />
+//               </Button>
+//               {imagePreview && (
+//                 <Box sx={{ mt: 2 }}>
+//                   <img
+//                     src={imagePreview}
+//                     alt="Blog"
+//                     style={{ maxWidth: "300px", maxHeight: "300px" }}
+//                   />
+//                 </Box>
+//               )}
+//             </Grid>
+
+//             <Grid item xs={12}>
+//               <FormControl fullWidth sx={{ mb: 2 }}>
+//                 <OutlinedInput
+//                   value={newTag}
+//                   onChange={(e) => setNewTag(e.target.value)}
+//                   onKeyPress={(e) => e.key === "Enter" && handleAddTag(e)}
+//                   placeholder="Add Tags"
+//                   endAdornment={
+//                     <IconButton onClick={handleAddTag}>
+//                       <AddIcon />
+//                     </IconButton>
+//                   }
+//                 />
+//                 <Box sx={{ mt: 1 }}>
+//                   {tags.map((tag, index) => (
+//                     <Chip
+//                       key={index}
+//                       label={tag}
+//                       onDelete={() => handleRemoveTag(index)}
+//                       sx={{ mr: 1, mt: 1 }}
+//                     />
+//                   ))}
+//                 </Box>
+//               </FormControl>
+//             </Grid>
+
+//             <Grid item xs={12}>
+//               <Typography variant="subtitle1">Introduction</Typography>
+//               {introductionEditor && (
+//                 <>
+//                   <MenuBar editor={introductionEditor} />
+//                   <Box 
+//                     sx={{ 
+//                       border: '1px solid rgba(0, 0, 0, 0.23)', 
+//                       borderRadius: 1, 
+//                       p: 1, 
+//                       minHeight: '100px' 
+//                     }}
+//                   >
+//                     <EditorContent editor={introductionEditor} />
+//                   </Box>
+//                 </>
+//               )}
+//             </Grid>
+
+//             <Grid item xs={12}>
+//               <Typography variant="subtitle1">Main Content</Typography>
+//               {mainContentEditor && (
+//                 <>
+//                   <MenuBar editor={mainContentEditor} />
+//                   <Box 
+//                     sx={{ 
+//                       border: '1px solid rgba(0, 0, 0, 0.23)', 
+//                       borderRadius: 1, 
+//                       p: 1, 
+//                       minHeight: '200px' 
+//                     }}
+//                   >
+//                     <EditorContent editor={mainContentEditor} />
+//                   </Box>
+//                 </>
+//               )}
+//             </Grid>
+
+//             <Grid item xs={12}>
+//               <Typography variant="subtitle1">Conclusion</Typography>
+//               {conclusionEditor && (
+//                 <>
+//                   <MenuBar editor={conclusionEditor} />
+//                   <Box 
+//                     sx={{ 
+//                       border: '1px solid rgba(0, 0, 0, 0.23)', 
+//                       borderRadius: 1, 
+//                       p: 1, 
+//                       minHeight: '100px' 
+//                     }}
+//                   >
+//                     <EditorContent editor={conclusionEditor} />
+//                   </Box>
+//                 </>
+//               )}
+//             </Grid>
+//           </Grid>
+//         </form>
+//       </DialogContent>
+//       <DialogActions>
+//         <Button onClick={onClose}>Cancel</Button>
+//         <Button
+//           type="submit"
+//           variant="contained"
+//           color="primary"
+//           onClick={handleSubmit}
+//         >
+//           {initialData ? "Update Blog" : "Create Blog Post"}
+//         </Button>
+//       </DialogActions>
+//     </Dialog>
+//   );
+// };
+
+// export default BlogCreateForm;
+
 "use client";
 import React, { useState, useEffect } from "react";
 import {
@@ -14,6 +449,7 @@ import {
   OutlinedInput,
   Chip,
   Typography,
+  useTheme,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -26,10 +462,7 @@ import {
   FormatListBulleted,
   FormatListNumbered,
   FormatQuote,
-  ColorLens,
 } from "@mui/icons-material";
-
-// Tiptap imports
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -46,76 +479,87 @@ import Color from "@tiptap/extension-color";
 import TextStyle from "@tiptap/extension-text-style";
 
 const MenuBar = ({ editor }) => {
+  const theme = useTheme();
   if (!editor) {
     return null;
   }
 
   const setLink = () => {
-    const previousUrl = editor.getAttributes('link').href
-    const url = window.prompt('URL', previousUrl)
+    const previousUrl = editor.getAttributes('link').href;
+    const url = window.prompt('URL', previousUrl);
 
     if (url === null) {
-      return
+      return;
     }
 
     if (url === '') {
-      editor.chain().focus().extendMarkRange('link').unsetLink().run()
-      return
+      editor.chain().focus().extendMarkRange('link').unsetLink().run();
+      return;
     }
 
-    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
-  }
+    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+  };
 
   return (
     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1 }}>
       <IconButton 
         onClick={() => editor.chain().focus().toggleBold().run()}
         color={editor.isActive('bold') ? 'primary' : 'default'}
+        sx={{ color: editor.isActive('bold') ? theme.palette.primary.main : theme.palette.text.secondary }}
       >
         <FormatBold />
       </IconButton>
       <IconButton 
         onClick={() => editor.chain().focus().toggleItalic().run()}
         color={editor.isActive('italic') ? 'primary' : 'default'}
+        sx={{ color: editor.isActive('italic') ? theme.palette.primary.main : theme.palette.text.secondary }}
       >
         <FormatItalic />
       </IconButton>
       <IconButton 
         onClick={() => editor.chain().focus().toggleUnderline().run()}
         color={editor.isActive('underline') ? 'primary' : 'default'}
+        sx={{ color: editor.isActive('underline') ? theme.palette.primary.main : theme.palette.text.secondary }}
       >
         <FormatUnderlined />
       </IconButton>
-      <IconButton onClick={setLink}>
+      <IconButton 
+        onClick={setLink}
+        sx={{ color: editor.isActive('link') ? theme.palette.primary.main : theme.palette.text.secondary }}
+      >
         <LinkIcon />
       </IconButton>
       <IconButton 
         onClick={() => editor.chain().focus().toggleCodeBlock().run()}
         color={editor.isActive('codeBlock') ? 'primary' : 'default'}
+        sx={{ color: editor.isActive('codeBlock') ? theme.palette.primary.main : theme.palette.text.secondary }}
       >
         <CodeOutlined />
       </IconButton>
       <IconButton 
         onClick={() => editor.chain().focus().toggleBulletList().run()}
         color={editor.isActive('bulletList') ? 'primary' : 'default'}
+        sx={{ color: editor.isActive('bulletList') ? theme.palette.primary.main : theme.palette.text.secondary }}
       >
         <FormatListBulleted />
       </IconButton>
       <IconButton 
         onClick={() => editor.chain().focus().toggleOrderedList().run()}
         color={editor.isActive('orderedList') ? 'primary' : 'default'}
+        sx={{ color: editor.isActive('orderedList') ? theme.palette.primary.main : theme.palette.text.secondary }}
       >
         <FormatListNumbered />
       </IconButton>
       <IconButton 
         onClick={() => editor.chain().focus().toggleBlockquote().run()}
         color={editor.isActive('blockquote') ? 'primary' : 'default'}
+        sx={{ color: editor.isActive('blockquote') ? theme.palette.primary.main : theme.palette.text.secondary }}
       >
         <FormatQuote />
       </IconButton>
     </Box>
-  )
-}
+  );
+};
 
 const BlogCreateForm = ({ 
   open, 
@@ -123,8 +567,9 @@ const BlogCreateForm = ({
   onSubmit, 
   initialData = null,
   club_id = null,
-  board_id = null
+  board_id = null,
 }) => {
+  const theme = useTheme();
   const [title, setTitle] = useState("");
   const [publisher, setPublisher] = useState("");
   const [tags, setTags] = useState([]);
@@ -132,7 +577,6 @@ const BlogCreateForm = ({
   const [blogImage, setBlogImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
 
-  // Tiptap editors
   const introductionEditor = useEditor({
     extensions: [
       StarterKit,
@@ -147,9 +591,9 @@ const BlogCreateForm = ({
       CodeBlock,
       Blockquote,
       Color,
-      TextStyle
+      TextStyle,
     ],
-    content: ""
+    content: "",
   });
 
   const mainContentEditor = useEditor({
@@ -166,9 +610,9 @@ const BlogCreateForm = ({
       CodeBlock,
       Blockquote,
       Color,
-      TextStyle
+      TextStyle,
     ],
-    content: ""
+    content: "",
   });
 
   const conclusionEditor = useEditor({
@@ -185,19 +629,16 @@ const BlogCreateForm = ({
       CodeBlock,
       Blockquote,
       Color,
-      TextStyle
+      TextStyle,
     ],
-    content: ""
+    content: "",
   });
 
-  // Reset or populate form when initialData changes
   useEffect(() => {
     if (initialData) {
       setTitle(initialData.title || "");
       setPublisher(initialData.publisher || "");
       setTags(initialData.tags || []);
-      
-      // Update Tiptap editors
       if (introductionEditor) {
         introductionEditor.commands.setContent(initialData.introduction || "");
       }
@@ -207,10 +648,8 @@ const BlogCreateForm = ({
       if (conclusionEditor) {
         conclusionEditor.commands.setContent(initialData.conclusion || "");
       }
-
       setImagePreview(initialData.image || null);
     } else {
-      // Reset all fields
       resetForm();
     }
   }, [initialData, open, introductionEditor, mainContentEditor, conclusionEditor]);
@@ -222,8 +661,6 @@ const BlogCreateForm = ({
     setNewTag("");
     setBlogImage(null);
     setImagePreview(null);
-
-    // Reset Tiptap editors
     if (introductionEditor) {
       introductionEditor.commands.clearContent();
     }
@@ -235,7 +672,6 @@ const BlogCreateForm = ({
     }
   };
 
-  // Tag handlers
   const handleAddTag = (e) => {
     e.preventDefault();
     if (newTag.trim() !== "" && !tags.includes(newTag.trim())) {
@@ -248,7 +684,6 @@ const BlogCreateForm = ({
     setTags(tags.filter((_, i) => i !== index));
   };
 
-  // Image upload handler
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
@@ -261,7 +696,6 @@ const BlogCreateForm = ({
     }
   };
 
-  // Submit handler
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit({
@@ -274,16 +708,16 @@ const BlogCreateForm = ({
       blogImage,
       imagePreview,
       club_id,
-      board_id
+      board_id,
     });
   };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
-      <DialogTitle>
+      <DialogTitle sx={{ bgcolor: theme.palette.background.paper, color: theme.palette.text.primary }}>
         {initialData ? "Edit Blog Post" : "Create Blog Post"}
       </DialogTitle>
-      <DialogContent>
+      <DialogContent sx={{ bgcolor: theme.palette.background.paper }}>
         <form onSubmit={handleSubmit}>
           <Grid container spacing={3}>
             <Grid item xs={12}>
@@ -293,6 +727,8 @@ const BlogCreateForm = ({
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
+                InputLabelProps={{ style: { color: theme.palette.text.secondary } }}
+                InputProps={{ style: { color: theme.palette.text.primary } }}
               />
             </Grid>
 
@@ -303,6 +739,8 @@ const BlogCreateForm = ({
                 value={publisher}
                 onChange={(e) => setPublisher(e.target.value)}
                 required
+                InputLabelProps={{ style: { color: theme.palette.text.secondary } }}
+                InputProps={{ style: { color: theme.palette.text.primary } }}
               />
             </Grid>
 
@@ -311,6 +749,13 @@ const BlogCreateForm = ({
                 variant="contained"
                 component="label"
                 startIcon={<ImageIcon />}
+                sx={{
+                  bgcolor: theme.palette.primary.main,
+                  color: theme.palette.primary.contrastText,
+                  '&:hover': {
+                    bgcolor: theme.palette.primary.dark,
+                  },
+                }}
               >
                 Upload Blog Image
                 <input
@@ -340,9 +785,15 @@ const BlogCreateForm = ({
                   placeholder="Add Tags"
                   endAdornment={
                     <IconButton onClick={handleAddTag}>
-                      <AddIcon />
+                      <AddIcon sx={{ color: theme.palette.primary.main }} />
                     </IconButton>
                   }
+                  sx={{
+                    color: theme.palette.text.primary,
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: theme.palette.divider,
+                    },
+                  }}
                 />
                 <Box sx={{ mt: 1 }}>
                   {tags.map((tag, index) => (
@@ -350,7 +801,12 @@ const BlogCreateForm = ({
                       key={index}
                       label={tag}
                       onDelete={() => handleRemoveTag(index)}
-                      sx={{ mr: 1, mt: 1 }}
+                      sx={{
+                        mr: 1,
+                        mt: 1,
+                        bgcolor: theme.palette.primary.light,
+                        color: theme.palette.primary.contrastText,
+                      }}
                     />
                   ))}
                 </Box>
@@ -358,16 +814,19 @@ const BlogCreateForm = ({
             </Grid>
 
             <Grid item xs={12}>
-              <Typography variant="subtitle1">Introduction</Typography>
+              <Typography variant="subtitle1" sx={{ color: theme.palette.text.primary }}>
+                Introduction
+              </Typography>
               {introductionEditor && (
                 <>
                   <MenuBar editor={introductionEditor} />
                   <Box 
                     sx={{ 
-                      border: '1px solid rgba(0, 0, 0, 0.23)', 
+                      border: `1px solid ${theme.palette.divider}`, 
                       borderRadius: 1, 
                       p: 1, 
-                      minHeight: '100px' 
+                      minHeight: '100px',
+                      bgcolor: theme.palette.background.default,
                     }}
                   >
                     <EditorContent editor={introductionEditor} />
@@ -377,16 +836,19 @@ const BlogCreateForm = ({
             </Grid>
 
             <Grid item xs={12}>
-              <Typography variant="subtitle1">Main Content</Typography>
+              <Typography variant="subtitle1" sx={{ color: theme.palette.text.primary }}>
+                Main Content
+              </Typography>
               {mainContentEditor && (
                 <>
                   <MenuBar editor={mainContentEditor} />
                   <Box 
                     sx={{ 
-                      border: '1px solid rgba(0, 0, 0, 0.23)', 
+                      border: `1px solid ${theme.palette.divider}`, 
                       borderRadius: 1, 
                       p: 1, 
-                      minHeight: '200px' 
+                      minHeight: '200px',
+                      bgcolor: theme.palette.background.default,
                     }}
                   >
                     <EditorContent editor={mainContentEditor} />
@@ -396,16 +858,19 @@ const BlogCreateForm = ({
             </Grid>
 
             <Grid item xs={12}>
-              <Typography variant="subtitle1">Conclusion</Typography>
+              <Typography variant="subtitle1" sx={{ color: theme.palette.text.primary }}>
+                Conclusion
+              </Typography>
               {conclusionEditor && (
                 <>
                   <MenuBar editor={conclusionEditor} />
                   <Box 
                     sx={{ 
-                      border: '1px solid rgba(0, 0, 0, 0.23)', 
+                      border: `1px solid ${theme.palette.divider}`, 
                       borderRadius: 1, 
                       p: 1, 
-                      minHeight: '100px' 
+                      minHeight: '100px',
+                      bgcolor: theme.palette.background.default,
                     }}
                   >
                     <EditorContent editor={conclusionEditor} />
@@ -416,13 +881,24 @@ const BlogCreateForm = ({
           </Grid>
         </form>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
+      <DialogActions sx={{ bgcolor: theme.palette.background.paper }}>
+        <Button 
+          onClick={onClose}
+          sx={{ color: theme.palette.text.secondary }}
+        >
+          Cancel
+        </Button>
         <Button
           type="submit"
           variant="contained"
-          color="primary"
           onClick={handleSubmit}
+          sx={{
+            bgcolor: theme.palette.primary.main,
+            color: theme.palette.primary.contrastText,
+            '&:hover': {
+              bgcolor: theme.palette.primary.dark,
+            },
+          }}
         >
           {initialData ? "Update Blog" : "Create Blog Post"}
         </Button>

@@ -20,7 +20,8 @@ import {
   InputAdornment,
   Drawer,
   Paper,
-  FormGroup
+  FormGroup,
+  useTheme
 } from "@mui/material";
 import {
   Close as CloseIcon,
@@ -40,21 +41,17 @@ const SearchAndFilter = ({
   setFilterActive,
   allKeywords 
 }) => {
+  const theme = useTheme();
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [isSticky, setIsSticky] = useState(false);
 
-  // Handle scroll event to make the search bar sticky
   useEffect(() => {
     const handleScroll = () => {
       const scrollPosition = window.scrollY;
-      // Make sticky after scrolling past a certain threshold (e.g., 100px)
       setIsSticky(scrollPosition > 100);
     };
 
-    // Add event listener
     window.addEventListener('scroll', handleScroll);
-
-    // Clean up event listener
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
@@ -92,25 +89,21 @@ const SearchAndFilter = ({
 
   return (
     <>
-      <Box 
-        sx={{ 
-          mb: isSticky ? 16 : 4, // Add margin bottom when sticky to prevent content jump
-          position: 'relative',
-          zIndex: 1100,
-        }}
-      >
+      <Box sx={{ 
+        mb: isSticky ? 16 : 4,
+        position: 'relative',
+        zIndex: 1100,
+      }}>
         <Paper 
           elevation={isSticky ? 4 : 0} 
           sx={{ 
             borderRadius: '16px',
-            background: 'white',
-            boxShadow: isSticky 
-              ? '0 6px 16px rgba(95, 150, 230, 0.2)' 
-              : '0 4px 12px rgba(95, 150, 230, 0.1)',
+            background: theme.palette.background.paper,
+            boxShadow: isSticky ? theme.shadows[4] : theme.shadows[1],
             overflow: 'hidden',
             transition: 'all 0.3s ease',
             '&:hover': {
-              boxShadow: '0 6px 16px rgba(95, 150, 230, 0.15)',
+              boxShadow: theme.shadows[4],
             },
             position: isSticky ? 'fixed' : 'relative',
             top: isSticky ? 0 : 'auto',
@@ -137,15 +130,15 @@ const SearchAndFilter = ({
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <SearchIcon sx={{ color: '#4776E6', opacity: 0.8 }} />
+                    <SearchIcon sx={{ color: theme.palette.primary.main, opacity: 0.8 }} />
                   </InputAdornment>
                 ),
                 disableUnderline: true,
                 sx: { 
                   fontSize: '0.95rem',
-                  color: '#2A3B4F',
+                  color: theme.palette.text.primary,
                   '&::placeholder': {
-                    color: '#607080',
+                    color: theme.palette.text.secondary,
                     opacity: 0.7
                   }
                 }
@@ -153,14 +146,14 @@ const SearchAndFilter = ({
               sx={{ 
                 maxWidth: '100%',
                 '& .MuiInputBase-root': {
-                  backgroundColor: 'rgba(248, 250, 255, 0.8)',
+                  backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
                   borderRadius: '12px',
                   pl: 1,
                   height: 48,
                   transition: 'all 0.3s ease',
                   '&:hover, &:focus-within': {
-                    backgroundColor: 'rgba(248, 250, 255, 1)',
-                    boxShadow: '0 2px 8px rgba(95, 150, 230, 0.1)'
+                    backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)',
+                    boxShadow: theme.shadows[1]
                   }
                 }
               }}
@@ -190,12 +183,12 @@ const SearchAndFilter = ({
                       }
                     } 
                   : {
-                      borderColor: '#4776E6',
-                      color: '#4776E6',
+                      borderColor: theme.palette.primary.main,
+                      color: theme.palette.primary.main,
                       '&:hover': {
-                        borderColor: '#3a5fc0',
-                        color: '#3a5fc0',
-                        backgroundColor: 'rgba(71, 118, 230, 0.05)'
+                        borderColor: theme.palette.primary.dark,
+                        color: theme.palette.primary.dark,
+                        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(71, 118, 230, 0.1)' : 'rgba(71, 118, 230, 0.05)'
                       }
                     })
               }}
@@ -205,8 +198,8 @@ const SearchAndFilter = ({
                 <Box
                   sx={{
                     ml: 1,
-                    bgcolor: filterActive ? 'rgba(255, 255, 255, 0.8)' : '#4776E6',
-                    color: filterActive ? '#4776E6' : 'white',
+                    bgcolor: filterActive ? 'rgba(255, 255, 255, 0.8)' : theme.palette.primary.main,
+                    color: filterActive ? theme.palette.primary.main : 'white',
                     borderRadius: '50%',
                     width: 20,
                     height: 20,
@@ -225,7 +218,6 @@ const SearchAndFilter = ({
         </Paper>
       </Box>
 
-      {/* Filter Drawer */}
       <Drawer
         anchor="right"
         open={filterDrawerOpen}
@@ -234,12 +226,13 @@ const SearchAndFilter = ({
           sx: {
             borderTopLeftRadius: 16,
             borderBottomLeftRadius: 16,
-            boxShadow: '-4px 0 20px rgba(95, 150, 230, 0.15)',
-            backgroundColor: '#f8faff'
+            boxShadow: theme.shadows[4],
+            backgroundColor: theme.palette.background.paper,
+            width: 320
           }
         }}
       >
-        <Box sx={{ width: 320, p: 3 }}>
+        <Box sx={{ p: 3 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
             <Typography 
               variant="h5" 
@@ -257,10 +250,10 @@ const SearchAndFilter = ({
               size="small"
               sx={{ 
                 borderRadius: '8px',
-                backgroundColor: 'rgba(95, 150, 230, 0.1)',
-                color: '#4776E6',
+                backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(95, 150, 230, 0.1)',
+                color: theme.palette.primary.main,
                 '&:hover': {
-                  backgroundColor: 'rgba(95, 150, 230, 0.2)',
+                  backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(95, 150, 230, 0.2)',
                 }
               }}
             >
@@ -268,17 +261,9 @@ const SearchAndFilter = ({
             </IconButton>
           </Box>
           
-          <Divider sx={{ mb: 3, borderColor: 'rgba(95, 150, 230, 0.2)' }} />
+          <Divider sx={{ mb: 3, borderColor: theme.palette.divider }} />
           
-          {/* Category Filter */}
-          <Typography 
-            variant="subtitle1" 
-            sx={{ 
-              fontWeight: 500, 
-              color: '#2A3B4F',
-              mb: 2 
-            }}
-          >
+          <Typography variant="subtitle1" sx={{ fontWeight: 500, mb: 2 }}>
             Category
           </Typography>
           
@@ -295,13 +280,11 @@ const SearchAndFilter = ({
                   control={
                     <Radio 
                       sx={{ 
-                        color: '#607080',
+                        color: theme.palette.text.secondary,
                         '&.Mui-checked': {
-                          color: '#4776E6',
+                          color: theme.palette.primary.main,
                         },
-                        '& .MuiSvgIcon-root': { 
-                          fontSize: 22
-                        } 
+                        '& .MuiSvgIcon-root': { fontSize: 22 } 
                       }}
                     />
                   }
@@ -309,7 +292,7 @@ const SearchAndFilter = ({
                     <Typography 
                       variant="body2" 
                       sx={{ 
-                        color: categoryFilter === category ? '#2A3B4F' : '#607080',
+                        color: categoryFilter === category ? theme.palette.text.primary : theme.palette.text.secondary,
                         fontWeight: categoryFilter === category ? 500 : 400,
                         textTransform: 'capitalize'
                       }}
@@ -323,9 +306,10 @@ const SearchAndFilter = ({
                     px: 1,
                     borderRadius: '8px',
                     transition: 'all 0.2s ease',
-                    bgcolor: categoryFilter === category ? 'rgba(95, 150, 230, 0.08)' : 'transparent',
+                    bgcolor: categoryFilter === category ? 
+                      (theme.palette.mode === 'dark' ? 'rgba(71, 118, 230, 0.2)' : 'rgba(71, 118, 230, 0.08)') : 'transparent',
                     '&:hover': {
-                      bgcolor: 'rgba(95, 150, 230, 0.05)'
+                      bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(95, 150, 230, 0.05)'
                     }
                   }}
                 />
@@ -333,17 +317,9 @@ const SearchAndFilter = ({
             </RadioGroup>
           </FormControl>
 
-          <Divider sx={{ mb: 3, borderColor: 'rgba(95, 150, 230, 0.2)' }} />
+          <Divider sx={{ mb: 3, borderColor: theme.palette.divider }} />
 
-          {/* Keywords Filter */}
-          <Typography 
-            variant="subtitle1" 
-            sx={{ 
-              fontWeight: 500, 
-              color: '#2A3B4F',
-              mb: 2 
-            }}
-          >
+          <Typography variant="subtitle1" sx={{ fontWeight: 500, mb: 2 }}>
             Keywords
           </Typography>
           
@@ -357,13 +333,11 @@ const SearchAndFilter = ({
                       checked={selectedKeywords.includes(keyword)}
                       onChange={() => handleKeywordToggle(keyword)}
                       sx={{ 
-                        color: '#607080',
+                        color: theme.palette.text.secondary,
                         '&.Mui-checked': {
-                          color: '#4776E6',
+                          color: theme.palette.primary.main,
                         },
-                        '& .MuiSvgIcon-root': { 
-                          fontSize: 22
-                        } 
+                        '& .MuiSvgIcon-root': { fontSize: 22 } 
                       }}
                     />
                   }
@@ -371,7 +345,8 @@ const SearchAndFilter = ({
                     <Typography 
                       variant="body2" 
                       sx={{ 
-                        color: selectedKeywords.includes(keyword) ? '#2A3B4F' : '#607080',
+                        color: selectedKeywords.includes(keyword) ? 
+                          theme.palette.text.primary : theme.palette.text.secondary,
                         fontWeight: selectedKeywords.includes(keyword) ? 500 : 400
                       }}
                     >
@@ -384,9 +359,10 @@ const SearchAndFilter = ({
                     px: 1,
                     borderRadius: '8px',
                     transition: 'all 0.2s ease',
-                    bgcolor: selectedKeywords.includes(keyword) ? 'rgba(95, 150, 230, 0.08)' : 'transparent',
+                    bgcolor: selectedKeywords.includes(keyword) ? 
+                      (theme.palette.mode === 'dark' ? 'rgba(71, 118, 230, 0.2)' : 'rgba(71, 118, 230, 0.08)') : 'transparent',
                     '&:hover': {
-                      bgcolor: 'rgba(95, 150, 230, 0.05)'
+                      bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(95, 150, 230, 0.05)'
                     }
                   }}
                 />
@@ -402,13 +378,13 @@ const SearchAndFilter = ({
               sx={{ 
                 textTransform: 'none',
                 fontWeight: 500,
-                color: '#607080',
+                color: theme.palette.text.secondary,
                 '&:hover': {
-                  color: '#2A3B4F',
-                  backgroundColor: 'rgba(95, 150, 230, 0.05)'
+                  color: theme.palette.text.primary,
+                  backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(95, 150, 230, 0.05)'
                 },
                 '&.Mui-disabled': {
-                  color: 'rgba(96, 112, 128, 0.4)'
+                  color: theme.palette.text.disabled
                 }
               }}
             >
@@ -437,18 +413,8 @@ const SearchAndFilter = ({
         </Box>
       </Drawer>
 
-      {/* Active filters display */}
       {filterActive && (
-        <Box
-          sx={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 0.8,
-            mt: -3,
-            mb: 2,
-            px: 1,
-          }}
-        >
+        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.8, mt: -3, mb: 2, px: 1 }}>
           {categoryFilter !== "all" && (
             <Chip
               label={`Category: ${categoryFilter}`}
@@ -460,13 +426,13 @@ const SearchAndFilter = ({
                 }
               }}
               sx={{
-                bgcolor: 'rgba(71, 118, 230, 0.1)',
-                color: '#4776E6',
+                bgcolor: theme.palette.mode === 'dark' ? 'rgba(71, 118, 230, 0.2)' : 'rgba(71, 118, 230, 0.1)',
+                color: theme.palette.primary.main,
                 fontWeight: 500,
                 '& .MuiChip-deleteIcon': {
-                  color: '#4776E6',
+                  color: theme.palette.primary.main,
                   '&:hover': {
-                    color: '#3a5fc0',
+                    color: theme.palette.primary.dark,
                   }
                 }
               }}
@@ -489,13 +455,13 @@ const SearchAndFilter = ({
                 }
               }}
               sx={{
-                bgcolor: 'rgba(71, 118, 230, 0.1)',
-                color: '#4776E6',
+                bgcolor: theme.palette.mode === 'dark' ? 'rgba(71, 118, 230, 0.2)' : 'rgba(71, 118, 230, 0.1)',
+                color: theme.palette.primary.main,
                 fontWeight: 500,
                 '& .MuiChip-deleteIcon': {
-                  color: '#4776E6',
+                  color: theme.palette.primary.main,
                   '&:hover': {
-                    color: '#3a5fc0',
+                    color: theme.palette.primary.dark,
                   }
                 }
               }}
@@ -507,12 +473,12 @@ const SearchAndFilter = ({
               size="small"
               onClick={handleFilterReset}
               sx={{
-                borderColor: '#4776E6',
-                color: '#4776E6',
+                borderColor: theme.palette.primary.main,
+                color: theme.palette.primary.main,
                 fontWeight: 500,
                 '&:hover': {
-                  bgcolor: 'rgba(71, 118, 230, 0.08)',
-                  borderColor: '#3a5fc0',
+                  bgcolor: theme.palette.mode === 'dark' ? 'rgba(71, 118, 230, 0.15)' : 'rgba(71, 118, 230, 0.08)',
+                  borderColor: theme.palette.primary.dark,
                 }
               }}
               variant="outlined"
