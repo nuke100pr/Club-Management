@@ -1,5 +1,3 @@
-
-
 "use client";
 import React, { useState, useEffect } from "react";
 import {
@@ -19,6 +17,7 @@ import {
   Divider,
   IconButton,
   useTheme,
+  alpha,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import TuneIcon from "@mui/icons-material/Tune";
@@ -106,6 +105,16 @@ const SearchAndFilter = ({
   }
   const filterCount = activeFilters.length;
 
+  // Theme-aware colors
+  const primaryColor = theme.palette.primary.main;
+  const primaryLight = alpha(theme.palette.primary.main, 0.1);
+  const primaryLighter = alpha(theme.palette.primary.main, 0.05);
+  const textPrimary = theme.palette.text.primary;
+  const textSecondary = theme.palette.text.secondary;
+  const backgroundDefault = theme.palette.background.default;
+  const backgroundPaper = theme.palette.background.paper;
+  const dividerColor = theme.palette.divider;
+
   return (
     <Box
       sx={{
@@ -118,14 +127,12 @@ const SearchAndFilter = ({
         elevation={isSticky ? 4 : 0}
         sx={{
           borderRadius: "16px",
-          background: "white",
-          boxShadow: isSticky
-            ? "0 6px 16px rgba(95, 150, 230, 0.2)"
-            : "0 4px 12px rgba(95, 150, 230, 0.1)",
+          background: backgroundPaper,
+          boxShadow: isSticky ? theme.shadows[4] : theme.shadows[1],
           overflow: "hidden",
           transition: "all 0.3s ease",
           "&:hover": {
-            boxShadow: "0 6px 16px rgba(95, 150, 230, 0.15)",
+            boxShadow: theme.shadows[3],
           },
           position: isSticky ? "fixed" : "relative",
           top: isSticky ? 16 : "auto",
@@ -141,7 +148,7 @@ const SearchAndFilter = ({
             to: { transform: "translateY(0)" },
           },
         }}
-            >
+      >
         <Toolbar sx={{ py: 0.5, px: 2 }}>
           <TextField
             fullWidth
@@ -152,15 +159,18 @@ const SearchAndFilter = ({
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchIcon sx={{ color: "#4776E6", opacity: 0.8 }} />
+                  <SearchIcon sx={{ 
+                    color: primaryColor, 
+                    opacity: 0.8 
+                  }} />
                 </InputAdornment>
               ),
               disableUnderline: true,
               sx: {
                 fontSize: "0.95rem",
-                color: "#2A3B4F",
+                color: textPrimary,
                 "&::placeholder": {
-                  color: "#607080",
+                  color: textSecondary,
                   opacity: 0.7,
                 },
               },
@@ -168,14 +178,14 @@ const SearchAndFilter = ({
             sx={{
               maxWidth: "100%",
               "& .MuiInputBase-root": {
-                backgroundColor: "rgba(248, 250, 255, 0.8)",
+                backgroundColor: alpha(backgroundDefault, 0.8),
                 borderRadius: "12px",
                 pl: 1,
                 height: 48,
                 transition: "all 0.3s ease",
                 "&:hover, &:focus-within": {
-                  backgroundColor: "rgba(248, 250, 255, 1)",
-                  boxShadow: "0 2px 8px rgba(95, 150, 230, 0.1)",
+                  backgroundColor: alpha(backgroundDefault, 1),
+                  boxShadow: theme.shadows[1],
                 },
               },
             }}
@@ -195,20 +205,24 @@ const SearchAndFilter = ({
               height: 40,
               ...(filterCount > 0
                 ? {
-                    background: "linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)",
-                    boxShadow: "0 4px 10px rgba(71, 118, 230, 0.3)",
+                    background: theme.palette.mode === 'dark' 
+                      ? 'linear-gradient(90deg, #8E54E9 0%, #4776E6 100%)' 
+                      : 'linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)',
+                    boxShadow: theme.shadows[2],
                     "&:hover": {
-                      boxShadow: "0 6px 15px rgba(71, 118, 230, 0.4)",
-                      background: "linear-gradient(90deg, #3a5fc0 0%, #7b46c7 100%)",
+                      boxShadow: theme.shadows[4],
+                      background: theme.palette.mode === 'dark' 
+                        ? 'linear-gradient(90deg, #7b3dc1 0%, #3a5fc0 100%)' 
+                        : 'linear-gradient(90deg, #3a5fc0 0%, #7b46c7 100%)',
                     },
                   }
                 : {
-                    borderColor: "#4776E6",
-                    color: "#4776E6",
+                    borderColor: primaryColor,
+                    color: primaryColor,
                     "&:hover": {
-                      borderColor: "#3a5fc0",
-                      color: "#3a5fc0",
-                      backgroundColor: "rgba(71, 118, 230, 0.05)",
+                      borderColor: theme.palette.primary.dark,
+                      color: theme.palette.primary.dark,
+                      backgroundColor: primaryLighter,
                     },
                   }),
             }}
@@ -218,8 +232,12 @@ const SearchAndFilter = ({
               <Box
                 sx={{
                   ml: 1,
-                  bgcolor: filterCount > 0 ? "rgba(255, 255, 255, 0.8)" : "#4776E6",
-                  color: filterCount > 0 ? "#4776E6" : "white",
+                  bgcolor: filterCount > 0 
+                    ? alpha(theme.palette.common.white, 0.8) 
+                    : primaryColor,
+                  color: filterCount > 0 
+                    ? primaryColor 
+                    : theme.palette.common.white,
                   borderRadius: "50%",
                   width: 20,
                   height: 20,
@@ -255,10 +273,10 @@ const SearchAndFilter = ({
               onDelete={() => handleDeleteFilter(filter.type)}
               deleteIcon={<CloseIcon />}
               sx={{
-                bgcolor: "rgba(95, 150, 230, 0.08)",
-                color: "#2A3B4F",
+                bgcolor: primaryLight,
+                color: textPrimary,
                 "&:hover": {
-                  bgcolor: "rgba(95, 150, 230, 0.12)",
+                  bgcolor: alpha(primaryColor, 0.2),
                 },
               }}
             />
@@ -267,10 +285,10 @@ const SearchAndFilter = ({
             label="Clear all"
             onClick={handleResetFilters}
             sx={{
-              bgcolor: "rgba(95, 150, 230, 0.08)",
-              color: "#2A3B4F",
+              bgcolor: primaryLight,
+              color: textPrimary,
               "&:hover": {
-                bgcolor: "rgba(95, 150, 230, 0.12)",
+                bgcolor: alpha(primaryColor, 0.2),
               },
             }}
           />
@@ -287,17 +305,24 @@ const SearchAndFilter = ({
             p: 3,
             borderTopLeftRadius: 16,
             borderBottomLeftRadius: 16,
-            boxShadow: "-4px 0 20px rgba(95, 150, 230, 0.15)",
-            backgroundColor: "#f8faff",
+            boxShadow: theme.shadows[6],
+            backgroundColor: backgroundPaper,
           },
         }}
       >
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+        <Box sx={{ 
+          display: "flex", 
+          justifyContent: "space-between", 
+          alignItems: "center", 
+          mb: 3 
+        }}>
           <Typography
             variant="h5"
             sx={{
               fontWeight: 600,
-              background: "linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)",
+              background: theme.palette.mode === 'dark' 
+                ? 'linear-gradient(90deg, #8E54E9 0%, #4776E6 100%)' 
+                : 'linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)',
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
             }}
@@ -309,10 +334,10 @@ const SearchAndFilter = ({
             size="small"
             sx={{
               borderRadius: "8px",
-              backgroundColor: "rgba(95, 150, 230, 0.1)",
-              color: "#4776E6",
+              backgroundColor: primaryLight,
+              color: primaryColor,
               "&:hover": {
-                backgroundColor: "rgba(95, 150, 230, 0.2)",
+                backgroundColor: alpha(primaryColor, 0.2),
               },
             }}
           >
@@ -320,10 +345,18 @@ const SearchAndFilter = ({
           </IconButton>
         </Box>
 
-        <Divider sx={{ mb: 3, borderColor: "rgba(95, 150, 230, 0.2)" }} />
+        <Divider sx={{ 
+          mb: 3, 
+          borderColor: dividerColor 
+        }} />
 
         <FormControl fullWidth sx={{ mb: 3 }}>
-          <InputLabel sx={{ color: "#607080", "&.Mui-focused": { color: "#4776E6" } }}>
+          <InputLabel sx={{ 
+            color: textSecondary, 
+            "&.Mui-focused": { 
+              color: primaryColor 
+            } 
+          }}>
             Board
           </InputLabel>
           <Select
@@ -331,15 +364,19 @@ const SearchAndFilter = ({
             label="Board"
             onChange={(e) => setSelectedBoard(e.target.value)}
             sx={{
-              "& .MuiSelect-select": { color: selectedBoard ? "#2A3B4F" : "#607080" },
+              "& .MuiSelect-select": { 
+                color: selectedBoard ? textPrimary : textSecondary 
+              },
               "& .MuiOutlinedInput-notchedOutline": {
-                borderColor: selectedBoard ? "#4776E6" : "rgba(95, 150, 230, 0.2)",
+                borderColor: selectedBoard 
+                  ? primaryColor 
+                  : dividerColor,
               },
               "&:hover .MuiOutlinedInput-notchedOutline": {
-                borderColor: "#4776E6",
+                borderColor: primaryColor,
               },
               "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                borderColor: "#4776E6",
+                borderColor: primaryColor,
               },
             }}
           >
@@ -353,7 +390,12 @@ const SearchAndFilter = ({
         </FormControl>
 
         <FormControl fullWidth sx={{ mb: 3 }}>
-          <InputLabel sx={{ color: "#607080", "&.Mui-focused": { color: "#4776E6" } }}>
+          <InputLabel sx={{ 
+            color: textSecondary, 
+            "&.Mui-focused": { 
+              color: primaryColor 
+            } 
+          }}>
             Club
           </InputLabel>
           <Select
@@ -361,15 +403,19 @@ const SearchAndFilter = ({
             label="Club"
             onChange={(e) => setSelectedClub(e.target.value)}
             sx={{
-              "& .MuiSelect-select": { color: selectedClub ? "#2A3B4F" : "#607080" },
+              "& .MuiSelect-select": { 
+                color: selectedClub ? textPrimary : textSecondary 
+              },
               "& .MuiOutlinedInput-notchedOutline": {
-                borderColor: selectedClub ? "#4776E6" : "rgba(95, 150, 230, 0.2)",
+                borderColor: selectedClub 
+                  ? primaryColor 
+                  : dividerColor,
               },
               "&:hover .MuiOutlinedInput-notchedOutline": {
-                borderColor: "#4776E6",
+                borderColor: primaryColor,
               },
               "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                borderColor: "#4776E6",
+                borderColor: primaryColor,
               },
             }}
           >
@@ -383,7 +429,12 @@ const SearchAndFilter = ({
         </FormControl>
 
         <FormControl fullWidth sx={{ mb: 3 }}>
-          <InputLabel sx={{ color: "#607080", "&.Mui-focused": { color: "#4776E6" } }}>
+          <InputLabel sx={{ 
+            color: textSecondary, 
+            "&.Mui-focused": { 
+              color: primaryColor 
+            } 
+          }}>
             Privacy
           </InputLabel>
           <Select
@@ -391,15 +442,19 @@ const SearchAndFilter = ({
             label="Privacy"
             onChange={(e) => setPrivacyFilter(e.target.value)}
             sx={{
-              "& .MuiSelect-select": { color: privacyFilter ? "#2A3B4F" : "#607080" },
+              "& .MuiSelect-select": { 
+                color: privacyFilter ? textPrimary : textSecondary 
+              },
               "& .MuiOutlinedInput-notchedOutline": {
-                borderColor: privacyFilter ? "#4776E6" : "rgba(95, 150, 230, 0.2)",
+                borderColor: privacyFilter 
+                  ? primaryColor 
+                  : dividerColor,
               },
               "&:hover .MuiOutlinedInput-notchedOutline": {
-                borderColor: "#4776E6",
+                borderColor: primaryColor,
               },
               "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                borderColor: "#4776E6",
+                borderColor: primaryColor,
               },
             }}
           >
@@ -417,13 +472,13 @@ const SearchAndFilter = ({
             sx={{
               textTransform: "none",
               fontWeight: 500,
-              color: "#607080",
+              color: textSecondary,
               "&:hover": {
-                color: "#2A3B4F",
-                backgroundColor: "rgba(95, 150, 230, 0.05)",
+                color: textPrimary,
+                backgroundColor: primaryLighter,
               },
               "&.Mui-disabled": {
-                color: "rgba(96, 112, 128, 0.4)",
+                color: alpha(textSecondary, 0.4),
               },
             }}
           >
@@ -433,15 +488,19 @@ const SearchAndFilter = ({
             variant="contained"
             onClick={handleApplyFilters}
             sx={{
-              background: "linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)",
-              boxShadow: "0 4px 10px rgba(71, 118, 230, 0.3)",
+              background: theme.palette.mode === 'dark' 
+                ? 'linear-gradient(90deg, #8E54E9 0%, #4776E6 100%)' 
+                : 'linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)',
+              boxShadow: theme.shadows[2],
               borderRadius: "8px",
               px: 3,
               textTransform: "none",
               fontWeight: 500,
               "&:hover": {
-                boxShadow: "0 6px 15px rgba(71, 118, 230, 0.4)",
-                background: "linear-gradient(90deg, #3a5fc0 0%, #7b46c7 100%)",
+                boxShadow: theme.shadows[4],
+                background: theme.palette.mode === 'dark' 
+                  ? 'linear-gradient(90deg, #7b3dc1 0%, #3a5fc0 100%)' 
+                  : 'linear-gradient(90deg, #3a5fc0 0%, #7b46c7 100%)',
                 transform: "translateY(-2px)",
               },
             }}

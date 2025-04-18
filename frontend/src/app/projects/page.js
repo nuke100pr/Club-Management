@@ -255,6 +255,7 @@ const ProjectsGrid = () => {
 
       if (result) {
         setUserData(result.userData);
+        console.log(result.userData);
         setUserId(result.userId);
         setIsSuperAdmin(result.isSuperAdmin);
 

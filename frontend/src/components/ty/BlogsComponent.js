@@ -22,7 +22,7 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import AddIcon from "@mui/icons-material/Add";
 import { useRouter } from "next/navigation";
 import BlogCreateForm from "@/components/blogs/BlogCreateForm";
-import { fetchUserData } from "@/utils/auth";
+import { fetchUserData,hasPermission } from "@/utils/auth";
 
 // Styled components (keep all existing styled components)
 const StyledCard = styled(Card)(({ theme, delay }) => ({
@@ -179,7 +179,7 @@ export default function BlogCardGrid({
       const result = await fetchUserData();
 
       if (result) {
-        setUserData(result.userData);
+        setUserData(result);
         setUserId(result.userId);
         setIsSuperAdmin(result.isSuperAdmin);
 
