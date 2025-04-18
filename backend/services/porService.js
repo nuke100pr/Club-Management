@@ -3,18 +3,20 @@ const PrivilegeType = require("../models/PrivilegeType");
 
 // POR Services
 exports.createPor = async (porData) => {
-  const { privilegeTypeId, club_id, board_id } = porData;
+  const { privilegeTypeId, club_id, board_id, user_id } = porData;
 
   // Check if a Por with the same (privilegeTypeId and club_id) exists
-  const existingPorWithClub = await Por.findOne({ 
-    privilegeTypeId, 
-    club_id 
+  const existingPorWithClub = await Por.findOne({
+    user_id,
+    privilegeTypeId,
+    club_id,
   });
 
   // Check if a Por with the same (privilegeTypeId and board_id) exists
-  const existingPorWithBoard = await Por.findOne({ 
-    privilegeTypeId, 
-    board_id 
+  const existingPorWithBoard = await Por.findOne({
+    user_id,
+    privilegeTypeId,
+    board_id,
   });
 
   if (existingPorWithClub || existingPorWithBoard) {
@@ -29,19 +31,43 @@ exports.createPor = async (porData) => {
 };
 
 exports.getAllPor = async () => {
-  return await Por.find()
-    .populate("privilegeTypeId")
-    .populate("club_id")
-    .populate("board_id")
-    .populate("user_id");
+  let por = await Por.find().populate("privilegeTypeId").populate("user_id");
+
+  console.log(por); // This is already the resolved array of PORs
+
+  if (!por) return null;
+
+  // Populate club_id and board_id conditionally for each POR
+  for (let doc of por) {
+    if (doc.club_id && doc.club_id !== "") {
+      await doc.populate("club_id");
+    }
+    if (doc.board_id && doc.board_id !== "") {
+      await doc.populate("board_id");
+    }
+  }
+
+  return por;
 };
 
 exports.getPorById = async (id) => {
-  return await Por.findById(id)
+  let por = await Por.findById(id)
     .populate("privilegeTypeId")
-    .populate("club_id")
-    .populate("board_id")
     .populate("user_id");
+
+  if (!por) return null;
+
+  // Populate club_id and board_id conditionally for each POR
+  for (let doc of por) {
+    if (doc.club_id && doc.club_id !== "") {
+      await doc.populate("club_id");
+    }
+    if (doc.board_id && doc.board_id !== "") {
+      await doc.populate("board_id");
+    }
+  }
+
+  return por;
 };
 
 exports.updatePor = async (id, updateData) => {
