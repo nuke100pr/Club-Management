@@ -16,6 +16,8 @@ const statRoutes = require("./routes/statRoutes");
 const porRoutes = require("./routes/porRoutes");
 const miscRoutes = require("./routes/miscRoutes");
 const baatRoutes = require("./routes/baatRoutes");
+const badgeRoutes = require("./routes/badgeRoutes");
+const eUserRoutes = require("./routes/extendedUserRoutes");
 const http = require("http");
 const socketio = require("socket.io");
 const path = require("path");
@@ -130,6 +132,8 @@ app.use("/por2", porRoutes);
 app.use("/misc", miscRoutes);
 app.use("/otp", otpRoutes);
 app.use("/baat", baatRoutes);
+app.use("/badges", badgeRoutes);
+app.use("/euser", eUserRoutes);
 
 // Connect to MongoDB and start the server
 connectDB().then(() => {
