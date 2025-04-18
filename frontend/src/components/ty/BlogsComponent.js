@@ -190,6 +190,7 @@ export default function BlogCardGrid({
             (clubId) => result.userData.data.clubs[clubId].blogs === true
           );
           setUserClubsWithBlogPermission(clubsWithPermission);
+          console.log(clubsWithPermission);
 
           if (clubsWithPermission.length > 0 && !propBoardId) {
             setSelectedClubId(clubsWithPermission[0]);
@@ -203,6 +204,7 @@ export default function BlogCardGrid({
             (boardId) => result.userData.data.boards[boardId].blogs === true
           );
           setUserBoardsWithBlogPermission(boardsWithPermission);
+          console.log(boardsWithPermission);
 
           if (boardsWithPermission.length > 0 && !propBoardId) {
             setSelectedBoardId(boardsWithPermission[0]);

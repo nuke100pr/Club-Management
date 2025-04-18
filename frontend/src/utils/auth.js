@@ -45,7 +45,6 @@ export async function fetchUserData() {
 
     const data = await response.json();
 
-
     // Prepare the result object
     const result = {
       userData: data.data,
@@ -84,4 +83,90 @@ export async function fetchUserData() {
     console.error("Error fetching user data:", error);
     return null;
   }
+}
+
+/**
+ * Checks if a user has permission for a specific action type
+ * @param {string} permissionType - Type of permission to check (posts, events, projects, resources, opportunities, blogs, forums)
+ * @param {Object} userData - User data object containing permissions
+ * @param {string} boardId - ID of the board to check permissions for
+ * @param {string} clubId - ID of the club to check permissions for
+ * @returns {boolean} - True if user has permission, false otherwise
+ */
+export async function hasPermission(permissionType, userData, boardId, clubId) {
+  // Case 1: If user is a superadmin, they have all permissions
+  if (userData.isSuperAdmin) {
+    return true;
+  }
+
+  // Case 2: If user is a board admin and we're checking for a club under their board
+  if (userData.isBoardAdmin && boardId === userData.boardId) {
+    // If clubId is provided, check if it's in the clubArray
+    if (clubId && userData.clubArray && userData.clubArray.includes(clubId)) {
+      return true;
+    }
+    // If no clubId is provided, they have permission for board-level operations
+    if (!clubId) {
+      return true;
+    }
+  }
+
+  // Case 3: If user is a club admin for the specific club
+  if (userData.isClubAdmin && clubId === userData.club_id) {
+    return true;
+  }
+
+  // Case 4: Check specific permissions in userData.data
+  if (userData.userData && userData.userData.data) {
+    // Check in clubs permissions if clubId is provided
+    if (
+      clubId &&
+      userData.userData.data.clubs &&
+      userData.userData.data.clubs[clubId]
+    ) {
+      return !!userData.userData.data.clubs[clubId][permissionType];
+    }
+
+    // Check in boards permissions if boardId is provided
+    if (
+      boardId &&
+      userData.userData.data.boards &&
+      userData.userData.data.boards[boardId]
+    ) {
+      return !!userData.userData.data.boards[boardId][permissionType];
+    }
+  }
+
+  // Case 5: Check in the nested userData structure
+  if (userData.userData && userData.userData.data) {
+    // Check clubs permissions
+    const clubs = userData.userData.data.clubs;
+    if (clubId && clubs && clubs[clubId]) {
+      return !!clubs[clubId][permissionType];
+    }
+
+    // Check boards permissions
+    const boards = userData.userData.data.boards;
+    if (boardId && boards && boards[boardId]) {
+      return !!boards[boardId][permissionType];
+    }
+  }
+
+  // Case 6: Check directly in userData.data structure
+  if (userData.data) {
+    // Check clubs permissions
+    const clubs = userData.data.clubs;
+    if (clubId && clubs && clubs[clubId]) {
+      return !!clubs[clubId][permissionType];
+    }
+
+    // Check boards permissions
+    const boards = userData.data.boards;
+    if (boardId && boards && boards[boardId]) {
+      return !!boards[boardId][permissionType];
+    }
+  }
+
+  // If none of the above conditions are met, user doesn't have permission
+  return false;
 }
