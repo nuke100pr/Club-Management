@@ -1,6 +1,6 @@
 "use client";
-import React, { useState, useContext, useEffect } from 'react';
-import { fetchUserData } from "@/utils/auth";
+import React, { useState, useContext, useEffect,useMemo } from 'react';
+import { fetchUserData ,hasPermission} from "@/utils/auth";
 import { useRouter } from "next/navigation";
 import {
   Box,
@@ -189,6 +189,7 @@ export default function EventsPage() {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [userClubsWithEventPermission, setUserClubsWithEventPermission] = useState([]);
   const [hoveredCard, setHoveredCard] = useState(null);
+  const [arrayPermissions, setArrayPermissions] = useState({});
   const [shareMenu, setShareMenu] = useState({
     open: false,
     anchorEl: null,
@@ -215,7 +216,7 @@ export default function EventsPage() {
       const result = await fetchUserData();
 
       if (result) {
-        setUserData(result.userData);
+        setUserData(result);
         setUserId(result.userId);
         setIsSuperAdmin(result.isSuperAdmin);
 
@@ -280,16 +281,12 @@ export default function EventsPage() {
 
   const hasEventPermission = (event) => {
     if (isSuperAdmin) return true;
-
-    const hasClubPermission =
-      event.club_id &&
-      userData?.data?.clubs?.[event.club_id._id || event.club_id]?.events;
-
-    const hasBoardPermission =
-      event.board_id &&
-      userData?.data?.boards?.[event.board_id._id || event.board_id]?.events;
-
-    return hasClubPermission || hasBoardPermission;
+    if (!userData) return false;
+    
+    const clubId = event.club_id?._id || event.club_id;
+    const boardId = event.board_id?._id || event.board_id;
+    
+    return hasPermission("events", userData, boardId, clubId);
   };
 
   const handleRegister = async (event) => {
@@ -564,34 +561,59 @@ export default function EventsPage() {
     setNotification({ ...notification, open: false });
   };
 
-  const filteredEvents = events.filter((event) => {
-    const matchesSearch = searchQuery
-      ? event.name.toLowerCase().includes(searchQuery.toLowerCase())
-      : true;
+  const filteredEvents = useMemo(() => {
+    return events.filter((event) => {
+      const matchesSearch = searchQuery
+        ? event.name.toLowerCase().includes(searchQuery.toLowerCase())
+        : true;
+  
+      const hasActiveFilters = Object.values(selectedFilters).some(Boolean);
+  
+      if (!hasActiveFilters) {
+        return matchesSearch;
+      }
+  
+      const matchesRegisteredFilter = selectedFilters["My Registered Events"]
+        ? event.registered
+        : true;
+      const matchesClubFilter = selectedFilters["My Clubs"]
+        ? event.isClubFollowed
+        : true;
+      const matchesBoardFilter = selectedFilters["My Boards"]
+        ? event.isBoardFollowed
+        : true;
+  
+      return (
+        matchesSearch &&
+        matchesRegisteredFilter &&
+        (!selectedFilters["My Clubs"] || matchesClubFilter) &&
+        (!selectedFilters["My Boards"] || matchesBoardFilter)
+      );
+    });
+  }, [events, searchQuery, selectedFilters]);
 
-    const hasActiveFilters = Object.values(selectedFilters).some(Boolean);
+  useEffect(() => {
+    // Check permissions for all resources
+    if (userData && filteredEvents.length > 0) {
+      filteredEvents.forEach(async (element) => {
+        const clubId = element.club_id?._id || element.club_id;
+        const boardId = element.board_id?._id || element.board_id;
 
-    if (!hasActiveFilters) {
-      return matchesSearch;
+        // If you must use the async version of hasPermission
+        const hasAccess = await hasPermission(
+          "opportunities",
+          userData,
+          boardId,
+          clubId
+        );
+
+        setArrayPermissions((prev) => ({
+          ...prev,
+          [element._id]: hasAccess,
+        }));
+      });
     }
-
-    const matchesRegisteredFilter = selectedFilters["My Registered Events"]
-      ? event.registered
-      : true;
-    const matchesClubFilter = selectedFilters["My Clubs"]
-      ? event.isClubFollowed
-      : true;
-    const matchesBoardFilter = selectedFilters["My Boards"]
-      ? event.isBoardFollowed
-      : true;
-
-    return (
-      matchesSearch &&
-      matchesRegisteredFilter &&
-      (!selectedFilters["My Clubs"] || matchesClubFilter) &&
-      (!selectedFilters["My Boards"] || matchesBoardFilter)
-    );
-  });
+  }, [userData, filteredEvents]);
 
   if (isLoading) {
     return (
@@ -679,7 +701,7 @@ export default function EventsPage() {
                     )}
                   </ImageOverlayIcons>
                   
-                  {(isSuperAdmin || hasEventPermission(event)) && (
+                  {(arrayPermissions[event._id]) && (
                     <Box
                       sx={{
                         position: 'absolute',

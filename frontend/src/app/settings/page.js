@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Container, Typography, Box, useTheme, Paper } from "@mui/material";
 import ThemeToggle from "../../components/themeToggle";
-import { fetchUserData } from "../../utils/auth"; // Assuming this is the correct path
+import { fetchUserData,getAuthToken } from "../../utils/auth"; // Assuming this is the correct path
 
 // Import our new components
 import UserProfileCard from "../../components/settings/UserProfileCard";
@@ -10,6 +10,16 @@ import PositionsAndBadges from "../../components/settings/PositionsAndBadges";
 import AccountSettings from "../../components/settings/AccountSettings";
 
 export default function SettingsPage() {
+ 
+  const [authToken,setAuthToken] = useState(null);
+  useEffect(() => {
+     const ff = async () => {
+        const nn = await getAuthToken();
+        setAuthToken(nn);
+     };
+     ff();
+  }, [])
+  
   const theme = useTheme();
   const [userProfile, setUserProfile] = useState({
     name: "Loading...",

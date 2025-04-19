@@ -10,10 +10,7 @@ const Blog = require("../models/Blogs");
 const Forum = require("../models/Forums");
 const Club = require("../models/Clubs");
 
-
 async function transformData(inputData) {
-
-
   const result = {
     success: true,
     data: {
@@ -73,32 +70,51 @@ async function transformData(inputData) {
 
 async function getPrivilegesByUserId1(user_id) {
   try {
-    const privileges = await Por.find({ user_id })  // Assuming the model is named Privilege
-      .populate('privilegeTypeId')
-      .populate('club_id')
-      .populate('board_id')
-      .populate('user_id');
-    
-    const user = await User.findById(user_id);  
+    let privileges = await Por.find({ user_id })
+      .populate({
+        path: "privilegeTypeId"
+      })
+      .populate({
+        path: "user_id"
+      });
+
+    // Conditionally populate club_id and board_id
+    privileges = await Promise.all(
+      privileges.map(async (privilege) => {
+        if (privilege.club_id && privilege.club_id !== "") {
+          await privilege.populate("club_id");
+        }
+        if (privilege.board_id && privilege.board_id !== "") {
+          await privilege.populate("board_id");
+        }
+        return privilege;
+      })
+    );
+
+    const user = await User.findById(user_id);
     if (!user) {
-      throw new Error('User not found');
+      throw new Error("User not found");
     }
     if (privileges.length === 0) {
-
-
       // Return a consistent format - adjust according to your needs
-      return { userId:user_id, userRole:user.userRole, data: {clubs:{},boards:{}},boardId:user?.board_id,clubId:user?.club_id };
+      return {
+        userId: user_id,
+        userRole: user.userRole,
+        data: { clubs: {}, boards: {} },
+        boardId: user?.board_id,
+        clubId: user?.club_id,
+      };
     }
     const transformedprivileges = await transformData(privileges);
     transformedprivileges.data = {
       ...transformedprivileges.data,
       boardId: user?.board_id,
-      clubId: user?.club_id
+      clubId: user?.club_id,
     };
     return transformedprivileges.data;
   } catch (error) {
     // Consider logging the error here
-    throw error;  // Re-throwing is fine if you want the caller to handle it
+    throw error; // Re-throwing is fine if you want the caller to handle it
   }
 }
 

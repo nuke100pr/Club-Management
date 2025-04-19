@@ -1,7 +1,7 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect,useMemo } from 'react';
 import { Calendar, Clock, Tag, Edit2, Trash2, Plus, Share } from 'lucide-react';
-import { fetchUserData } from '@/utils/auth';
+import { fetchUserData,hasPermission } from '@/utils/auth';
 import SearchAndFilter from '../../components/projects/SearchAndFilter';
 import CreateProjectDialog from '../../components/projects/CreateProjectDialog';
 import { useRouter } from 'next/navigation';
@@ -119,7 +119,7 @@ const ProjectCard = ({ project, hasPermission, handleEdit, handleDelete, router,
           >
             <Share size={18} />
           </button>
-          {hasPermission && (
+          {hasPermission[project._id] && (
             <>
               <button 
                 onClick={(e) => { e.stopPropagation(); handleEdit(project); }}
@@ -239,6 +239,9 @@ const ProjectsGrid = () => {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [userClubsWithProjectPermission, setUserClubsWithProjectPermission] = useState([]);
   const [userBoardsWithProjectPermission, setUserBoardsWithProjectPermission] = useState([]);
+
+
+  const [arrayPermissions, setArrayPermissions] = useState({});
   const router = useRouter();
 
   const [shareMenu, setShareMenu] = useState({
@@ -248,14 +251,17 @@ const ProjectsGrid = () => {
       title: "",
       contentType: "project"
     });
+
+
+    
+    
   // Fetch user data on mount
   useEffect(() => {
     async function loadUserData() {
       const result = await fetchUserData();
 
       if (result) {
-        setUserData(result.userData);
-        console.log(result.userData);
+        setUserData(result);
         setUserId(result.userId);
         setIsSuperAdmin(result.isSuperAdmin);
 
@@ -286,36 +292,7 @@ const ProjectsGrid = () => {
     });
   };
   
-  // Check if user has permission to edit/delete a project
-  const hasProjectPermission = (project) => {
-    // Superadmins have all permissions
-    if (isSuperAdmin) return true;
 
-    // Check if project belongs to a club where user has permission
-    if (project.club_id) {
-      const clubId = project.club_id._id || project.club_id;
-      if (userClubsWithProjectPermission.includes(clubId)) {
-        return true;
-      }
-    }
-
-    // Check if project belongs to a board where user has permission
-    if (project.board_id) {
-      const boardId = project.board_id._id || project.board_id;
-      if (userBoardsWithProjectPermission.includes(boardId)) {
-        return true;
-      }
-    }
-
-    return false;
-  };
-
-  // Check if user can create projects
-  const canCreateProjects = () => {
-    return isSuperAdmin || 
-           userClubsWithProjectPermission.length > 0 || 
-           userBoardsWithProjectPermission.length > 0;
-  };
 
   // Fetch projects from backend
   const fetchProjects = async () => {
@@ -460,11 +437,41 @@ const ProjectsGrid = () => {
     setFilters(newFilters);
   };
 
-  const filteredProjects = projects.filter(
-    (project) =>
-      project.title.toLowerCase().includes(search.toLowerCase()) &&
-      (!filters.status || project.status === filters.status)
+  const filteredProjects = useMemo(() => 
+    projects.filter(
+      (project) =>
+        project.title.toLowerCase().includes(search.toLowerCase()) &&
+        (!filters.status || project.status === filters.status)
+    ), 
+    [projects, search, filters.status]
   );
+
+  useEffect(() => {
+    // Check permissions for all resources
+    if (userData && filteredProjects.length > 0) {
+      filteredProjects.forEach(async (project) => {
+        const clubId = project.club_id?._id || project.club_id;
+        const boardId = project.board_id?._id || project.board_id;
+        
+        // If you must use the async version of hasPermission
+        const hasAccess = await hasPermission("projects", userData, boardId, clubId);
+        
+        setArrayPermissions(prev => ({
+          ...prev,
+          [project._id]: hasAccess
+        }));
+      });
+    }
+  }, [userData, filteredProjects]);
+
+  useEffect(() => {
+    console.log("llll");
+  }, [userData]);
+  
+  
+  useEffect(() => {
+    console.log("llsjnjndjll");
+  }, [filteredProjects]);
 
   return (
     <div 
@@ -481,7 +488,7 @@ const ProjectsGrid = () => {
           <ProjectCard 
             key={project._id} 
             project={project} 
-            hasPermission={hasProjectPermission(project)}
+            hasPermission={arrayPermissions}
             handleEdit={handleEdit}
             handleDelete={handleDelete}
             router={router}

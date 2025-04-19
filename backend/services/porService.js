@@ -79,11 +79,26 @@ exports.deletePor = async (id) => {
 };
 
 exports.getPorByUserId = async (userId) => {
-  return await Por.find({ user_id: userId })
-    .populate("privilegeTypeId")
-    .populate("club_id")
-    .populate("board_id")
-    .populate("user_id");
+  const privileges = await Por.find({ user_id:userId })
+  .populate({
+    path: "privilegeTypeId",
+
+  })
+  .populate({
+    path: "user_id",
+
+  });
+
+// Conditionally populate club_id and board_id (only if they exist)
+const populatedPrivileges = await Promise.all(
+  privileges.map(async (privilege) => {
+    if (privilege.club_id) await privilege.populate("club_id");
+    if (privilege.board_id) await privilege.populate("board_id");
+    return privilege;
+  })
+);
+
+return populatedPrivileges;
 };
 
 // PrivilegeType Services

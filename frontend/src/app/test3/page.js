@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { fetchUserData } from "@/utils/auth";
+import { fetchUserData,getAuthToken } from "@/utils/auth";
 import {
   Box,
   Container,
@@ -23,6 +23,7 @@ import BoardClubManagement from "../../components/manage/BoardClubManagement";
 
 const PORManagement = () => {
   const router = useRouter();
+
   const [currentUser, setCurrentUser] = useState(null);
   const [managedOrganization, setManagedOrganization] = useState(null);
   const [organizationType, setOrganizationType] = useState(null);

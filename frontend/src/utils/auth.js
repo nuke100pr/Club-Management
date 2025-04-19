@@ -99,6 +99,7 @@ export async function hasPermission(permissionType, userData, boardId, clubId) {
     return true;
   }
 
+  console.log("ayush1");
   // Case 2: If user is a board admin and we're checking for a club under their board
   if (userData.isBoardAdmin && boardId === userData.boardId) {
     // If clubId is provided, check if it's in the clubArray
@@ -110,6 +111,8 @@ export async function hasPermission(permissionType, userData, boardId, clubId) {
       return true;
     }
   }
+
+  console.log("ayush2");
 
   // Case 3: If user is a club admin for the specific club
   if (userData.isClubAdmin && clubId === userData.club_id) {
@@ -137,6 +140,8 @@ export async function hasPermission(permissionType, userData, boardId, clubId) {
     }
   }
 
+  console.log("ayush3");
+
   // Case 5: Check in the nested userData structure
   if (userData.userData && userData.userData.data) {
     // Check clubs permissions
@@ -152,21 +157,35 @@ export async function hasPermission(permissionType, userData, boardId, clubId) {
     }
   }
 
+  console.log("ayush3");
   // Case 6: Check directly in userData.data structure
   if (userData.data) {
     // Check clubs permissions
     const clubs = userData.data.clubs;
     if (clubId && clubs && clubs[clubId]) {
-      return !!clubs[clubId][permissionType];
+      return clubs[clubId][permissionType];
     }
+    console.log("ayush4");
 
     // Check boards permissions
     const boards = userData.data.boards;
     if (boardId && boards && boards[boardId]) {
-      return !!boards[boardId][permissionType];
+      console.log("nomaste");
+      return boards[boardId][permissionType];
     }
   }
 
   // If none of the above conditions are met, user doesn't have permission
   return false;
 }
+
+export async function  getAuthToken(){
+  const cookies = document.cookie.split(";");
+  for (let cookie of cookies) {
+    const [name, value] = cookie.trim().split("=");
+    if (name === "auth_token") {
+      return decodeURIComponent(value);
+    }
+  }
+  return null;
+};

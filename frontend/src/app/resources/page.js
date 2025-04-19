@@ -1,14 +1,26 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { 
-  Box, Container, Typography, Button, Chip, IconButton, 
-  Tooltip, Fab, useTheme 
+import {
+  Box,
+  Container,
+  Typography,
+  Button,
+  Chip,
+  IconButton,
+  Tooltip,
+  Fab,
+  useTheme,
 } from "@mui/material";
-import { Share as ShareIcon, Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from "@mui/icons-material";
+import {
+  Share as ShareIcon,
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+} from "@mui/icons-material";
 import SearchAndFilterBar from "../../components/resources/SearchAndFilterBar";
 import CreateResourceDialog from "../../components/resources/CreateResourceDialog";
 import UniversalShareMenu from "../../components/shared/UniversalShareMenu";
-import { fetchUserData } from "@/utils/auth";
+import { fetchUserData, hasPermission } from "@/utils/auth";
 
 const getTagColor = (index, theme) => {
   const colors = [
@@ -19,7 +31,7 @@ const getTagColor = (index, theme) => {
     theme.palette.error.main,
     theme.palette.warning.main,
     theme.palette.primary.dark,
-    theme.palette.secondary.dark
+    theme.palette.secondary.dark,
   ];
   return colors[index % colors.length];
 };
@@ -37,12 +49,39 @@ const ResourceCards = () => {
   const [userData, setUserData] = useState(null);
   const [userId, setUserId] = useState(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-  const [userClubsWithResourcePermission, setUserClubsWithResourcePermission] = useState([]);
-  const [userBoardsWithResourcePermission, setUserBoardsWithResourcePermission] = useState([]);
+  
+  const [arrayPermissions, setArrayPermissions] = useState({});
+
+  const [userClubsWithResourcePermission, setUserClubsWithResourcePermission] =
+    useState([]);
+  const [
+    userBoardsWithResourcePermission,
+    setUserBoardsWithResourcePermission,
+  ] = useState([]);
   const [selectedBoard, setSelectedBoard] = useState(null);
   const [selectedClub, setSelectedClub] = useState(null);
   const [shareMenuAnchor, setShareMenuAnchor] = useState(null);
   const [currentSharedResource, setCurrentSharedResource] = useState(null);
+
+
+  useEffect(() => {
+    // Check permissions for all resources
+    if (userData && filteredResources.length > 0) {
+      filteredResources.forEach(async (resource) => {
+        const clubId = resource.club_id?._id || resource.club_id;
+        const boardId = resource.board_id?._id || resource.board_id;
+        
+        // If you must use the async version of hasPermission
+        const hasAccess = await hasPermission("resources", userData, boardId, clubId);
+        
+        setArrayPermissions(prev => ({
+          ...prev,
+          [resource.id]: hasAccess
+        }));
+      });
+    }
+  }, [userData, filteredResources]);
+
 
   useEffect(() => {
     async function loadUserData() {
@@ -53,14 +92,20 @@ const ResourceCards = () => {
         setIsSuperAdmin(result.isSuperAdmin);
 
         if (result.userData?.data?.clubs) {
-          const clubsWithPermission = Object.keys(result.userData.data.clubs)
-            .filter(clubId => result.userData.data.clubs[clubId].resources === true);
+          const clubsWithPermission = Object.keys(
+            result.userData.data.clubs
+          ).filter(
+            (clubId) => result.userData.data.clubs[clubId].resources === true
+          );
           setUserClubsWithResourcePermission(clubsWithPermission);
         }
 
         if (result.userData?.data?.boards) {
-          const boardsWithPermission = Object.keys(result.userData.data.boards)
-            .filter(boardId => result.userData.data.boards[boardId].resources === true);
+          const boardsWithPermission = Object.keys(
+            result.userData.data.boards
+          ).filter(
+            (boardId) => result.userData.data.boards[boardId].resources === true
+          );
           setUserBoardsWithResourcePermission(boardsWithPermission);
         }
       }
@@ -70,7 +115,9 @@ const ResourceCards = () => {
 
   const fetchUserNameById = async (userId) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users/${userId}/details`);
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/users/${userId}/details`
+      );
       const result = await response.json();
       if (result.success && result.data) {
         return result.data.name || "Unknown User";
@@ -82,54 +129,47 @@ const ResourceCards = () => {
     }
   };
 
-  const hasResourcePermission = (resource) => {
+  const hasResourcePermission = async (resource) => {
     if (isSuperAdmin) return true;
-    if (resource.club_id) {
-      const clubId = resource.club_id._id || resource.club_id;
-      if (userClubsWithResourcePermission.includes(clubId)) {
-        return true;
-      }
-    }
-    if (resource.board_id) {
-      const boardId = resource.board_id._id || resource.board_id;
-      if (userBoardsWithResourcePermission.includes(boardId)) {
-        return true;
-      }
-    }
-    return false;
-  };
+    if (!userData) return false;
 
-  const canCreateResources = () => {
-    return isSuperAdmin || 
-           userClubsWithResourcePermission.length > 0 || 
-           userBoardsWithResourcePermission.length > 0;
+    const clubId = resource.club_id?._id || resource.club_id;
+    const boardId = resource.board_id?._id || resource.board_id;
+
+    const vt = await hasPermission("resources", userData, boardId, clubId);
+    console.log(vt);
+    return vt;
   };
 
   const getDefaultClubOrBoardId = () => {
     if (userClubsWithResourcePermission.length > 0) {
       return {
         type: "club",
-        id: userClubsWithResourcePermission[0]
+        id: userClubsWithResourcePermission[0],
       };
     }
     if (userBoardsWithResourcePermission.length > 0) {
       return {
         type: "board",
-        id: userBoardsWithResourcePermission[0]
+        id: userBoardsWithResourcePermission[0],
       };
     }
     return null;
   };
 
-  const allKeywords = [...new Set(allResources.flatMap(resource => resource.tags || []))];
+  const allKeywords = [
+    ...new Set(allResources.flatMap((resource) => resource.tags || [])),
+  ];
 
   useEffect(() => {
     const fetchResources = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/resources/api/resource`);
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/resources/api/resource`
+        );
         const result = await response.json();
         if (result.success && result.data) {
-          const formattedResources = result.data.map(resource => ({
+          const formattedResources = result.data.map((resource) => ({
             id: resource._id,
             title: resource.title,
             description: resource.description,
@@ -149,20 +189,23 @@ const ResourceCards = () => {
     };
     fetchResources();
   }, []);
-  
+
   useEffect(() => {
     let result = allResources;
     if (searchTerm.trim()) {
       const search = searchTerm.toLowerCase();
-      result = result.filter(resource => 
-        resource.title.toLowerCase().includes(search) ||
-        resource.description.toLowerCase().includes(search) ||
-        resource.keywords.some(keyword => keyword.toLowerCase().includes(search))
+      result = result.filter(
+        (resource) =>
+          resource.title.toLowerCase().includes(search) ||
+          resource.description.toLowerCase().includes(search) ||
+          resource.keywords.some((keyword) =>
+            keyword.toLowerCase().includes(search)
+          )
       );
     }
     if (selectedKeywords.length > 0) {
-      result = result.filter(resource => 
-        resource.keywords.some(keyword => selectedKeywords.includes(keyword))
+      result = result.filter((resource) =>
+        resource.keywords.some((keyword) => selectedKeywords.includes(keyword))
       );
     }
     setFilteredResources(result);
@@ -171,7 +214,10 @@ const ResourceCards = () => {
   useEffect(() => {
     const fetchUserNames = async () => {
       const namePromises = allResources.map(async (resource) => {
-        if (!userNames[resource.publishedBy] && resource.publishedBy !== "Unknown") {
+        if (
+          !userNames[resource.publishedBy] &&
+          resource.publishedBy !== "Unknown"
+        ) {
           const name = await fetchUserNameById(resource.publishedBy);
           return { id: resource.publishedBy, name };
         }
@@ -179,7 +225,7 @@ const ResourceCards = () => {
       });
       const results = await Promise.all(namePromises);
       const newUserNames = { ...userNames };
-      results.forEach(result => {
+      results.forEach((result) => {
         if (result) {
           newUserNames[result.id] = result.name;
         }
@@ -201,7 +247,9 @@ const ResourceCards = () => {
 
   const handleEdit = async (resourceId) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/resources/bpi/${resourceId}`);
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/resources/bpi/${resourceId}`
+      );
       const result = await response.json();
       if (result.success) {
         const editResource = {
@@ -212,7 +260,7 @@ const ResourceCards = () => {
           published_at: result.data.published_at,
           tags: result.data.tags || [],
           club_id: result.data.club_id || null,
-          board_id: result.data.board_id || null
+          board_id: result.data.board_id || null,
         };
         setEditingResource(editResource);
         setCreateDialogOpen(true);
@@ -224,13 +272,16 @@ const ResourceCards = () => {
 
   const handleDelete = async (resourceId) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/resources/bpi/${resourceId}`, {
-        method: 'DELETE'
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/resources/bpi/${resourceId}`,
+        {
+          method: "DELETE",
+        }
+      );
       const result = await response.json();
       if (result.success) {
-        setAllResources(prev => prev.filter(r => r.id !== resourceId));
-        alert('Resource deleted successfully!');
+        setAllResources((prev) => prev.filter((r) => r.id !== resourceId));
+        alert("Resource deleted successfully!");
       }
     } catch (error) {
       console.error("Error deleting resource:", error);
@@ -238,13 +289,13 @@ const ResourceCards = () => {
   };
 
   const handleCreateResource = (newResource) => {
-    setAllResources(prev => [...prev, newResource]);
+    setAllResources((prev) => [...prev, newResource]);
     setCreateDialogOpen(false);
   };
 
   const handleUpdateResource = (updatedResource) => {
-    setAllResources(prev => 
-      prev.map(r => r.id === updatedResource.id ? updatedResource : r)
+    setAllResources((prev) =>
+      prev.map((r) => (r.id === updatedResource.id ? updatedResource : r))
     );
     setCreateDialogOpen(false);
     setEditingResource(null);
@@ -263,12 +314,14 @@ const ResourceCards = () => {
   const defaultContext = getDefaultClubOrBoardId();
 
   return (
-    <Box sx={{ 
-      minHeight: "100vh",
-      padding: "32px",
-      backgroundColor: theme.palette.background.default
-    }}>
-      <SearchAndFilterBar 
+    <Box
+      sx={{
+        minHeight: "100vh",
+        padding: "32px",
+        backgroundColor: theme.palette.background.default,
+      }}
+    >
+      <SearchAndFilterBar
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         allKeywords={allKeywords}
@@ -280,11 +333,13 @@ const ResourceCards = () => {
       />
 
       <Container maxWidth="xl" sx={{ mt: 4, mb: 4, px: 0 }}>
-        <Box sx={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-          gap: 3,
-        }}>
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+            gap: 3,
+          }}
+        >
           {filteredResources.length > 0 ? (
             filteredResources.map((resource) => (
               <Box
@@ -306,14 +361,16 @@ const ResourceCards = () => {
                   height: "100%",
                 }}
               >
-                {hasResourcePermission(resource) && (
-                  <Box sx={{ 
-                    position: "absolute", 
-                    top: "12px", 
-                    right: "12px", 
-                    display: "flex",
-                    gap: 1
-                  }}>
+                {arrayPermissions[resource.id] === true && (
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      top: "12px",
+                      right: "12px",
+                      display: "flex",
+                      gap: 1,
+                    }}
+                  >
                     <IconButton
                       onClick={() => handleEdit(resource.id)}
                       sx={{
@@ -322,8 +379,8 @@ const ResourceCards = () => {
                         height: "32px",
                         "&:hover": {
                           backgroundColor: theme.palette.primary.main,
-                          color: theme.palette.primary.contrastText
-                        }
+                          color: theme.palette.primary.contrastText,
+                        },
                       }}
                     >
                       <EditIcon sx={{ fontSize: "16px" }} />
@@ -336,8 +393,8 @@ const ResourceCards = () => {
                         height: "32px",
                         "&:hover": {
                           backgroundColor: theme.palette.error.main,
-                          color: theme.palette.error.contrastText
-                        }
+                          color: theme.palette.error.contrastText,
+                        },
                       }}
                     >
                       <DeleteIcon sx={{ fontSize: "16px" }} />
@@ -345,7 +402,14 @@ const ResourceCards = () => {
                   </Box>
                 )}
 
-                <Box sx={{ p: 3, flex: 1, display: "flex", flexDirection: "column" }}>
+                <Box
+                  sx={{
+                    p: 3,
+                    flex: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
+                >
                   <Typography
                     variant="h6"
                     sx={{
@@ -353,7 +417,7 @@ const ResourceCards = () => {
                       fontWeight: 600,
                       color: theme.palette.text.primary,
                       mb: 2,
-                      mt: 3
+                      mt: 3,
                     }}
                   >
                     {resource.title}
@@ -365,14 +429,16 @@ const ResourceCards = () => {
                       color: theme.palette.text.secondary,
                       mb: 2,
                       lineHeight: 1.6,
-                      flex: 1
+                      flex: 1,
                     }}
                   >
                     {resource.description}
                   </Typography>
 
                   {resource.tags && resource.tags.length > 0 && (
-                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}>
+                    <Box
+                      sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}
+                    >
                       {resource.tags.map((tag, index) => (
                         <Chip
                           key={index}
@@ -391,7 +457,14 @@ const ResourceCards = () => {
                     </Box>
                   )}
 
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 1 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      mt: 1,
+                    }}
+                  >
                     <Button
                       variant="contained"
                       size="small"
@@ -409,20 +482,20 @@ const ResourceCards = () => {
                           boxShadow: theme.shadows[4],
                           transform: "translateY(-2px)",
                         },
-                        transition: "all 0.3s ease"
+                        transition: "all 0.3s ease",
                       }}
                     >
                       View Resource
                     </Button>
 
                     <Tooltip title="Share resource">
-                      <IconButton 
+                      <IconButton
                         onClick={(e) => handleShareClick(e, resource)}
                         sx={{
                           color: theme.palette.primary.main,
                           "&:hover": {
                             backgroundColor: theme.palette.action.hover,
-                          }
+                          },
                         }}
                       >
                         <ShareIcon fontSize="small" />
@@ -431,40 +504,47 @@ const ResourceCards = () => {
                   </Box>
                 </Box>
 
-                <Box 
-                  sx={{ 
+                <Box
+                  sx={{
                     p: 2,
                     borderTop: `1px solid ${theme.palette.divider}`,
                     backgroundColor: theme.palette.action.hover,
                     display: "flex",
-                    justifyContent: "space-between"
+                    justifyContent: "space-between",
                   }}
                 >
-                  <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-                    By: {userNames[resource.publishedBy] || resource.publishedBy}
+                  <Typography
+                    variant="caption"
+                    sx={{ color: theme.palette.text.secondary }}
+                  >
+                    By:{" "}
+                    {userNames[resource.publishedBy] || resource.publishedBy}
                   </Typography>
-                  <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
+                  <Typography
+                    variant="caption"
+                    sx={{ color: theme.palette.text.secondary }}
+                  >
                     {new Date(resource.publishedAt).toLocaleDateString()}
                   </Typography>
                 </Box>
               </Box>
             ))
           ) : (
-            <Box 
-              sx={{ 
-                gridColumn: "1 / -1", 
-                textAlign: "center", 
+            <Box
+              sx={{
+                gridColumn: "1 / -1",
+                textAlign: "center",
                 backgroundColor: theme.palette.background.paper,
                 borderRadius: "16px",
                 padding: 4,
                 boxShadow: theme.shadows[2],
               }}
             >
-              <Typography 
-                variant="h6" 
-                sx={{ 
+              <Typography
+                variant="h6"
+                sx={{
                   color: theme.palette.text.secondary,
-                  fontWeight: 500
+                  fontWeight: 500,
                 }}
               >
                 No resources found
@@ -487,7 +567,7 @@ const ResourceCards = () => {
         />
       )}
 
-      <CreateResourceDialog 
+      <CreateResourceDialog
         open={createDialogOpen}
         onClose={handleDialogClose}
         existingResource={editingResource}
@@ -495,8 +575,12 @@ const ResourceCards = () => {
         onUpdateResource={handleUpdateResource}
         board_id={selectedBoard}
         club_id={selectedClub}
-        defaultBoardId={defaultContext?.type === 'board' ? defaultContext.id : null}
-        defaultClubId={defaultContext?.type === 'club' ? defaultContext.id : null}
+        defaultBoardId={
+          defaultContext?.type === "board" ? defaultContext.id : null
+        }
+        defaultClubId={
+          defaultContext?.type === "club" ? defaultContext.id : null
+        }
         userId={userId}
       />
     </Box>

@@ -219,23 +219,13 @@ export default function BlogCardGrid({
   const hasBlogPermission = (blog) => {
     if (isSuperAdmin) return true;
 
+    if (!userData) return false;
     
+    const clubId = blog.club_id?._id || blog.club_id;
+    const boardId = blog.board_id?._id || blog.board_id;
+    
+    return hasPermission("blogs", userData,  boardId, clubId);
 
-    if (blog.club_id) {
-      const clubId = blog.club_id._id || blog.club_id;
-      if (userClubsWithBlogPermission.includes(clubId)) {
-        return true;
-      }
-    }
-
-    if (blog.board_id) {
-      const boardId = blog.board_id._id || blog.board_id;
-      if (userBoardsWithBlogPermission.includes(boardId)) {
-        return true;
-      }
-    }
-
-    return false;
   };
 
   // Check if user can create blogs
@@ -251,6 +241,8 @@ export default function BlogCardGrid({
     }
     return false;
   };
+
+
 
 
   useEffect(() => {
@@ -719,7 +711,7 @@ export default function BlogCardGrid({
         </Typography>
       )}
 
-      {canCreateBlogs() && (
+      {hasBlogPermission() && (
         <Fab
           color="primary"
           aria-label="add"

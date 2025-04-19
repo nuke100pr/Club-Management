@@ -78,7 +78,7 @@ export default function PositionsAndBadges({ userPors, userBadges, isLoading }) 
                           Term: {formatDate(por.start_date)} - {formatDate(por.end_date)}
                         </Typography>
                         <Chip 
-                          label={`Board: ${por.board_id.name}`} 
+                          label={`Board: ${por?.board_id?.name}`} 
                           size="small" 
                           sx={{ 
                             bgcolor: theme.palette.secondary.light,

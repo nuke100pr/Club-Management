@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useMemo } from "react";
 import SearchIcon from "@mui/icons-material/Search";
 import { useRouter } from "next/navigation";
 import {
@@ -42,7 +42,7 @@ import PersonRemoveIcon from "@mui/icons-material/PersonRemove";
 import SearchAndFilter from "../../components/forums/SearchAndFilter";
 import ForumCreateDialog from "../../components/forums/ForumCreateDialog";
 import Navbar from "../../components/Navbar";
-import { fetchUserData } from "@/utils/auth";
+import { fetchUserData,hasPermission } from "@/utils/auth";
 
 // ForumMembersDialog component with theme support
 const ForumMembersDialog = ({ open, onClose, forumId }) => {
@@ -216,14 +216,18 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>
-        <Typography variant="h5" sx={{ 
-          background: theme.palette.mode === 'dark' 
-            ? 'linear-gradient(90deg, #8E54E9 0%, #4776E6 100%)' 
-            : 'linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)',
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-          fontWeight: 600,
-        }}>
+        <Typography
+          variant="h5"
+          sx={{
+            background:
+              theme.palette.mode === "dark"
+                ? "linear-gradient(90deg, #8E54E9 0%, #4776E6 100%)"
+                : "linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            fontWeight: 600,
+          }}
+        >
           Forum Members
         </Typography>
       </DialogTitle>
@@ -235,10 +239,7 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
         ) : (
           <>
             <Box sx={{ mb: 3 }}>
-              <Typography
-                variant="h6"
-                sx={{ mb: 1, fontWeight: 600 }}
-              >
+              <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
                 Add New Members
               </Typography>
 
@@ -265,7 +266,7 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
                       boxShadow: theme.shadows[3],
                       borderColor: theme.palette.primary.main,
                     },
-                  }
+                  },
                 }}
                 sx={{ mb: 2 }}
               />
@@ -298,7 +299,10 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
                         onClick={() => handleUserSelect(user._id)}
                         sx={{
                           "&:hover": {
-                            backgroundColor: alpha(theme.palette.primary.main, 0.05),
+                            backgroundColor: alpha(
+                              theme.palette.primary.main,
+                              0.05
+                            ),
                           },
                         }}
                       >
@@ -323,11 +327,12 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
                 <Button
                   onClick={handleAddMember}
                   disabled={selectedUsers.length === 0 || addingMember}
-                  sx={{ 
+                  sx={{
                     minWidth: 100,
-                    background: theme.palette.mode === 'dark' 
-                      ? 'linear-gradient(90deg, #8E54E9 0%, #4776E6 100%)' 
-                      : 'linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)',
+                    background:
+                      theme.palette.mode === "dark"
+                        ? "linear-gradient(90deg, #8E54E9 0%, #4776E6 100%)"
+                        : "linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)",
                     color: "white",
                     fontWeight: 500,
                     borderRadius: "8px",
@@ -336,9 +341,10 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
                     textTransform: "none",
                     transition: "all 0.3s ease",
                     "&:hover": {
-                      background: theme.palette.mode === 'dark' 
-                        ? 'linear-gradient(90deg, #7b3dc1 0%, #3a5fc0 100%)' 
-                        : 'linear-gradient(90deg, #3a5fc0 0%, #7b3dc1 100%)',
+                      background:
+                        theme.palette.mode === "dark"
+                          ? "linear-gradient(90deg, #7b3dc1 0%, #3a5fc0 100%)"
+                          : "linear-gradient(90deg, #3a5fc0 0%, #7b3dc1 100%)",
                       boxShadow: theme.shadows[4],
                       transform: "translateY(-2px)",
                     },
@@ -355,10 +361,7 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
 
             <Divider sx={{ my: 2 }} />
 
-            <Typography
-              variant="h6"
-              sx={{ mb: 1, fontWeight: 600 }}
-            >
+            <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
               Current Members ({members.length})
             </Typography>
 
@@ -385,7 +388,7 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
                     boxShadow: theme.shadows[3],
                     borderColor: theme.palette.primary.main,
                   },
-                }
+                },
               }}
               sx={{ mb: 2 }}
             />
@@ -401,7 +404,10 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
                     <ListItem
                       sx={{
                         "&:hover": {
-                          backgroundColor: alpha(theme.palette.primary.main, 0.05),
+                          backgroundColor: alpha(
+                            theme.palette.primary.main,
+                            0.05
+                          ),
                         },
                       }}
                     >
@@ -439,7 +445,7 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
         )}
       </DialogContent>
       <DialogActions>
-        <Button 
+        <Button
           onClick={onClose}
           sx={{
             color: theme.palette.primary.main,
@@ -516,19 +522,21 @@ const ForumCard = ({
   };
 
   return (
-    <Card sx={{ 
-      width: "100%", 
-      height: "100%",
-      borderRadius: "16px",
-      boxShadow: theme.shadows[2],
-      transition: "all 0.3s ease",
-      "&:hover": {
-        transform: "translateY(-8px)",
-        boxShadow: theme.shadows[6],
-      },
-      borderTop: "4px solid",
-      borderColor: theme.palette.primary.main,
-    }}>
+    <Card
+      sx={{
+        width: "100%",
+        height: "100%",
+        borderRadius: "16px",
+        boxShadow: theme.shadows[2],
+        transition: "all 0.3s ease",
+        "&:hover": {
+          transform: "translateY(-8px)",
+          boxShadow: theme.shadows[6],
+        },
+        borderTop: "4px solid",
+        borderColor: theme.palette.primary.main,
+      }}
+    >
       <CardMedia
         component="img"
         height="160"
@@ -559,7 +567,7 @@ const ForumCard = ({
             {forum.title}
           </Typography>
           <Box sx={{ display: "flex", alignItems: "center" }}>
-            {hasPermission && (
+            {hasPermission[forum._id] && (
               <>
                 <IconButton
                   onClick={() => handleEdit(forum._id)}
@@ -694,9 +702,10 @@ const ForumCard = ({
               flexGrow: 1,
               py: 1,
               fontSize: { xs: "0.75rem", sm: "0.8rem", md: "0.875rem" },
-              background: theme.palette.mode === 'dark' 
-                ? 'linear-gradient(90deg, #8E54E9 0%, #4776E6 100%)' 
-                : 'linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)',
+              background:
+                theme.palette.mode === "dark"
+                  ? "linear-gradient(90deg, #8E54E9 0%, #4776E6 100%)"
+                  : "linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)",
               color: "white",
               fontWeight: 500,
               borderRadius: "8px",
@@ -704,9 +713,10 @@ const ForumCard = ({
               textTransform: "none",
               transition: "all 0.3s ease",
               "&:hover": {
-                background: theme.palette.mode === 'dark' 
-                  ? 'linear-gradient(90deg, #7b3dc1 0%, #3a5fc0 100%)' 
-                  : 'linear-gradient(90deg, #3a5fc0 0%, #7b3dc1 100%)',
+                background:
+                  theme.palette.mode === "dark"
+                    ? "linear-gradient(90deg, #7b3dc1 0%, #3a5fc0 100%)"
+                    : "linear-gradient(90deg, #3a5fc0 0%, #7b3dc1 100%)",
                 boxShadow: theme.shadows[4],
                 transform: "translateY(-2px)",
               },
@@ -715,7 +725,7 @@ const ForumCard = ({
             VIEW DISCUSSION
           </Button>
 
-          <Button
+          {(hasPermission[forum._id] && (<Button
             onClick={() => onViewMembers(forum._id)}
             sx={{
               py: 1,
@@ -733,7 +743,7 @@ const ForumCard = ({
             }}
           >
             <PeopleIcon sx={{ fontSize: { xs: "1rem", sm: "1.25rem" } }} />
-          </Button>
+          </Button>))}
         </Box>
       </Box>
     </Card>
@@ -757,6 +767,7 @@ const ForumList = ({ boards: propBoards = {}, clubs: propClubs = {} }) => {
     useState([]);
   const [userBoardsWithForumPermission, setUserBoardsWithForumPermission] =
     useState([]);
+  const [arrayPermissions, setArrayPermissions] = useState({});
   const router = useRouter();
 
   const checkMembership = async (forumId, userId) => {
@@ -816,33 +827,6 @@ const ForumList = ({ boards: propBoards = {}, clubs: propClubs = {} }) => {
     loadUserData();
   }, []);
 
-  const hasForumPermission = (forum) => {
-    if (isSuperAdmin) return true;
-
-    if (forum.club_id) {
-      const clubId = forum.club_id._id || forum.club_id;
-      if (userClubsWithForumPermission.includes(clubId)) {
-        return true;
-      }
-    }
-
-    if (forum.board_id) {
-      const boardId = forum.board_id._id || forum.board_id;
-      if (userBoardsWithForumPermission.includes(boardId)) {
-        return true;
-      }
-    }
-
-    return false;
-  };
-
-  const canCreateForums = () => {
-    return (
-      isSuperAdmin ||
-      userClubsWithForumPermission.length > 0 ||
-      userBoardsWithForumPermission.length > 0
-    );
-  };
 
   const getDefaultClubOrBoardId = () => {
     if (userClubsWithForumPermission.length > 0) {
@@ -964,13 +948,38 @@ const ForumList = ({ boards: propBoards = {}, clubs: propClubs = {} }) => {
     ? propClubs
     : sampleClubs;
 
-  const filteredForums = forums?.filter(
-    (forum) =>
-      forum.title.toLowerCase().includes(search.toLowerCase()) &&
-      (!selectedBoard || forum.board_id === selectedBoard) &&
-      (!selectedClub || forum.club_id === selectedClub) &&
-      (!privacyFilter || forum.public_or_private === privacyFilter)
-  );
+    const filteredForums = useMemo(() => {
+      return forums?.filter(
+        (forum) =>
+          forum.title.toLowerCase().includes(search.toLowerCase()) &&
+          (!selectedBoard || forum.board_id === selectedBoard) &&
+          (!selectedClub || forum.club_id === selectedClub) &&
+          (!privacyFilter || forum.public_or_private === privacyFilter)
+      );
+    }, [forums, search, selectedBoard, selectedClub, privacyFilter]);
+
+    useEffect(() => {
+      // Check permissions for all resources
+      if (userData && filteredForums.length > 0) {
+        filteredForums.forEach(async (element) => {
+          const clubId = element.club_id?._id || element.club_id;
+          const boardId = element.board_id?._id || element.board_id;
+  
+          // If you must use the async version of hasPermission
+          const hasAccess = await hasPermission(
+            "opportunities",
+            userData,
+            boardId,
+            clubId
+          );
+  
+          setArrayPermissions((prev) => ({
+            ...prev,
+            [element._id]: hasAccess,
+          }));
+        });
+      }
+    }, [userData, filteredForums]);
 
   const defaultContext = getDefaultClubOrBoardId();
 
@@ -990,9 +999,9 @@ const ForumList = ({ boards: propBoards = {}, clubs: propClubs = {} }) => {
           availableClubs={availableClubs}
         />
 
-        <Grid 
-          container 
-          spacing={{ xs: 2, sm: 3, md: 4 }} 
+        <Grid
+          container
+          spacing={{ xs: 2, sm: 3, md: 4 }}
           sx={{ mt: { xs: 4, sm: 8, md: 12 } }}
         >
           {filteredForums.map((forum) => (
@@ -1004,34 +1013,11 @@ const ForumList = ({ boards: propBoards = {}, clubs: propClubs = {} }) => {
                 onViewForum={handleViewForum}
                 onViewMembers={handleViewMembers}
                 onDeleteForum={handleDeleteForum}
-                hasPermission={hasForumPermission(forum)}
+                hasPermission={arrayPermissions}
               />
             </Grid>
           ))}
         </Grid>
-
-        {canCreateForums() && (
-          <Fab
-            color="primary"
-            aria-label="add"
-            onClick={handleCreateForumToggle}
-            sx={{
-              position: "fixed",
-              bottom: { xs: 16, sm: 24, md: 32 },
-              right: { xs: 16, sm: 24, md: 32 },
-              background: theme.palette.mode === 'dark' 
-                ? 'linear-gradient(90deg, #8E54E9 0%, #4776E6 100%)' 
-                : 'linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)',
-              "&:hover": {
-                background: theme.palette.mode === 'dark' 
-                  ? 'linear-gradient(90deg, #7b3dc1 0%, #3a5fc0 100%)' 
-                  : 'linear-gradient(90deg, #3a5fc0 0%, #7b3dc1 100%)',
-              },
-            }}
-          >
-            <AddIcon />
-          </Fab>
-        )}
 
         {/* Keep the dialog components as they are */}
         {createForumOpen && (
