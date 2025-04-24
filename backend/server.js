@@ -18,9 +18,10 @@ const miscRoutes = require("./routes/miscRoutes");
 const baatRoutes = require("./routes/baatRoutes");
 const badgeRoutes = require("./routes/badgeRoutes");
 const eUserRoutes = require("./routes/extendedUserRoutes");
+const nautiNotificationRoutes = require("./routes/nauti.notification.routes");
 
-const notificationQueueRoutes = require('./routes/notificationQueueRoutes');
-const userNotificationRoutes = require('./routes/userNotificationRoutes');
+const notificationQueueRoutes = require("./routes/notificationQueueRoutes");
+const userNotificationRoutes = require("./routes/userNotificationRoutes");
 
 const http = require("http");
 const socketio = require("socket.io");
@@ -138,9 +139,10 @@ app.use("/otp", otpRoutes);
 app.use("/baat", baatRoutes);
 app.use("/badges", badgeRoutes);
 app.use("/euser", eUserRoutes);
+app.use("/notifications", nautiNotificationRoutes);
 
-app.use('/api/notification-queue', notificationQueueRoutes);
-app.use('/api/user-notifications', userNotificationRoutes);
+app.use("/api/notification-queue", notificationQueueRoutes);
+app.use("/api/user-notifications", userNotificationRoutes);
 
 // Connect to MongoDB and start the server
 connectDB().then(() => {

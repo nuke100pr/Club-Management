@@ -1,25 +1,8 @@
 // public/notification-service-worker.js
 const POLL_INTERVAL = 5000; // 5 seconds
-let userId = "67e73a073127d9304be21670"; // Hardcoded user ID
+let userId = null; // Will be set from the main application
 let isPolling = false;
 let pollTimer = null;
-
-// Debug function to check notification permission
-async function checkNotificationPermission() {
-  // Service workers can't directly check Notification.permission
-  // Let's try to show a test notification to see if it works
-  try {
-    console.log("Testing notification permission with a test notification");
-    await self.registration.showNotification("Test Notification", {
-      body: "This is a test notification to check permissions",
-    });
-    console.log("Test notification sent successfully - permissions appear to be granted");
-    return true;
-  } catch (error) {
-    console.error("Failed to show test notification, likely permission denied:", error);
-    return false;
-  }
-}
 
 // Listen for messages from the main application
 self.addEventListener("message", (event) => {
@@ -28,9 +11,15 @@ self.addEventListener("message", (event) => {
 
   switch (type) {
     case "START_POLLING":
-      startPolling();
-      // Also test permissions when starting polling
-      checkNotificationPermission();
+      // Use the userId passed from main application
+      if (data && data.userId) {
+        userId = data.userId;
+        startPolling();
+      } else {
+        console.error(
+          "Service worker: Cannot start polling - missing user ID in message"
+        );
+      }
       break;
 
     case "STOP_POLLING":
@@ -38,16 +27,15 @@ self.addEventListener("message", (event) => {
       break;
 
     case "REFRESH_USER_DATA":
-      // No need to refresh user data as it's hardcoded
-      console.log("Service worker: User ID is hardcoded, no refresh needed");
-      break;
-      
-    case "TEST_NOTIFICATION":
-      console.log("Service worker: Testing notification manually");
-      showNotification({
-        title: "Test Notification",
-        message: "This is a test notification triggered manually",
-      });
+      // Update the user ID when it changes
+      if (data && data.userId) {
+        console.log("Service worker: Updating user ID:", data.userId);
+        userId = data.userId;
+      } else {
+        console.warn(
+          "Service worker: Received REFRESH_USER_DATA without userId"
+        );
+      }
       break;
 
     default:
@@ -59,8 +47,18 @@ self.addEventListener("message", (event) => {
 function startPolling() {
   if (isPolling) return;
 
+  if (!userId) {
+    console.error(
+      "Service worker: Cannot start polling - no user ID available"
+    );
+    return;
+  }
+
   isPolling = true;
-  console.log("Service worker: Starting notification polling with hardcoded user ID:", userId);
+  console.log(
+    "Service worker: Starting notification polling for user ID:",
+    userId
+  );
 
   // Immediately check for notifications
   checkAndTransferNotifications();
@@ -86,8 +84,15 @@ function stopPolling() {
 
 // Check and transfer notifications
 async function checkAndTransferNotifications() {
+  if (!userId) {
+    console.error(
+      "Service worker: Cannot check notifications - no user ID available"
+    );
+    return;
+  }
+
   try {
-    console.log("Checking for notifications...");
+    console.log("Checking for notifications for user:", userId);
     const response = await fetch(
       `http://localhost:5000/api/user-notifications/transfer/${userId}`,
       {
@@ -119,7 +124,7 @@ async function checkAndTransferNotifications() {
           });
         });
       });
-      
+
       // Try to show notifications for each transferred notification
       result.data.notifications.forEach((notification) => {
         console.log("Attempting to show notification:", notification);
@@ -144,12 +149,17 @@ async function showNotification(notification) {
       requireInteraction: true, // This makes the notification stay until user interacts with it
     };
 
-    console.log("Showing notification with title:", title, "and options:", options);
-    
+    console.log(
+      "Showing notification with title:",
+      title,
+      "and options:",
+      options
+    );
+
     await self.registration.showNotification(title, options);
     console.log("✅ Notification display command executed successfully");
   } catch (error) {
-    console.error('❌ Error showing notification:', error);
+    console.error("❌ Error showing notification:", error);
   }
 }
 

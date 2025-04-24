@@ -214,18 +214,7 @@ const CollapsibleNavBar = () => {
             aria-label="notifications"
             onClick={toggleNotificationsDrawer}
           >
-            <Badge
-              badgeContent={unreadCount}
-              color="error"
-              sx={{
-                "& .MuiBadge-badge": {
-                  background: "linear-gradient(to right, #FF416C, #FF4B2B)",
-                  boxShadow: "0 2px 5px rgba(255, 65, 108, 0.5)",
-                },
-              }}
-            >
-              <NotificationsIcon />
-            </Badge>
+            <NotificationsIcon />
           </PremiumIconButton>
           <PremiumIconButton
             color="primary"

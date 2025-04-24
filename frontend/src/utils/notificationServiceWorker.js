@@ -1,12 +1,46 @@
+import { getUserIdFromToken } from './auth';
+
 export default class NotificationServiceWorker {
     constructor() {
       this.worker = null;
       this.isRegistered = false;
       this.permissionStatus = 'default';
+      this.userId = null;
       
       // Check if Notification is available (for SSR compatibility)
       if (typeof window !== 'undefined' && 'Notification' in window) {
         this.permissionStatus = Notification.permission;
+        // Initialize user ID asynchronously
+        this.initUserId();
+      }
+    }
+  
+    // Initialize user ID asynchronously
+    async initUserId() {
+      try {
+        await this.getUserIdAsync();
+      } catch (error) {
+        console.error("Error initializing user ID:", error);
+      }
+    }
+  
+    // Get user ID from token - handles both sync and async implementations
+    async getUserIdAsync() {
+      try {
+        const result = getUserIdFromToken();
+        
+        // Handle if getUserIdFromToken returns a Promise
+        if (result instanceof Promise) {
+          this.userId = await result;
+        } else {
+          this.userId = result;
+        }
+        
+        console.log("Retrieved user ID from token:", this.userId);
+        return this.userId;
+      } catch (error) {
+        console.error("Error getting user ID from token:", error);
+        return null;
       }
     }
   
@@ -17,7 +51,6 @@ export default class NotificationServiceWorker {
         return false;
       }
       
-      // Explicitly request permission - this will show the browser permission dialog
       console.log("Requesting notification permission...");
       try {
         const permission = await Notification.requestPermission();
@@ -41,6 +74,9 @@ export default class NotificationServiceWorker {
       }
   
       try {
+        // Ensure we have the user ID before proceeding
+        await this.getUserIdAsync();
+        
         const registration = await navigator.serviceWorker.register('/notification-service-worker.js');
         this.worker = registration.active || registration.installing || registration.waiting;
         this.isRegistered = true;
@@ -71,6 +107,10 @@ export default class NotificationServiceWorker {
         
         // Update the permission status in the service worker
         this.updatePermissionStatus();
+        
+        // Instead of calling refreshUserData directly, which might still have the Promise issue,
+        // call a safe version that ensures we're only sending primitive values
+        await this.safeRefreshUserData();
         
         // Start polling if permission is granted
         if (this.permissionStatus === 'granted') {
@@ -127,9 +167,34 @@ export default class NotificationServiceWorker {
         data: { permission: this.permissionStatus }
       });
     }
+    
+    // Safely refresh user data - ensures we're only sending primitive values
+    async safeRefreshUserData() {
+      if (!navigator.serviceWorker.controller) {
+        console.warn("Cannot refresh user data: no controller");
+        return;
+      }
+      
+      // Make sure we have the latest user ID and it's resolved from any Promise
+      await this.getUserIdAsync();
+      
+      if (!this.userId) {
+        console.warn("Cannot refresh user data: no user ID available");
+        return;
+      }
+      
+      const userId = String(this.userId);
+      console.log("Sending user ID to service worker:", userId);
+      
+      // Only send string data to avoid cloning issues
+      navigator.serviceWorker.controller.postMessage({
+        type: 'REFRESH_USER_DATA',
+        data: { userId }
+      });
+    }
   
     // Start polling for notifications
-    startPolling() {
+    async startPolling() {
       if (!this.isRegistered) {
         throw new Error('Service worker not registered');
       }
@@ -139,11 +204,22 @@ export default class NotificationServiceWorker {
         return;
       }
       
+      // Ensure we have the latest user ID
+      await this.getUserIdAsync();
+      
+      if (!this.userId) {
+        console.error("Cannot start polling: no user ID available");
+        return;
+      }
+      
       // Only start polling if permission is granted
       if (this.permissionStatus === 'granted') {
-        console.log("Starting notification polling");
+        const userId = String(this.userId);
+        console.log("Starting notification polling for user:", userId);
+        
         navigator.serviceWorker.controller.postMessage({
-          type: 'START_POLLING'
+          type: 'START_POLLING',
+          data: { userId }
         });
       } else {
         console.warn('Cannot start notification polling: permission not granted');
@@ -158,7 +234,7 @@ export default class NotificationServiceWorker {
       if (granted) {
         console.log("Permission granted, updating status and starting polling");
         this.updatePermissionStatus();
-        this.startPolling();
+        await this.startPolling();
       } else {
         console.warn('Notification permission denied by user');
       }

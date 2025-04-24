@@ -14,10 +14,14 @@ import {
   Divider,
   Avatar,
   styled,
+  CircularProgress,
+  Button,
 } from "@mui/material";
 import {
   Close as CloseIcon,
+  Delete as DeleteIcon,
 } from "@mui/icons-material";
+import { fetchUserData } from "../../utils/auth";
 
 // Notification Item component
 const NotificationItem = styled(ListItem)(({ theme, isRead }) => ({
@@ -32,64 +36,118 @@ const NotificationItem = styled(ListItem)(({ theme, isRead }) => ({
   }
 }));
 
-// Sample notifications data
-const sampleNotifications = [
-  {
-    id: 1,
-    title: "New Event Posted",
-    description: "A new networking event has been added to the calendar",
-    time: "10 minutes ago",
-    isRead: false,
-    avatar: "E"
-  },
-  {
-    id: 2,
-    title: "Project Update",
-    description: "Your team has completed milestone 2 of the project",
-    time: "1 hour ago",
-    isRead: false,
-    avatar: "P"
-  },
-  {
-    id: 3,
-    title: "New Job Opportunity",
-    description: "A new job matching your profile has been posted",
-    time: "3 hours ago",
-    isRead: true,
-    avatar: "J"
-  },
-  {
-    id: 4,
-    title: "Forum Reply",
-    description: "Someone replied to your question about React hooks",
-    time: "Yesterday",
-    isRead: true,
-    avatar: "F"
-  },
-  {
-    id: 5,
-    title: "System Update",
-    description: "The platform will be under maintenance this weekend",
-    time: "2 days ago",
-    isRead: true,
-    avatar: "S"
-  }
-];
-
 const NotificationsDrawer = ({ open, onClose }) => {
   const theme = useTheme();
-  const [notifications, setNotifications] = useState(sampleNotifications);
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Use useEffect to mark notifications as read when drawer opens
+  // Fetch notifications when drawer opens
   useEffect(() => {
-    if (open) {
-      const updatedNotifications = notifications.map(notif => ({
-        ...notif,
-        isRead: true
-      }));
-      setNotifications(updatedNotifications);
+    const fetchNotifications = async () => {
+      if (open) {
+        try {
+          setLoading(true);
+          
+          // Fetch user data first
+          const userData = await fetchUserData();
+          const userId = userData.userId;
+          
+          // Fetch notifications for the user
+          const response = await fetch(`http://localhost:5000/notifications/user/${userId}`);
+          
+          if (!response.ok) {
+            throw new Error('Failed to fetch notifications');
+          }
+          
+          const data = await response.json();
+          setNotifications(data);
+          setError(null);
+        } catch (err) {
+          console.error('Error fetching notifications:', err);
+          setError('Failed to load notifications');
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchNotifications();
+  }, [open]);
+
+  // Mark notification as read
+  const handleMarkAsRead = async (notificationId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/notifications/${notificationId}/read`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to mark notification as read');
+      }
+
+      // Update local state
+      setNotifications(prevNotifications => 
+        prevNotifications.map(notif => 
+          notif._id === notificationId ? { ...notif, isRead: true } : notif
+        )
+      );
+    } catch (err) {
+      console.error('Error marking notification as read:', err);
     }
-  }, [open]); // Only run when 'open' changes
+  };
+
+  // Delete notification
+  const handleDeleteNotification = async (notificationId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/notifications/${notificationId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete notification');
+      }
+
+      // Remove from local state
+      setNotifications(prevNotifications => 
+        prevNotifications.filter(notif => notif._id !== notificationId)
+      );
+    } catch (err) {
+      console.error('Error deleting notification:', err);
+    }
+  };
+
+  // Clear all notifications
+  const handleClearAll = async () => {
+    try {
+      setLoading(true);
+      
+      // Delete each notification one by one
+      const deletePromises = notifications.map(notification => 
+        fetch(`http://localhost:5000/notifications/${notification._id}`, {
+          method: 'DELETE',
+        })
+      );
+      
+      await Promise.all(deletePromises);
+      
+      // Clear local state
+      setNotifications([]);
+    } catch (err) {
+      console.error('Error clearing notifications:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Get avatar letter from title or default
+  const getAvatarLetter = (title) => {
+    if (!title) return "N";
+    return title.charAt(0).toUpperCase();
+  };
 
   return (
     <Drawer
@@ -152,14 +210,33 @@ const NotificationsDrawer = ({ open, onClose }) => {
         
         {/* Notifications List */}
         <List sx={{ width: '100%', padding: 2, overflow: 'auto', flexGrow: 1 }}>
-          {notifications.length > 0 ? (
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress size={32} />
+            </Box>
+          ) : error ? (
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+              <Typography variant="body1" color="error">
+                {error}
+              </Typography>
+              <Button 
+                variant="outlined" 
+                color="primary" 
+                sx={{ mt: 2 }}
+                onClick={() => window.location.reload()}
+              >
+                Retry
+              </Button>
+            </Box>
+          ) : notifications.length > 0 ? (
             notifications.map((notification) => (
               <NotificationItem 
-                key={notification.id} 
+                key={notification._id} 
                 isRead={notification.isRead}
                 disablePadding
+                onClick={() => !notification.isRead && handleMarkAsRead(notification._id)}
               >
-                <Box sx={{ display: 'flex', width: '100%' }}>
+                <Box sx={{ display: 'flex', width: '100%', alignItems: 'flex-start' }}>
                   <Avatar 
                     sx={{ 
                       width: 40, 
@@ -170,19 +247,29 @@ const NotificationsDrawer = ({ open, onClose }) => {
                         'linear-gradient(135deg, #4776E6 0%, #8E54E9 100%)'
                     }}
                   >
-                    {notification.avatar}
+                    {getAvatarLetter(notification.title)}
                   </Avatar>
                   <Box sx={{ flexGrow: 1 }}>
                     <Typography variant="subtitle2" sx={{ fontWeight: notification.isRead ? 400 : 600 }}>
                       {notification.title}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
-                      {notification.description}
+                      {notification.message || notification.description}
                     </Typography>
                     <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                      {notification.time}
+                      {new Date(notification.createdAt).toLocaleString()}
                     </Typography>
                   </Box>
+                  <IconButton 
+                    size="small" 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteNotification(notification._id);
+                    }}
+                    sx={{ ml: 1 }}
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
                 </Box>
               </NotificationItem>
             ))
@@ -196,10 +283,10 @@ const NotificationsDrawer = ({ open, onClose }) => {
         </List>
         
         {/* Clear All Button */}
-        {notifications.length > 0 && (
+        {!loading && notifications.length > 0 && (
           <Box sx={{ p: 2 }}>
             <ListItemButton
-              onClick={() => setNotifications([])}
+              onClick={handleClearAll}
               sx={{
                 background: alpha(theme.palette.primary.main, 0.1),
                 borderRadius: 2,
