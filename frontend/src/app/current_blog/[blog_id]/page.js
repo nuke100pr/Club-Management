@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import BlogCreateForm from '../../../components/blogs//BlogCreateForm';
-
+import { fetchUserData, hasPermission } from "@/utils/auth";
 // Material UI imports
 import { 
   Box, 
@@ -21,7 +21,9 @@ import {
   useTheme,
   alpha,
   Stack,
-  Avatar
+  Avatar,
+  IconButton,
+  Tooltip
 } from '@mui/material';
 
 // Material UI icons
@@ -35,41 +37,6 @@ import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import PersonIcon from '@mui/icons-material/Person';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
-// Custom theme constants
-const themeConstants = {
-  colors: {
-    primary: {
-      main: '#4776E6',
-      light: '#6a98ff',
-      dark: '#3a5fc0'
-    },
-    secondary: '#8E54E9',
-    background: {
-      default: '#f8faff',
-      card: '#ffffff',
-      sidebar: 'rgba(245, 247, 250, 0.7)'
-    },
-    text: {
-      primary: '#2A3B4F',
-      secondary: '#607080'
-    },
-    gradients: {
-      primary: 'linear-gradient(45deg, #4776E6 0%, #8E54E9 100%)'
-    },
-    shadows: {
-      card: '0 4px 12px rgba(95, 150, 230, 0.1)',
-      cardHover: '0 12px 20px rgba(95, 150, 230, 0.2)',
-      button: '0 4px 10px rgba(71, 118, 230, 0.3)',
-      buttonHover: '0 6px 15px rgba(71, 118, 230, 0.4)'
-    }
-  },
-  borderRadius: {
-    base: 8,
-    card: 16,
-    button: 8
-  }
-};
-
 export default function BlogDetailPage() {
   const { blog_id } = useParams();
   const router = useRouter();
@@ -80,6 +47,15 @@ export default function BlogDetailPage() {
   const [error, setError] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+
+  const [userData, setUserData] = useState(null);
+  const [userId, setUserId] = useState(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [selectedClubId, setSelectedClubId] = useState(null);
+  const [selectedBoardId, setSelectedBoardId] = useState(null);
+  const [userClubsWithBlogPermission, setUserClubsWithBlogPermission] = useState([]);
+  const [userBoardsWithBlogPermission, setUserBoardsWithBlogPermission] = useState([]);
+  const [hasPermissionToEdit, setHasPermissionToEdit] = useState(false); 
 
   // Fetch blog
   useEffect(() => {
@@ -99,6 +75,67 @@ export default function BlogDetailPage() {
 
     fetchBlog();
   }, [blog_id]);
+
+  useEffect(() => {
+    async function loadUserData() {
+      const result = await fetchUserData();
+
+      if (result) {
+        setUserData(result);
+        setUserId(result.userId);
+        setIsSuperAdmin(result.isSuperAdmin);
+
+        // Extract clubs with blogs permission
+        if (result.userData?.data?.clubs) {
+          const clubsWithPermission = Object.keys(result.userData.data.clubs).filter(
+            (clubId) => result.userData.data.clubs[clubId].blogs === true
+          );
+          setUserClubsWithBlogPermission(clubsWithPermission);
+
+          // Set the first club as default if available
+          if (clubsWithPermission.length > 0) {
+            setSelectedClubId(clubsWithPermission[0]);
+          }
+        }
+
+        // Extract boards with blogs permission
+        if (result.userData?.data?.boards) {
+          const boardsWithPermission = Object.keys(result.userData.data.boards).filter(
+            (boardId) => result.userData.data.boards[boardId].blogs === true
+          );
+          setUserBoardsWithBlogPermission(boardsWithPermission);
+
+          // Set the first board as default if available
+          if (boardsWithPermission.length > 0) {
+            setSelectedBoardId(boardsWithPermission[0]);
+          }
+        }
+      }
+    }
+    loadUserData();
+  }, []);
+
+  // Check permission when blog or userData changes
+  useEffect(() => {
+    if (blog && userData) {
+      const lml = async () => {
+        const hasPermission = await hasBlogPermission(blog);
+        setHasPermissionToEdit(hasPermission);
+      }
+    
+      lml();
+    }
+  }, [blog, userData]);
+
+  const hasBlogPermission = (blog) => {
+    if (isSuperAdmin) return true;
+    if (!userData) return false;
+    
+    const clubId = blog.club_id?._id || blog.club_id;
+    const boardId = blog.board_id?._id || blog.board_id;
+    
+    return hasPermission("blogs", userData, boardId, clubId);
+  };
 
   const handleDelete = async () => {
     if (!confirm('Are you sure you want to delete this blog?')) return;
@@ -179,6 +216,9 @@ export default function BlogDetailPage() {
     router.push('/src/app/blogs');
   };
 
+  // Define gradients that will look good in both light and dark themes
+  const primaryGradient = `linear-gradient(45deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`;
+  
   // Loading, error and empty states
   if (isLoading) return (
     <Box 
@@ -186,19 +226,19 @@ export default function BlogDetailPage() {
       justifyContent="center" 
       alignItems="center" 
       minHeight="80vh"
-      sx={{ bgcolor: themeConstants.colors.background.default }}
+      sx={{ bgcolor: theme.palette.background.default }}
     >
-      <CircularProgress sx={{ color: themeConstants.colors.primary.main }} />
+      <CircularProgress sx={{ color: theme.palette.primary.main }} />
     </Box>
   );
   
   if (error) return (
-    <Container maxWidth="lg" sx={{ py: 4, bgcolor: themeConstants.colors.background.default }}>
+    <Container maxWidth="lg" sx={{ py: 4, bgcolor: theme.palette.background.default }}>
       <Alert 
         severity="error"
         sx={{ 
-          borderRadius: themeConstants.borderRadius.base,
-          boxShadow: themeConstants.colors.shadows.card
+          borderRadius: theme.shape.borderRadius,
+          boxShadow: theme.shadows[2]
         }}
       >
         Error: {error}
@@ -207,8 +247,8 @@ export default function BlogDetailPage() {
   );
   
   if (!blog) return (
-    <Container maxWidth="lg" sx={{ py: 4, bgcolor: themeConstants.colors.background.default }}>
-      <Typography variant="body1" color={themeConstants.colors.text.secondary}>
+    <Container maxWidth="lg" sx={{ py: 4, bgcolor: theme.palette.background.default }}>
+      <Typography variant="body1" color={theme.palette.text.secondary}>
         No blog found
       </Typography>
     </Container>
@@ -223,13 +263,13 @@ export default function BlogDetailPage() {
 
   // Rich text content styling
   const richTextStyles = {
-    '& p': { mb: 2, color: themeConstants.colors.text.primary, fontSize: '1rem', lineHeight: 1.6 },
+    '& p': { mb: 2, color: theme.palette.text.primary, fontSize: '1rem', lineHeight: 1.6 },
     '& h1': { 
       fontSize: '1.75rem', 
       mb: 2, 
       mt: 3, 
       fontWeight: 600,
-      background: themeConstants.colors.gradients.primary,
+      background: primaryGradient,
       WebkitBackgroundClip: 'text',
       WebkitTextFillColor: 'transparent',
     },
@@ -238,23 +278,23 @@ export default function BlogDetailPage() {
       mb: 2, 
       mt: 3, 
       fontWeight: 600,
-      color: themeConstants.colors.primary.main,
+      color: theme.palette.primary.main,
     },
     '& h3': { 
       fontSize: '1.25rem', 
       mb: 2, 
       mt: 3, 
       fontWeight: 600,
-      color: themeConstants.colors.primary.dark,
+      color: theme.palette.primary.dark,
     },
-    '& ul, & ol': { pl: 4, mb: 2, color: themeConstants.colors.text.primary },
+    '& ul, & ol': { pl: 4, mb: 2, color: theme.palette.text.primary },
     '& li': { mb: 1 },
     '& a': { 
-      color: themeConstants.colors.primary.main,
+      color: theme.palette.primary.main,
       textDecoration: 'none',
       transition: 'all 0.3s ease',
       '&:hover': {
-        color: themeConstants.colors.secondary,
+        color: theme.palette.secondary.main,
         textDecoration: 'underline',
       }
     },
@@ -262,23 +302,23 @@ export default function BlogDetailPage() {
       maxWidth: '100%', 
       height: 'auto', 
       my: 2,
-      borderRadius: themeConstants.borderRadius.base,
-      boxShadow: themeConstants.colors.shadows.card,
+      borderRadius: theme.shape.borderRadius,
+      boxShadow: theme.shadows[2],
     },
     '& blockquote': { 
-      borderLeft: `4px solid ${themeConstants.colors.primary.light}`, 
+      borderLeft: `4px solid ${theme.palette.primary.light}`, 
       pl: 2, 
       py: 1, 
       my: 2,
       fontStyle: 'italic',
-      bgcolor: alpha(themeConstants.colors.primary.main, 0.05),
-      borderRadius: '0 8px 8px 0' 
+      bgcolor: alpha(theme.palette.primary.main, 0.05),
+      borderRadius: `0 ${theme.shape.borderRadius}px ${theme.shape.borderRadius}px 0` 
     }
   };
 
   return (
     <Box sx={{ 
-      bgcolor: themeConstants.colors.background.default,
+      bgcolor: theme.palette.background.default,
       minHeight: '100vh',
       pb: 8
     }}>
@@ -313,16 +353,16 @@ export default function BlogDetailPage() {
               position: 'absolute',
               top: 16,
               left: 16,
-              background: themeConstants.colors.gradients.primary,
-              boxShadow: themeConstants.colors.shadows.button,
-              borderRadius: themeConstants.borderRadius.button,
+              background: primaryGradient,
+              boxShadow: theme.shadows[4],
+              borderRadius: theme.shape.borderRadius,
               textTransform: 'none',
               fontWeight: 500,
               py: 1,
-              fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+              fontFamily: theme.typography.fontFamily,
               transition: 'all 0.3s ease',
               '&:hover': {
-                boxShadow: themeConstants.colors.shadows.buttonHover,
+                boxShadow: theme.shadows[8],
                 transform: 'translateY(-2px)'
               }
             }}
@@ -336,16 +376,16 @@ export default function BlogDetailPage() {
               position: 'absolute',
               top: 16,
               right: 16,
-              background: themeConstants.colors.gradients.primary,
-              boxShadow: themeConstants.colors.shadows.button,
-              borderRadius: themeConstants.borderRadius.button,
+              background: primaryGradient,
+              boxShadow: theme.shadows[4],
+              borderRadius: theme.shape.borderRadius,
               textTransform: 'none',
               fontWeight: 500,
               py: 1,
-              fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+              fontFamily: theme.typography.fontFamily,
               transition: 'all 0.3s ease',
               '&:hover': {
-                boxShadow: themeConstants.colors.shadows.buttonHover,
+                boxShadow: theme.shadows[8],
                 transform: 'translateY(-2px)'
               }
             }}
@@ -367,32 +407,98 @@ export default function BlogDetailPage() {
         <Card 
           elevation={0}
           sx={{ 
-            borderRadius: themeConstants.borderRadius.card,
-            boxShadow: themeConstants.colors.shadows.card,
+            borderRadius: theme.shape.borderRadius * 2,
+            boxShadow: theme.shadows[4],
             mb: 4,
             overflow: 'visible',
             transition: 'all 0.3s ease',
             p: { xs: 3, md: 4 },
-            bgcolor: 'white',
+            bgcolor: theme.palette.background.paper,
             '&:hover': {
-              boxShadow: themeConstants.colors.shadows.cardHover,
+              boxShadow: theme.shadows[8],
             }
           }}
         >
-          <Typography 
-            variant="h3" 
-            component="h1" 
-            gutterBottom 
-            sx={{ 
-              fontWeight: 600,
-              color: themeConstants.colors.text.primary,
-              fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-              fontSize: { xs: '1.75rem', md: '2.5rem' },
-              mb: 2
-            }}
-          >
-            {blog.title}
-          </Typography>
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: { xs: 'flex-start', sm: 'center' },
+            flexDirection: { xs: 'column', sm: 'row' },
+            gap: { xs: 2, sm: 0 },
+            mb: 2
+          }}>
+            <Typography 
+              variant="h3" 
+              component="h1" 
+              sx={{ 
+                fontWeight: 600,
+                color: theme.palette.text.primary,
+                fontFamily: theme.typography.fontFamily,
+                fontSize: { xs: '1.75rem', md: '2.5rem' }
+              }}
+            >
+              {blog.title}
+            </Typography>
+            
+            {/* Action buttons - Moved from bottom to next to title */}
+            {hasPermissionToEdit && (
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Tooltip title="Edit">
+                  <IconButton
+                    onClick={handleEdit}
+                    sx={{ 
+                      background: primaryGradient,
+                      color: theme.palette.common.white,
+                      '&:hover': {
+                        background: theme.palette.primary.dark,
+                        transform: 'translateY(-2px)',
+                        boxShadow: theme.shadows[6]
+                      },
+                      transition: 'all 0.3s ease',
+                    }}
+                  >
+                    <EditIcon />
+                  </IconButton>
+                </Tooltip>
+                
+                <Tooltip title="Delete">
+                  <IconButton
+                    onClick={handleDelete}
+                    sx={{ 
+                      bgcolor: alpha(theme.palette.error.main, 0.1),
+                      color: theme.palette.error.main,
+                      '&:hover': {
+                        bgcolor: alpha(theme.palette.error.main, 0.2),
+                        transform: 'translateY(-2px)',
+                        boxShadow: `0 4px 10px ${alpha(theme.palette.error.main, 0.3)}`
+                      },
+                      transition: 'all 0.3s ease',
+                    }}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            )}
+            
+            <Tooltip title="Share">
+              <IconButton
+                onClick={handleShare}
+                sx={{ 
+                  bgcolor: alpha(theme.palette.secondary.main, 0.1),
+                  color: theme.palette.secondary.main,
+                  '&:hover': {
+                    bgcolor: alpha(theme.palette.secondary.main, 0.2),
+                    transform: 'translateY(-2px)',
+                    boxShadow: `0 4px 10px ${alpha(theme.palette.secondary.main, 0.2)}`
+                  },
+                  transition: 'all 0.3s ease',
+                }}
+              >
+                <ShareIcon />
+              </IconButton>
+            </Tooltip>
+          </Box>
 
           <Stack 
             direction="row" 
@@ -400,7 +506,7 @@ export default function BlogDetailPage() {
             alignItems="center" 
             sx={{ 
               mb: 3,
-              color: themeConstants.colors.text.secondary,
+              color: theme.palette.text.secondary,
             }}
           >
             <Stack direction="row" spacing={1} alignItems="center">
@@ -408,7 +514,7 @@ export default function BlogDetailPage() {
                 sx={{ 
                   width: 28, 
                   height: 28, 
-                  bgcolor: themeConstants.colors.primary.main,
+                  bgcolor: theme.palette.primary.main,
                   fontSize: '0.875rem'
                 }}
               >
@@ -428,12 +534,12 @@ export default function BlogDetailPage() {
           {/* Blog metadata */}
           <Paper 
             elevation={0}
-            sx={ { 
+            sx={{ 
               p: 2, 
               mb: 3, 
-              borderRadius: themeConstants.borderRadius.base,
-              bgcolor: alpha(themeConstants.colors.primary.main, 0.05),
-              border: `1px solid ${alpha(themeConstants.colors.primary.main, 0.1)}`,
+              borderRadius: theme.shape.borderRadius,
+              bgcolor: alpha(theme.palette.primary.main, 0.05),
+              border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
             }}
           >
             <Stack 
@@ -442,20 +548,20 @@ export default function BlogDetailPage() {
               divider={<Divider orientation="vertical" flexItem />}
             >
               <Stack direction="row" alignItems="center" spacing={1}>
-                <VisibilityIcon fontSize="small" sx={{ color: themeConstants.colors.primary.main }} />
+                <VisibilityIcon fontSize="small" sx={{ color: theme.palette.primary.main }} />
                 <Typography variant="body2">{blog.number_of_views} views</Typography>
               </Stack>
               
               {blog.club_id && (
                 <Stack direction="row" alignItems="center" spacing={1}>
-                  <PeopleIcon fontSize="small" sx={{ color: themeConstants.colors.secondary }} />
+                  <PeopleIcon fontSize="small" sx={{ color: theme.palette.secondary.main }} />
                   <Typography variant="body2">Club: {blog.club_id}</Typography>
                 </Stack>
               )}
               
               {blog.board_id && (
                 <Stack direction="row" alignItems="center" spacing={1}>
-                  <DashboardIcon fontSize="small" sx={{ color: themeConstants.colors.primary.dark }} />
+                  <DashboardIcon fontSize="small" sx={{ color: theme.palette.primary.dark }} />
                   <Typography variant="body2">Board: {blog.board_id}</Typography>
                 </Stack>
               )}
@@ -474,13 +580,13 @@ export default function BlogDetailPage() {
                     sx={{ 
                       my: 0.5, 
                       borderRadius: '12px',
-                      bgcolor: alpha(themeConstants.colors.primary.main, 0.1),
-                      color: themeConstants.colors.primary.dark,
+                      bgcolor: alpha(theme.palette.primary.main, 0.1),
+                      color: theme.palette.primary.dark,
                       fontSize: '0.65rem',
                       height: '22px',
                       fontWeight: 500,
                       '&:hover': {
-                        bgcolor: alpha(themeConstants.colors.primary.main, 0.2),
+                        bgcolor: alpha(theme.palette.primary.main, 0.2),
                       }
                     }}
                   />
@@ -496,14 +602,15 @@ export default function BlogDetailPage() {
           sx={{ 
             p: { xs: 3, md: 4 }, 
             mb: 4, 
-            borderRadius: themeConstants.borderRadius.card,
-            boxShadow: themeConstants.colors.shadows.card,
+            borderRadius: theme.shape.borderRadius * 2,
+            boxShadow: theme.shadows[4],
             '&:hover': {
-              boxShadow: themeConstants.colors.shadows.cardHover,
+              boxShadow: theme.shadows[8],
             },
             transition: 'all 0.3s ease',
             position: 'relative',
             overflow: 'hidden',
+            bgcolor: theme.palette.background.paper,
             '&::before': {
               content: '""',
               position: 'absolute',
@@ -511,7 +618,7 @@ export default function BlogDetailPage() {
               left: 0,
               width: '100%',
               height: '4px',
-              background: themeConstants.colors.gradients.primary
+              background: primaryGradient
             }
           }}
         >
@@ -523,8 +630,8 @@ export default function BlogDetailPage() {
                 gutterBottom 
                 sx={{ 
                   fontWeight: 600,
-                  fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-                  background: themeConstants.colors.gradients.primary,
+                  fontFamily: theme.typography.fontFamily,
+                  background: primaryGradient,
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   display: 'inline-block',
@@ -548,8 +655,8 @@ export default function BlogDetailPage() {
                 gutterBottom 
                 sx={{ 
                   fontWeight: 600,
-                  fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-                  background: themeConstants.colors.gradients.primary,
+                  fontFamily: theme.typography.fontFamily,
+                  background: primaryGradient,
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   display: 'inline-block',
@@ -573,8 +680,8 @@ export default function BlogDetailPage() {
                 gutterBottom 
                 sx={{ 
                   fontWeight: 600,
-                  fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-                  background: themeConstants.colors.gradients.primary,
+                  fontFamily: theme.typography.fontFamily,
+                  background: primaryGradient,
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   display: 'inline-block',
@@ -598,14 +705,14 @@ export default function BlogDetailPage() {
             sx={{ 
               p: 3, 
               mb: 4, 
-              borderRadius: themeConstants.borderRadius.card,
-              boxShadow: themeConstants.colors.shadows.card,
+              borderRadius: theme.shape.borderRadius * 2,
+              boxShadow: theme.shadows[4],
               '&:hover': {
-                boxShadow: themeConstants.colors.shadows.cardHover,
+                boxShadow: theme.shadows[8],
               },
               transition: 'all 0.3s ease',
-              bgcolor: 'white',
-              borderLeft: `4px solid ${themeConstants.colors.secondary}`
+              bgcolor: theme.palette.background.paper,
+              borderLeft: `4px solid ${theme.palette.secondary.main}`
             }}
           >
             <Typography 
@@ -613,8 +720,8 @@ export default function BlogDetailPage() {
               gutterBottom
               sx={{ 
                 fontWeight: 600,
-                color: themeConstants.colors.text.primary,
-                fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+                color: theme.palette.text.primary,
+                fontFamily: theme.typography.fontFamily,
               }}
             >
               About the Author
@@ -622,7 +729,7 @@ export default function BlogDetailPage() {
             <Typography 
               variant="body1"
               sx={{ 
-                color: themeConstants.colors.text.secondary,
+                color: theme.palette.text.secondary,
                 lineHeight: 1.6
               }}
             >
@@ -630,80 +737,6 @@ export default function BlogDetailPage() {
             </Typography>
           </Card>
         )}
-
-        {/* Action buttons */}
-        <Stack 
-          direction={{ xs: 'column', sm: 'row' }} 
-          spacing={2} 
-          sx={{ mt: 4 }}
-        >
-          <Button
-            variant="contained"
-            startIcon={<EditIcon />}
-            onClick={handleEdit}
-            sx={{ 
-              background: themeConstants.colors.gradients.primary,
-              boxShadow: themeConstants.colors.shadows.button,
-              borderRadius: themeConstants.borderRadius.button,
-              textTransform: 'none',
-              fontWeight: 500,
-              py: 1,
-              fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                boxShadow: themeConstants.colors.shadows.buttonHover,
-                transform: 'translateY(-2px)'
-              }
-            }}
-          >
-            Edit Blog
-          </Button>
-          
-          <Button
-            variant="outlined"
-            color="error"
-            startIcon={<DeleteIcon />}
-            onClick={handleDelete}
-            sx={{ 
-              borderRadius: themeConstants.borderRadius.button,
-              textTransform: 'none',
-              fontWeight: 500,
-              py: 1,
-              transition: 'all 0.3s ease',
-              fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-              '&:hover': {
-                transform: 'translateY(-2px)',
-                boxShadow: '0 4px 10px rgba(211, 47, 47, 0.3)'
-              }
-            }}
-          >
-            Delete Blog
-          </Button>
-          
-          <Button
-            variant="outlined"
-            startIcon={<ShareIcon />}
-            onClick={handleShare}
-            sx={{ 
-              color: themeConstants.colors.secondary,
-              borderColor: themeConstants.colors.secondary,
-              borderRadius: themeConstants.borderRadius.button,
-              textTransform: 'none',
-              fontWeight: 500,
-              py: 1,
-              fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                borderColor: themeConstants.colors.secondary,
-                backgroundColor: alpha(themeConstants.colors.secondary, 0.05),
-                transform: 'translateY(-2px)',
-                boxShadow: '0 4px 10px rgba(142, 84, 233, 0.2)'
-              }
-            }}
-          >
-            Share
-          </Button>
-        </Stack>
       </Container>
 
       {/* Blog Create Form Dialog for editing - unchanged functionality */}
@@ -734,4 +767,3 @@ export default function BlogDetailPage() {
     </Box>
   );
 }
-

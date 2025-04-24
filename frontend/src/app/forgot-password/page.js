@@ -188,7 +188,7 @@ export default function ForgotPasswordPage() {
     setMessage({ type: "", text: "" });
 
     try {
-      const response = await fetch("${process.env.NEXT_PUBLIC_BACKEND_URL}/otp/verify", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/otp/verify`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -250,7 +250,7 @@ export default function ForgotPasswordPage() {
     setMessage({ type: "", text: "" });
 
     try {
-      const response = await fetch("${process.env.NEXT_PUBLIC_BACKEND_URL}/otp/reset-password", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/otp/reset-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

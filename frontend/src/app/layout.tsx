@@ -6,6 +6,10 @@ import BanChecker from "@/components/BanChecker";
 import CollapsibleNavBar from "@/components/navigationBar";
 import { ThemeProvider } from "@/context/ThemeContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import NotificationInitializer from "@/components/NotificationInitializer";
+
+// Import React for useEffect
+import { useEffect } from "react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,6 +32,9 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Note: The NotificationInitializer component will handle the notification permissions
+  // since we can't use useEffect directly in this server component
+
   return (
     <html lang="en">
       <head>
@@ -46,9 +53,11 @@ export default function RootLayout({
         <BanChecker />
         <ThemeProvider>
           {/* <Navbar /> */}
+          {/* Add NotificationInitializer as a client component */}
+          <NotificationInitializer />
           <main className="pt-0">
             {/* pt-16 adds padding-top that matches navbar height */}
-{children}
+            {children}
           </main>
           <CollapsibleNavBar />
         </ThemeProvider>

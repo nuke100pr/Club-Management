@@ -35,8 +35,7 @@ import {
   Toolbar,
   Badge,
   CssBaseline,
-  ThemeProvider,
-  createTheme,
+  useTheme,
   alpha,
   styled,
   InputAdornment,
@@ -71,126 +70,10 @@ import { useParams } from "next/navigation";
 
 const API_URL = "http://localhost:5000/uploads";
 
-const theme = createTheme({
-  palette: {
-    mode: "light",
-    primary: {
-      main: "#6B46C1",
-      light: "#A78BFA",
-      dark: "#553C9A",
-      contrastText: "#FFFFFF",
-    },
-    secondary: {
-      main: "#10B981",
-      light: "#6EE7B7",
-      dark: "#047857",
-    },
-    background: {
-      default: "#F3F4F6",
-      paper: "#FFFFFF",
-    },
-    text: {
-      primary: "#1F2937",
-      secondary: "#6B7280",
-    },
-  },
-  typography: {
-    fontFamily: [
-      "Inter",
-      "-apple-system",
-      "BlinkMacSystemFont",
-      '"Segoe UI"',
-      "Roboto",
-      '"Helvetica Neue"',
-      "Arial",
-      "sans-serif",
-      '"Apple Color Emoji"',
-      '"Segoe UI Emoji"',
-      '"Segoe UI Symbol"',
-    ].join(","),
-    h6: {
-      fontWeight: 700,
-    },
-    subtitle2: {
-      fontWeight: 600,
-    },
-  },
-  components: {
-    MuiCssBaseline: {
-      styleOverrides: `
-        @keyframes pulse {
-          0% { transform: scale(1); }
-          50% { transform: scale(1.2); }
-          100% { transform: scale(1); }
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-      `,
-    },
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          textTransform: "none",
-          fontWeight: 600,
-          borderRadius: "12px",
-          padding: "10px 20px",
-          transition: "all 0.3s ease",
-          "&:hover": {
-            transform: "translateY(-2px)",
-            boxShadow: "0 4px 12px rgba(107, 70, 193, 0.2)",
-          },
-        },
-        contained: {
-          background: "linear-gradient(45deg, #6B46C1, #A78BFA)",
-          boxShadow: "0 2px 10px rgba(107, 70, 193, 0.3)",
-          "&:hover": {
-            background: "linear-gradient(45deg, #553C9A, #A78BFA)",
-          },
-        },
-      },
-    },
-    MuiPaper: {
-      styleOverrides: {
-        root: {
-          borderRadius: "16px",
-          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
-          transition: "box-shadow 0.3s ease",
-          "&:hover": {
-            boxShadow: "0 6px 25px rgba(0, 0, 0, 0.15)",
-          },
-        },
-      },
-    },
-    MuiAvatar: {
-      styleOverrides: {
-        root: {
-          width: 40,
-          height: 40,
-          background: "linear-gradient(45deg, #6B46C1, #A78BFA)",
-          color: "#FFFFFF",
-          fontWeight: 600,
-          boxShadow: "0 2px 8px rgba(107, 70, 193, 0.2)",
-        },
-      },
-    },
-    MuiListItem: {
-      styleOverrides: {
-        root: {
-          padding: "12px 16px",
-          transition: "background 0.3s ease",
-          "&:hover": {
-            backgroundColor: "rgba(107, 70, 193, 0.05)",
-          },
-        },
-      },
-    },
-  },
-});
-
 const PremiumAppBar = styled(AppBar)(({ theme }) => ({
-  background: "linear-gradient(90deg, #FFFFFF, #F3F4F6)",
+  background: theme.palette.mode === 'light' 
+    ? "linear-gradient(90deg, #FFFFFF, #F3F4F6)"
+    : theme.palette.background.paper,
   color: theme.palette.text.primary,
   borderBottom: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
   boxShadow: "0 2px 10px rgba(0, 0, 0, 0.05)",
@@ -225,17 +108,25 @@ const MessageBubble = styled(Paper)(({ theme, isUser }) => ({
   borderRadius: "18px",
   maxWidth: "75%",
   background: isUser
-    ? "linear-gradient(90deg, #6B46C1, #A78BFA)"
-    : "linear-gradient(90deg, #E5E7EB, #F3F4F6)",
+    ? theme.palette.mode === 'light'
+      ? "linear-gradient(90deg, #6B46C1, #A78BFA)"
+      : theme.palette.primary.dark
+    : theme.palette.mode === 'light'
+      ? "linear-gradient(90deg, #E5E7EB, #F3F4F6)"
+      : theme.palette.grey[800],
   color: isUser ? "#FFFFFF" : theme.palette.text.primary,
   wordBreak: "break-word",
   display: "inline-block",
   minWidth: "100px",
-  boxShadow: isUser ? "0 2px 10px rgba(107, 70, 193, 0.3)" : "0 1px 5px rgba(0, 0, 0, 0.1)",
+  boxShadow: isUser 
+    ? "0 2px 10px rgba(107, 70, 193, 0.3)" 
+    : "0 1px 5px rgba(0, 0, 0, 0.1)",
   transition: "transform 0.2s ease, box-shadow 0.2s ease",
   "&:hover": {
     transform: isUser ? "translateY(-2px)" : "none",
-    boxShadow: isUser ? "0 4px 15px rgba(107, 70, 193, 0.4)" : "0 2px 8px rgba(0, 0, 0, 0.15)",
+    boxShadow: isUser 
+      ? "0 4px 15px rgba(107, 70, 193, 0.4)" 
+      : "0 2px 8px rgba(0, 0, 0, 0.15)",
   },
 }));
 
@@ -263,6 +154,7 @@ const PollOption = styled(Box)(({ theme }) => ({
 }));
 
 export default function ChatApp() {
+  const theme = useTheme();
   const { forum_id } = useParams();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -277,7 +169,7 @@ export default function ChatApp() {
   const [expandedReplies, setExpandedReplies] = useState({});
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
   const [selectedMessageIndex, setSelectedMessageIndex] = useState(null);
-  const [forumName, setForumName] = useState("Loading..."); // Initial state
+  const [forumName, setForumName] = useState("Loading...");
   const [memberDialogOpen, setMemberDialogOpen] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
@@ -297,7 +189,6 @@ export default function ChatApp() {
   const socketRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  // Fetch forum name based on forum_id
   useEffect(() => {
     const fetchForumName = async () => {
       try {
@@ -307,7 +198,7 @@ export default function ChatApp() {
         setForumName(data.title);
       } catch (error) {
         console.error("Error fetching forum name:", error);
-        setForumName("Forum Names"); // Fallback
+        setForumName("Forum Names");
       }
     };
 
@@ -1036,7 +927,7 @@ export default function ChatApp() {
   };
 
   return (
-    <ThemeProvider theme={theme}>
+    <>
       <CssBaseline />
       <Box
         sx={{
@@ -1597,6 +1488,6 @@ export default function ChatApp() {
           </DialogActions>
         </Dialog>
       </Box>
-    </ThemeProvider>
+    </>
   );
 }

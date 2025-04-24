@@ -475,15 +475,15 @@ const ProjectsGrid = () => {
 
   return (
     <div 
-      className="px-20 py-15 min-h-screen"
+      className="px-4 sm:px-20 py-15 min-h-screen"
       style={{ backgroundColor: bgColor }}
     >
       <SearchAndFilter
         onSearchChange={handleSearchChange}
         onFilterChange={handleFilterChange}
       />
-      
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 mt-6">
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 mt-6 px-4 sm:px-0">      
         {filteredProjects.map(project => (
           <ProjectCard 
             key={project._id} 

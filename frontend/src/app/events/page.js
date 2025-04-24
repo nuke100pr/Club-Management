@@ -1,6 +1,6 @@
 "use client";
-import React, { useState, useContext, useEffect,useMemo } from 'react';
-import { fetchUserData ,hasPermission} from "@/utils/auth";
+import React, { useState, useContext, useEffect, useMemo } from "react";
+import { fetchUserData, hasPermission } from "@/utils/auth";
 import { useRouter } from "next/navigation";
 import {
   Box,
@@ -28,8 +28,8 @@ import {
   CircularProgress,
   Tooltip,
   useTheme,
-} from '@mui/material';
-import { styled } from '@mui/material/styles';
+} from "@mui/material";
+import { styled } from "@mui/material/styles";
 import {
   AccessTime,
   CalendarToday,
@@ -46,7 +46,7 @@ import {
   OpenInNew,
   CheckCircleOutline,
   Share,
-} from '@mui/icons-material';
+} from "@mui/icons-material";
 import EventsSearchBar from "../../components/events/EventsSearchBar";
 import EventForm from "../../components/events/EventForm";
 import UniversalShareMenu from "../../components/shared/UniversalShareMenu";
@@ -58,14 +58,14 @@ const StyledCard = styled(Card)(({ theme }) => ({
   borderRadius: 16,
   backgroundColor: theme.palette.background.paper,
   boxShadow: theme.shadows[2],
-  transition: 'all 0.3s ease',
-  overflow: 'hidden',
-  height: '100%',
-  display: 'flex',
-  flexDirection: 'column',
-  position: 'relative',
-  '&:hover': {
-    transform: 'translateY(-8px)',
+  transition: "all 0.3s ease",
+  overflow: "hidden",
+  height: "100%",
+  display: "flex",
+  flexDirection: "column",
+  position: "relative",
+  "&:hover": {
+    transform: "translateY(-8px)",
     boxShadow: theme.shadows[8],
   },
   borderTop: `3px solid ${theme.palette.primary.main}`,
@@ -73,55 +73,64 @@ const StyledCard = styled(Card)(({ theme }) => ({
 
 const EventChip = styled(Chip)(({ theme, eventtype }) => {
   const typeColors = {
-    'Session': theme.palette.success.main,
-    'Competition': theme.palette.error.main,
-    'Workshop': theme.palette.secondary.main,
-    'Meeting': theme.palette.info.main,
-    'Masterclass': theme.palette.secondary.main,
-    'Seminar': theme.palette.info.light,
-    'Summit': theme.palette.primary.dark
+    Session: theme.palette.success.main,
+    Competition: theme.palette.error.main,
+    Workshop: theme.palette.secondary.main,
+    Meeting: theme.palette.info.main,
+    Masterclass: theme.palette.secondary.main,
+    Seminar: theme.palette.info.light,
+    Summit: theme.palette.primary.dark,
   };
-  
+
   const color = typeColors[eventtype] || theme.palette.primary.main;
-  
+
   return {
-    backgroundColor: theme.palette.mode === 'dark' 
-      ? theme.palette.action.selected 
-      : `${color}15`,
+    backgroundColor:
+      theme.palette.mode === "dark"
+        ? theme.palette.action.selected
+        : `${color}15`,
     color: color,
     height: 28,
-    fontSize: '0.75rem',
+    fontSize: "0.75rem",
     borderRadius: 14,
     fontWeight: 500,
-    padding: '0 12px',
-    border: theme.palette.mode === 'dark' ? `1px solid ${color}` : 'none'
+    padding: "0 12px",
+    border: theme.palette.mode === "dark" ? `1px solid ${color}` : "none",
   };
 });
 
 const DurationChip = styled(Chip)(({ theme }) => ({
-  backgroundColor: theme.palette.mode === 'dark'
-    ? theme.palette.action.selected
-    : 'rgba(95, 150, 230, 0.15)',
+  backgroundColor:
+    theme.palette.mode === "dark"
+      ? theme.palette.action.selected
+      : "rgba(95, 150, 230, 0.15)",
   color: theme.palette.primary.main,
   height: 28,
-  fontSize: '0.75rem',
+  fontSize: "0.75rem",
   borderRadius: 14,
   fontWeight: 500,
-  padding: '0 12px',
-  border: theme.palette.mode === 'dark' ? `1px solid ${theme.palette.primary.main}` : 'none'
+  padding: "0 12px",
+  border:
+    theme.palette.mode === "dark"
+      ? `1px solid ${theme.palette.primary.main}`
+      : "none",
 }));
 
 const FollowingChip = styled(Chip)(({ theme }) => ({
-  backgroundColor: theme.palette.mode === 'dark'
-    ? theme.palette.action.selected
-    : 'rgba(95, 150, 230, 0.1)',
+  backgroundColor:
+    theme.palette.mode === "dark"
+      ? theme.palette.action.selected
+      : "rgba(95, 150, 230, 0.1)",
   color: theme.palette.primary.main,
   height: 28,
-  fontSize: '0.75rem',
+  fontSize: "0.75rem",
   borderRadius: 14,
   fontWeight: 500,
   marginLeft: 12,
-  border: theme.palette.mode === 'dark' ? `1px solid ${theme.palette.primary.main}` : 'none'
+  border:
+    theme.palette.mode === "dark"
+      ? `1px solid ${theme.palette.primary.main}`
+      : "none",
 }));
 
 const RegisterButton = styled(Button)(({ theme }) => ({
@@ -129,37 +138,38 @@ const RegisterButton = styled(Button)(({ theme }) => ({
   color: theme.palette.getContrastText(theme.palette.primary.main),
   fontWeight: 500,
   borderRadius: 20,
-  padding: '8px 24px',
+  padding: "8px 24px",
   boxShadow: theme.shadows[2],
-  transition: 'all 0.3s ease',
-  '&:hover': {
+  transition: "all 0.3s ease",
+  "&:hover": {
     background: `linear-gradient(to right, ${theme.palette.primary.dark}, ${theme.palette.secondary.dark})`,
     boxShadow: theme.shadows[4],
-    transform: 'translateY(-2px)',
+    transform: "translateY(-2px)",
   },
-  '&.Mui-disabled': {
+  "&.Mui-disabled": {
     background: theme.palette.action.disabledBackground,
-    color: theme.palette.action.disabled
-  }
+    color: theme.palette.action.disabled,
+  },
 }));
 
 const RegistrationsChip = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  backgroundColor: theme.palette.mode === 'dark'
-    ? theme.palette.action.selected
-    : 'rgba(95, 150, 230, 0.1)',
+  display: "flex",
+  alignItems: "center",
+  backgroundColor:
+    theme.palette.mode === "dark"
+      ? theme.palette.action.selected
+      : "rgba(95, 150, 230, 0.1)",
   color: theme.palette.text.secondary,
   borderRadius: 16,
-  padding: '4px 12px',
-  fontSize: '0.85rem'
+  padding: "4px 12px",
+  fontSize: "0.85rem",
 }));
 
 const ImageOverlayIcons = styled(Box)(({ theme }) => ({
-  position: 'absolute',
+  position: "absolute",
   top: 12,
   right: 12,
-  display: 'flex',
+  display: "flex",
   gap: 8,
   zIndex: 2,
 }));
@@ -187,7 +197,8 @@ export default function EventsPage() {
   const [userData, setUserData] = useState(null);
   const [user_id, setUserId] = useState(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-  const [userClubsWithEventPermission, setUserClubsWithEventPermission] = useState([]);
+  const [userClubsWithEventPermission, setUserClubsWithEventPermission] =
+    useState([]);
   const [hoveredCard, setHoveredCard] = useState(null);
   const [arrayPermissions, setArrayPermissions] = useState({});
   const [shareMenu, setShareMenu] = useState({
@@ -195,7 +206,7 @@ export default function EventsPage() {
     anchorEl: null,
     id: null,
     title: "",
-    contentType: "event"
+    contentType: "event",
   });
   const router = useRouter();
 
@@ -282,10 +293,10 @@ export default function EventsPage() {
   const hasEventPermission = (event) => {
     if (isSuperAdmin) return true;
     if (!userData) return false;
-    
+
     const clubId = event.club_id?._id || event.club_id;
     const boardId = event.board_id?._id || event.board_id;
-    
+
     return hasPermission("events", userData, boardId, clubId);
   };
 
@@ -389,25 +400,28 @@ export default function EventsPage() {
   };
   const handleShareClick = (event, eventId) => {
     event.stopPropagation();
-    const currentEvent = events.find(e => e._id === eventId);
+    const currentEvent = events.find((e) => e._id === eventId);
     setShareMenu({
       open: true,
       anchorEl: event.currentTarget,
       id: eventId,
       title: currentEvent.name,
-      contentType: "event"
+      contentType: "event",
     });
   };
-  
+
   const clearFilters = () => {
     setSelectedFilters({});
   };
 
   const handleDelete = async (eventId) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/events/${eventId}`, {
-        method: "DELETE",
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/events/${eventId}`,
+        {
+          method: "DELETE",
+        }
+      );
       if (!response.ok)
         throw new Error(`HTTP error! status: ${response.status}`);
 
@@ -429,7 +443,9 @@ export default function EventsPage() {
 
   const handleEdit = async (event) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/events/${event._id}`);
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/events/${event._id}`
+      );
       if (!response.ok)
         throw new Error(`HTTP error! status: ${response.status}`);
 
@@ -566,13 +582,13 @@ export default function EventsPage() {
       const matchesSearch = searchQuery
         ? event.name.toLowerCase().includes(searchQuery.toLowerCase())
         : true;
-  
+
       const hasActiveFilters = Object.values(selectedFilters).some(Boolean);
-  
+
       if (!hasActiveFilters) {
         return matchesSearch;
       }
-  
+
       const matchesRegisteredFilter = selectedFilters["My Registered Events"]
         ? event.registered
         : true;
@@ -582,7 +598,7 @@ export default function EventsPage() {
       const matchesBoardFilter = selectedFilters["My Boards"]
         ? event.isBoardFollowed
         : true;
-  
+
       return (
         matchesSearch &&
         matchesRegisteredFilter &&
@@ -634,13 +650,14 @@ export default function EventsPage() {
   }
 
   return (
-    <Box sx={{ 
-      padding: 4, 
-      backgroundColor: theme.palette.background.default,
-      minHeight: '100vh'
-    }}>
+    <Box
+      sx={{
+        padding: 4,
+        backgroundColor: theme.palette.background.default,
+        minHeight: "100vh",
+      }}
+    >
       <Container maxWidth="xl">
-        
         <EventsSearchBar
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
@@ -649,7 +666,7 @@ export default function EventsPage() {
           filters={filters}
           clearFilters={clearFilters}
         />
-        
+
         <Grid container spacing={4}>
           {filteredEvents.map((event) => (
             <Grid item xs={12} sm={6} md={4} lg={3} key={event._id}>
@@ -657,7 +674,7 @@ export default function EventsPage() {
                 onMouseEnter={() => setHoveredCard(event._id)}
                 onMouseLeave={() => setHoveredCard(null)}
               >
-                <Box sx={{ position: 'relative' }}>
+                <Box sx={{ position: "relative" }}>
                   {event.image && (
                     <CardMedia
                       component="img"
@@ -668,46 +685,54 @@ export default function EventsPage() {
                   )}
                   <ImageOverlayIcons>
                     {event.isClubFollowed || event.isBoardFollowed ? (
-                      <IconButton 
-                        size="small" 
-                        sx={{ 
-                          backgroundColor: theme.palette.background.paper, 
-                          '&:hover': { backgroundColor: theme.palette.background.paper } 
+                      <IconButton
+                        size="small"
+                        sx={{
+                          backgroundColor: theme.palette.background.paper,
+                          "&:hover": {
+                            backgroundColor: theme.palette.background.paper,
+                          },
                         }}
                       >
                         <Star style={{ color: theme.palette.warning.main }} />
                       </IconButton>
                     ) : (
-                      <IconButton 
-                        size="small" 
-                        sx={{ 
-                          backgroundColor: theme.palette.background.paper, 
-                          '&:hover': { backgroundColor: theme.palette.background.paper } 
+                      <IconButton
+                        size="small"
+                        sx={{
+                          backgroundColor: theme.palette.background.paper,
+                          "&:hover": {
+                            backgroundColor: theme.palette.background.paper,
+                          },
                         }}
                       >
                         <StarOutline color="action" />
                       </IconButton>
                     )}
                     {event.registered && (
-                      <IconButton 
-                        size="small" 
-                        sx={{ 
-                          backgroundColor: theme.palette.background.paper, 
-                          '&:hover': { backgroundColor: theme.palette.background.paper } 
+                      <IconButton
+                        size="small"
+                        sx={{
+                          backgroundColor: theme.palette.background.paper,
+                          "&:hover": {
+                            backgroundColor: theme.palette.background.paper,
+                          },
                         }}
                       >
-                        <CheckCircle style={{ color: theme.palette.success.main }} />
+                        <CheckCircle
+                          style={{ color: theme.palette.success.main }}
+                        />
                       </IconButton>
                     )}
                   </ImageOverlayIcons>
-                  
-                  {(arrayPermissions[event._id]) && (
+
+                  {arrayPermissions[event._id] && (
                     <Box
                       sx={{
-                        position: 'absolute',
+                        position: "absolute",
                         top: 8,
                         left: 8,
-                        display: 'flex',
+                        display: "flex",
                         gap: 1,
                       }}
                     >
@@ -719,12 +744,15 @@ export default function EventsPage() {
                         }}
                         sx={{
                           bgcolor: theme.palette.background.paper,
-                          '&:hover': { bgcolor: theme.palette.action.hover },
+                          "&:hover": { bgcolor: theme.palette.action.hover },
                           width: 32,
                           height: 32,
                         }}
                       >
-                        <Edit fontSize="small" sx={{ color: theme.palette.primary.main }} />
+                        <Edit
+                          fontSize="small"
+                          sx={{ color: theme.palette.primary.main }}
+                        />
                       </IconButton>
                       <IconButton
                         size="small"
@@ -734,56 +762,77 @@ export default function EventsPage() {
                         }}
                         sx={{
                           bgcolor: theme.palette.background.paper,
-                          '&:hover': { bgcolor: theme.palette.action.hover },
+                          "&:hover": { bgcolor: theme.palette.action.hover },
                           width: 32,
                           height: 32,
                         }}
                       >
-                        <Delete fontSize="small" sx={{ color: theme.palette.error.main }} />
+                        <Delete
+                          fontSize="small"
+                          sx={{ color: theme.palette.error.main }}
+                        />
                       </IconButton>
                     </Box>
                   )}
                 </Box>
-                
-                <CardContent sx={{ p: 3, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                    <Typography variant="h6" component="div" sx={{ fontWeight: 600 }}>
+
+                <CardContent
+                  sx={{
+                    p: 3,
+                    flexGrow: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      mb: 2,
+                    }}
+                  >
+                    <Typography
+                      variant="h6"
+                      component="div"
+                      sx={{ fontWeight: 600 }}
+                    >
                       {event.name}
                     </Typography>
-                    <Box sx={{ display: 'flex' }}>
-                      <IconButton 
-                        size="small" 
+                    <Box sx={{ display: "flex" }}>
+                      <IconButton
+                        size="small"
                         onClick={(e) => handleShareClick(e, event._id)}
                         sx={{
-                          color: 'primary.main',
+                          color: "primary.main",
                           mr: 1,
-                          '&:hover': {
-                            backgroundColor: theme.palette.action.selected
-                          }
+                          "&:hover": {
+                            backgroundColor: theme.palette.action.selected,
+                          },
                         }}
                       >
                         <Share fontSize="small" />
                       </IconButton>
-                      <IconButton 
-                        size="small" 
+                      <IconButton
+                        size="small"
                         onClick={(e) => {
                           e.stopPropagation();
                           router.push(`/current_event/${event._id}`);
                         }}
                         sx={{
-                          color: 'primary.main',
-                          '&:hover': {
-                            backgroundColor: theme.palette.action.selected
-                          }
+                          color: "primary.main",
+                          "&:hover": {
+                            backgroundColor: theme.palette.action.selected,
+                          },
                         }}
                       >
                         <OpenInNew fontSize="small" />
                       </IconButton>
                     </Box>
                   </Box>
-                  
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+
+                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                    <Box sx={{ display: "flex", alignItems: "center" }}>
                       {event.club_id ? (
                         <Avatar
                           src={event.club_id.image?.path || event.club_id.image}
@@ -793,13 +842,23 @@ export default function EventsPage() {
                       ) : event.board_id ? (
                         <Avatar
                           alt={event.board_id.name}
-                          sx={{ width: 28, height: 28, mr: 1.5, bgcolor: theme.palette.divider }}
+                          sx={{
+                            width: 28,
+                            height: 28,
+                            mr: 1.5,
+                            bgcolor: theme.palette.divider,
+                          }}
                         >
                           {event?.board_id?.name?.charAt(0)}
                         </Avatar>
                       ) : (
                         <Avatar
-                          sx={{ width: 28, height: 28, mr: 1.5, bgcolor: theme.palette.divider }}
+                          sx={{
+                            width: 28,
+                            height: 28,
+                            mr: 1.5,
+                            bgcolor: theme.palette.divider,
+                          }}
                         >
                           H
                         </Avatar>
@@ -808,58 +867,66 @@ export default function EventsPage() {
                         {event.club_id?.name || event.board_id?.name || "Host"}
                       </Typography>
                     </Box>
-                    <FollowingChip 
-                      label={event.isClubFollowed || event.isBoardFollowed ? "Following" : "Follow"}
+                    <FollowingChip
+                      label={
+                        event.isClubFollowed || event.isBoardFollowed
+                          ? "Following"
+                          : "Follow"
+                      }
                       size="small"
-                      variant={event.isClubFollowed || event.isBoardFollowed ? "filled" : "outlined"}
+                      variant={
+                        event.isClubFollowed || event.isBoardFollowed
+                          ? "filled"
+                          : "outlined"
+                      }
                     />
                   </Box>
-                  
-                  <Box sx={{ display: 'flex', gap: 1.5, mb: 2 }}>
-                    <EventChip 
-                      label={event.event_type_id || "Event"} 
+
+                  <Box sx={{ display: "flex", gap: 1.5, mb: 2 }}>
+                    <EventChip
+                      label={event.event_type_id || "Event"}
                       size="small"
                       eventtype={event.event_type_id || "Event"}
                     />
-                    <DurationChip 
+                    <DurationChip
                       icon={<AccessTime style={{ fontSize: 16 }} />}
                       label={`${event.duration} mins`}
                       size="small"
                     />
                   </Box>
-                  
+
                   <Divider sx={{ mb: 2 }} />
-                  
+
                   <Box sx={{ mb: 2 }}>
                     {event.description && (
                       <>
-                        <Typography 
-                          variant="body2" 
-                          color="text.secondary" 
-                          sx={{ 
-                            fontSize: '0.85rem', 
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{
+                            fontSize: "0.85rem",
                             lineHeight: 1.5,
-                            display: '-webkit-box',
-                            WebkitLineClamp: '3',
-                            WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            maxHeight: '4rem'
+                            display: "-webkit-box",
+                            WebkitLineClamp: "3",
+                            WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            maxHeight: "4rem",
                           }}
                         >
                           {event.description}
                         </Typography>
-                        
+
                         {event.description.length > 120 && (
-                          <Button 
-                            variant="text" 
-                            size="small" 
-                            sx={{ 
-                              mt: 0.5, 
-                              p: 0, 
-                              textTransform: 'none', 
-                              fontSize: '0.8rem',
-                              color: 'primary.main'
+                          <Button
+                            variant="text"
+                            size="small"
+                            sx={{
+                              mt: 0.5,
+                              p: 0,
+                              textTransform: "none",
+                              fontSize: "0.8rem",
+                              color: "primary.main",
                             }}
                             onClick={(e) => {
                               e.stopPropagation();
@@ -872,34 +939,52 @@ export default function EventsPage() {
                       </>
                     )}
                   </Box>
-                  
-                  <Box sx={{ mt: 'auto' }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mr: 3 }}>
-                        <CalendarToday color="primary" sx={{ fontSize: 16, mr: 1 }} />
+
+                  <Box sx={{ mt: "auto" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", mr: 3 }}
+                      >
+                        <CalendarToday
+                          color="primary"
+                          sx={{ fontSize: 16, mr: 1 }}
+                        />
                         <Typography variant="body2" color="text.secondary">
                           {new Date(event.timestamp).toLocaleDateString()}
                         </Typography>
                       </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <AccessTime color="primary" sx={{ fontSize: 16, mr: 1 }} />
+                      <Box sx={{ display: "flex", alignItems: "center" }}>
+                        <AccessTime
+                          color="primary"
+                          sx={{ fontSize: 16, mr: 1 }}
+                        />
                         <Typography variant="body2" color="text.secondary">
                           {new Date(event.timestamp).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit'
+                            hour: "2-digit",
+                            minute: "2-digit",
                           })}
                         </Typography>
                       </Box>
                     </Box>
-                    
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                      <LocationOn color="primary" sx={{ fontSize: 16, mr: 1 }} />
+
+                    <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                      <LocationOn
+                        color="primary"
+                        sx={{ fontSize: 16, mr: 1 }}
+                      />
                       <Typography variant="body2" color="text.secondary">
                         {event.venue}
                       </Typography>
                     </Box>
-                    
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        mb: 3,
+                      }}
+                    >
                       <RegistrationsChip>
                         <People color="primary" sx={{ fontSize: 20, mr: 1 }} />
                         <Typography variant="body2">
@@ -908,8 +993,8 @@ export default function EventsPage() {
                       </RegistrationsChip>
                       {(isSuperAdmin || hasEventPermission(event)) && (
                         <Tooltip title="View registrations">
-                          <IconButton 
-                            size="small" 
+                          <IconButton
+                            size="small"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleViewRegistrations(event._id);
@@ -920,17 +1005,21 @@ export default function EventsPage() {
                         </Tooltip>
                       )}
                     </Box>
-                    
-                    <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                      <RegisterButton 
-                        variant="contained" 
+
+                    <Box sx={{ display: "flex", justifyContent: "center" }}>
+                      <RegisterButton
+                        variant="contained"
                         fullWidth
                         disabled={event.registered}
                         onClick={(e) => {
                           e.stopPropagation();
                           !event.registered && handleRegister(event);
                         }}
-                        startIcon={event.registered ? <CheckCircleOutline sx={{ fontSize: 16 }} /> : null}
+                        startIcon={
+                          event.registered ? (
+                            <CheckCircleOutline sx={{ fontSize: 16 }} />
+                          ) : null
+                        }
                       >
                         {event.registered ? "Registered" : "Register Now"}
                       </RegisterButton>
@@ -963,30 +1052,41 @@ export default function EventsPage() {
           <Add />
         </Fab>
 
-        <EventForm
+        <Dialog
           open={openDialog}
           onClose={() => {
             setOpenDialog(false);
             setEditFormData(null);
           }}
-          onSubmit={handleFormSubmit}
-          initialData={
-            editFormData || {
-              name: "",
-              venue: "",
-              timestamp: "",
-              duration: "",
-              description: "",
-              event_type_id: "Session",
-              club_id: "",
-              board_id: "",
-              image: null,
-            }
-          }
-          title={isEditing ? "Edit Event" : "Add New Event"}
-          submitButtonText={isEditing ? "Update Event" : "Create Event"}
-          eventTypes={["Session", "Competition", "Workshop", "Meeting", "Masterclass", "Seminar", "Summit"]}
-        />
+          maxWidth="md"
+          fullWidth
+        >
+          <Box sx={{ p: 3 }}>
+            <Typography variant="h5" sx={{ mb: 3 }}>
+              {isEditing ? "Edit Event" : "Add New Event"}
+            </Typography>
+            <EventForm
+              event={currentEvent}
+              onSubmit={handleFormSubmit}
+              onCancel={() => {
+                setOpenDialog(false);
+                setEditFormData(null);
+              }}
+              eventTypes={[
+                "Session",
+                "Competition",
+                "Workshop",
+                "Meeting",
+                "Masterclass",
+                "Seminar",
+                "Summit",
+              ]}
+              // Pass necessary props to EventForm
+              isSuperAdmin={isSuperAdmin}
+              clubs={userClubsWithEventPermission}
+            />
+          </Box>
+        </Dialog>
 
         <Dialog
           open={registrationsDialog.open}
@@ -1043,16 +1143,24 @@ export default function EventsPage() {
             )}
           </DialogContent>
         </Dialog>
-        
+
         <UniversalShareMenu
           anchorEl={shareMenu.anchorEl}
           open={shareMenu.open}
-          onClose={() => setShareMenu({ open: false, anchorEl: null, id: null, title: "", contentType: "event" })}
+          onClose={() =>
+            setShareMenu({
+              open: false,
+              anchorEl: null,
+              id: null,
+              title: "",
+              contentType: "event",
+            })
+          }
           id={shareMenu.id}
           title={shareMenu.title}
           contentType={shareMenu.contentType}
         />
-        
+
         <Snackbar
           open={notification.open}
           autoHideDuration={4000}
