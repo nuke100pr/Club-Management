@@ -391,7 +391,7 @@ export default function BLOGS() {
 
         // If you must use the async version of hasPermission
         const hasAccess = await hasPermission(
-          "opportunities",
+          "blogs",
           userData,
           boardId,
           clubId

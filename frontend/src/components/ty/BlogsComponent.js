@@ -172,6 +172,53 @@ export default function BlogCardGrid({
   const [selectedBoardId, setSelectedBoardId] = useState(propBoardId);
   const [cardsReady, setCardsReady] = useState(false);
   const router = useRouter();
+  const [arrayPermissions, setArrayPermissions] = useState({});
+  const [canCreateBlogs, setCanCreateBlogs] = useState(false);
+
+  useEffect(() => {
+    // Check permissions for all resources
+    if (userData && filteredBlogs.length > 0) {
+      filteredBlogs.forEach(async (element) => {
+        const clubId = element.club_id?._id || element.club_id;
+        const boardId = element.board_id?._id || element.board_id;
+
+        // If you must use the async version of hasPermission
+        const hasAccess = await hasPermission(
+          "blogs",
+          userData,
+          boardId,
+          clubId
+        );
+
+        setArrayPermissions((prev) => ({
+          ...prev,
+          [element._id]: hasAccess,
+        }));
+      });
+    }
+  }, [userData, filteredBlogs]);
+
+
+useEffect(() => {
+  async function checkBlogCreationPermission() {
+    if (isSuperAdmin) {
+      setCanCreateBlogs(true);
+      return;
+    }
+    if (!userData) {
+      setCanCreateBlogs(false);
+      return;
+    }
+    if (boardId) {
+      const hasBlogPermission = await hasPermission("blogs", userData, boardId, null);
+      setCanCreateBlogs(hasBlogPermission);
+      return;
+    }
+    setCanCreateBlogs(false);
+  }
+
+  checkBlogCreationPermission();
+}, [isSuperAdmin, userData, propBoardId]);
 
   // Fetch user data on mount
   useEffect(() => {
@@ -214,36 +261,6 @@ export default function BlogCardGrid({
     }
     loadUserData();
   }, [propBoardId]);
-
-  // Check if user has permission to edit/delete a blog
-  const hasBlogPermission = (blog) => {
-    if (isSuperAdmin) return true;
-
-    if (!userData) return false;
-    
-    const clubId = blog.club_id?._id || blog.club_id;
-    const boardId = blog.board_id?._id || blog.board_id;
-    
-    return hasPermission("blogs", userData,  boardId, clubId);
-
-  };
-
-  // Check if user can create blogs
-  const canCreateBlogs = () => {
-    if (isSuperAdmin) {
-      return true;
-    }
-    if (propBoardId) {
-      if (userBoardsWithBlogPermission.includes(propBoardId)) {
-        return true;
-      }
-      return isSuperAdmin;
-    }
-    return false;
-  };
-
-
-
 
   useEffect(() => {
     const fetchBlogs = async () => {
@@ -668,7 +685,7 @@ export default function BlogCardGrid({
                       alignItems="center"
                     >
                       <Box>
-                        {hasBlogPermission(blog) && (
+                        {arrayPermissions[blog._id] && (
                           <>
                             <IconButton
                               size="small"
@@ -711,7 +728,7 @@ export default function BlogCardGrid({
         </Typography>
       )}
 
-      {hasBlogPermission() && (
+      {canCreateBlogs && (
         <Fab
           color="primary"
           aria-label="add"

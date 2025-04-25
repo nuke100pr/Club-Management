@@ -19,7 +19,7 @@ import {
   import DeleteIcon from "@mui/icons-material/Delete";
   import AddIcon from "@mui/icons-material/Add";
   import CreateProjectDialog from "../../components/projects/CreateProjectDialog";
-  import { fetchUserData } from "@/utils/auth";
+  import { fetchUserData, hasPermission } from "@/utils/auth";
   
   // Add fade-in animation styles
   const fadeInAnimation = {
@@ -57,13 +57,56 @@ import {
     const [userClubsWithProjectPermission, setUserClubsWithProjectPermission] = useState([]);
     const [userBoardsWithProjectPermission, setUserBoardsWithProjectPermission] = useState([]);
   
+    const [arrayPermissions, setArrayPermissions] = useState({});
+    
+    const [canCreateProjects, setCanCreateProjects] = useState(false);
+
+    useEffect(() => {
+      async function checkProjectCreationPermission() {
+        if (isSuperAdmin) {
+          setCanCreateProjects(true);
+          return;
+        }
+        if (!userData) {
+          setCanCreateProjects(false);
+          return;
+        }
+        if (boardId) {
+          const hasProjectPermission = await hasPermission("projects", userData, null, clubId);
+          setCanCreateProjects(hasProjectPermission);
+          return;
+        }
+        setCanCreateProjects(false);
+      }
+    
+      checkProjectCreationPermission();
+    }, [isSuperAdmin, userData, boardId]);
+    useEffect(() => {
+      // Check permissions for all resources
+      if (userData && projects.length > 0) {
+        projects.forEach(async (project) => {
+          const clubId = project.club_id?._id || project.club_id;
+          const boardId = project.board_id?._id || project.board_id;
+          
+          // If you must use the async version of hasPermission
+          const hasAccess = await hasPermission("projects", userData, boardId, clubId);
+          
+          
+          setArrayPermissions(prev => ({
+            ...prev,
+            [project._id]: hasAccess
+          }));
+        });
+      }
+    }, [userData, projects]);
+
     // Fetch user data on mount
     useEffect(() => {
       async function loadUserData() {
         const result = await fetchUserData();
   
         if (result) {
-          setUserData(result.userData);
+          setUserData(result);
           setUserId(result.userId);
           setIsSuperAdmin(result.isSuperAdmin);
   
@@ -107,13 +150,6 @@ import {
       }
   
       return false;
-    };
-  
-    // Check if user can create projects
-    const canCreateProjects = () => {
-      return isSuperAdmin || 
-             userClubsWithProjectPermission.length > 0 || 
-             userBoardsWithProjectPermission.length > 0;
     };
   
     // Fetch projects from backend with improved loading behavior
@@ -417,7 +453,7 @@ import {
                       >
                         {project.status}
                       </Typography>
-                      {hasProjectPermission(project) && (
+                      {arrayPermissions[project._id] && (
                         <Box>
                           <IconButton
                             onClick={() => handleEdit(project)}
@@ -539,7 +575,7 @@ import {
         />
   
         {/* Floating Action Button for adding a new project */}
-        {canCreateProjects() && (
+        {canCreateProjects && (
           <Fab
             color="primary"
             aria-label="add project"

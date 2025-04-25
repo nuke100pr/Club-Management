@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchUserData } from "@/utils/auth";
+import { fetchUserData,hasPermission } from "@/utils/auth";
 import EventForm from "../events/EventForm";
 import {
   Grid,
@@ -86,6 +86,53 @@ export default function EventsPage({ boardId = null, searchQuery = "" }) {
   const [minimumLoadingTimeElapsed, setMinimumLoadingTimeElapsed] =
     useState(false);
   const router = useRouter();
+  const [arrayPermissions, setArrayPermissions] = useState({});
+  const [canCreateEvents, setCanCreateEvents] = useState(false);
+
+  useEffect(() => {
+    // Check permissions for all resources
+    if (userData && events.length > 0) {
+      events.forEach(async (element) => {
+        const clubId = element.club_id?._id || element.club_id;
+        const boardId = element.board_id?._id || element.board_id;
+
+        // If you must use the async version of hasPermission
+        const hasAccess = await hasPermission(
+          "events",
+          userData,
+          boardId,
+          clubId
+        );
+
+        setArrayPermissions((prev) => ({
+          ...prev,
+          [element._id]: hasAccess,
+        }));
+      });
+    }
+  }, [userData, events]);
+
+
+useEffect(() => {
+  async function checkEventCreationPermission() {
+    if (isSuperAdmin) {
+      setCanCreateEvents(true);
+      return;
+    }
+    if (!userData) {
+      setCanCreateEvents(false);
+      return;
+    }
+    if (boardId) {
+      const hasEventPermission = await hasPermission("events", userData, boardId, null);
+      setCanCreateEvents(hasEventPermission);
+      return;
+    }
+    setCanCreateEvents(false);
+  }
+
+  checkEventCreationPermission();
+}, [isSuperAdmin, userData, boardId]);
 
   useEffect(() => {
     async function loadUserData() {
@@ -216,14 +263,6 @@ export default function EventsPage({ boardId = null, searchQuery = "" }) {
       setLoading(false);
     }
   }, [events, minimumLoadingTimeElapsed, error]);
-
-  const canCreateEvents = () => {
-    return (
-      isSuperAdmin ||
-      userClubsWithEventPermission.length > 0 ||
-      userBoardsWithEventPermission.length > 0
-    );
-  };
 
   const hasEventPermission = (event) => {
     if (isSuperAdmin) return true;
@@ -818,7 +857,7 @@ export default function EventsPage({ boardId = null, searchQuery = "" }) {
                   <Skeleton variant="rectangular" height={36} width={60} />
                 ) : (
                   <Box>
-                    {hasEventPermission(event) && (
+                    {arrayPermissions[event._id] && (
                       <>
                         <Tooltip title="Edit">
                           <IconButton
@@ -893,7 +932,7 @@ export default function EventsPage({ boardId = null, searchQuery = "" }) {
       </Grid>
 
       {/* Add Event Button */}
-      {canCreateEvents() && (
+      {canCreateEvents && (
         <Fab
           color="primary"
           aria-label="add"

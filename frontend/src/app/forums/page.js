@@ -967,7 +967,7 @@ const ForumList = ({ boards: propBoards = {}, clubs: propClubs = {} }) => {
   
           // If you must use the async version of hasPermission
           const hasAccess = await hasPermission(
-            "opportunities",
+            "forums",
             userData,
             boardId,
             clubId

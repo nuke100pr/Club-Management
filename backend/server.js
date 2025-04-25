@@ -23,6 +23,8 @@ const nautiNotificationRoutes = require("./routes/nauti.notification.routes");
 const notificationQueueRoutes = require("./routes/notificationQueueRoutes");
 const userNotificationRoutes = require("./routes/userNotificationRoutes");
 
+const authMiddleware = require("./middleware/authMiddleware");
+
 const http = require("http");
 const socketio = require("socket.io");
 const path = require("path");
@@ -124,7 +126,7 @@ app.use("/api", postRoutes);
 app.use("/api/messages", messageRoutes);
 
 app.use("/forums2", forumRoutes2);
-app.use("/events", eventAndRsvpRoutes);
+app.use("/events",authMiddleware, eventAndRsvpRoutes);
 app.use("/projects", projectRoutes);
 app.use("/resources", resourceRoutes);
 app.use("/opportunities", opportunityRoutes);

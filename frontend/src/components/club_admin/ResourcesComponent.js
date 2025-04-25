@@ -18,7 +18,7 @@ import { Edit, Delete, Share, Visibility } from "@mui/icons-material";
 import AddIcon from "@mui/icons-material/Add";
 import { useTheme } from "@mui/material/styles";
 import { useEffect, useState } from "react";
-import { fetchUserData } from "@/utils/auth";
+import { fetchUserData,hasPermission } from "@/utils/auth";
 import CreateResourceDialog from "../../components/resources/CreateResourceDialog";
 
 // Add fade-in animation styles
@@ -63,6 +63,51 @@ export default function ResourcesPage({ clubId = null, searchQuery = "" }) {
 
   const [selectedClub, setSelectedClub] = useState(clubId);
 
+  const [arrayPermissions, setArrayPermissions] = useState({});
+  const [canCreateResources, setCanCreateResources] = useState(false);
+
+  useEffect(() => {
+    // Check permissions for all resources
+    if (userData && filteredResources.length > 0) {
+      filteredResources.forEach(async (resource) => {
+        const clubId = resource.club_id?._id || resource.club_id;
+        const boardId = resource.board_id?._id || resource.board_id;
+        
+        // If you must use the async version of hasPermission
+        const hasAccess = await hasPermission("resources", userData, boardId, clubId);
+        console.log(hasAccess)
+        console.log(userData)
+        
+        setArrayPermissions(prev => ({
+          ...prev,
+          [resource.id]: hasAccess
+        }));
+      });
+    }
+  }, [userData, filteredResources]);
+
+
+  useEffect(() => {
+    async function checkResourceCreationPermission() {
+      if (isSuperAdmin) {
+        setCanCreateResources(true);
+        return;
+      }
+      if (!userData) {
+        setCanCreateResources(false);
+        return;
+      }
+      if (boardId) {
+        const hasResourcePermission = await hasPermission("resources", userData, null, clubId);
+        setCanCreateResources(hasResourcePermission);
+        return;
+      }
+      setCanCreateResources(false);
+    }
+
+    checkResourceCreationPermission();
+  }, [isSuperAdmin, userData, boardId]);
+    
   useEffect(() => {
     async function loadUserData() {
       const result = await fetchUserData();
@@ -111,19 +156,6 @@ export default function ResourcesPage({ clubId = null, searchQuery = "" }) {
       }
     }
 
-    return false;
-  };
-
-  const canCreateResources = () => {
-    if (isSuperAdmin) {
-      return true;
-    }
-    if (clubId) {
-      if (userBoardsWithResourcePermission.includes(clubId)) {
-        return true;
-      }
-      return isSuperAdmin;
-    }
     return false;
   };
 
@@ -404,7 +436,7 @@ export default function ResourcesPage({ clubId = null, searchQuery = "" }) {
                   }}
                 >
                   {/* Edit/Delete buttons */}
-                  {hasResourcePermission(resource) && (
+                  {arrayPermissions[resource.id] && (
                     <Box
                       sx={{
                         position: "absolute",
@@ -575,7 +607,7 @@ export default function ResourcesPage({ clubId = null, searchQuery = "" }) {
         userId={userId}
       />
 
-      {canCreateResources() && (
+      {canCreateResources && (
         <Fab
           color="primary"
           aria-label="add"

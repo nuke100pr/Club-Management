@@ -7,9 +7,14 @@ const verifyToken = (req, res, next) => {
     // 1. Authorization header (Bearer token)
     // 2. Or from query parameter (/?token=xxx)
     // 3. Or from cookies (if you're using them)
+
+    console.log("hello");
+
     const token = req.headers.authorization?.split(' ')[1] || 
                  req.query.token || 
                  req.cookies.token;
+ 
+    
 
     if (!token) {
         return res.status(401).json({ 
@@ -20,6 +25,10 @@ const verifyToken = (req, res, next) => {
 
     try {
         // Verify token
+        if(!token)
+        {
+            next();
+        }
         const decoded = jwt.verify(token, JWT_SECRET);
         
         // Attach decoded user data to request

@@ -27,7 +27,7 @@ import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import LaunchIcon from "@mui/icons-material/Launch";
 import CreateResourceDialog from "../../components/opportunities/CreateResourceDialog";
-import { fetchUserData } from "@/utils/auth";
+import { fetchUserData,hasPermission } from "@/utils/auth";
 
 const getTagColor = (index, theme) => {
   const colors =
@@ -273,7 +273,7 @@ const OpportunityCard = ({
           }}
         />
 
-        {hasPermission && (
+        {arrayPermissions[opportunity._id] && (   
           <Box
             sx={{
               position: "absolute",
@@ -526,6 +526,55 @@ export default function OpportunitiesPage({
   const [showSkeleton, setShowSkeleton] = useState(true);
   const router = useRouter();
 
+  const [arrayPermissions, setArrayPermissions] = useState({});
+
+  const [canCreateOpportunities, setCanCreateOpportunities] = useState(false);
+
+  useEffect(() => {
+    async function checkOpportunityCreationPermission() {
+      if (isSuperAdmin) {
+        setCanCreateOpportunities(true);
+        return;
+      }
+      if (!userData) {
+        setCanCreateOpportunities(false);
+        return;
+      }
+      if (boardId) {
+        const hasOpportunityPermission = await hasPermission("opportunities", userData, null, clubId);
+        setCanCreateOpportunities(hasOpportunityPermission);
+        return;
+      }
+      setCanCreateOpportunities(false);
+    }
+
+    checkOpportunityCreationPermission();
+  }, [isSuperAdmin, userData, boardId]);
+
+  useEffect(() => {
+    // Check permissions for all resources
+    if (userData && filteredOpportunities.length > 0) {
+      filteredOpportunities.forEach(async (element) => {
+        const clubId = element.club_id?._id || element.club_id;
+        const boardId = element.board_id?._id || element.board_id;
+
+        // If you must use the async version of hasPermission
+        const hasAccess = await hasPermission(
+          "opportunities",
+          userData,
+          boardId,
+          clubId
+        );
+
+        setArrayPermissions((prev) => ({
+          ...prev,
+          [element._id]: hasAccess,
+        }));
+      });
+    }
+  }, [userData, filteredOpportunities]);
+
+  
   useEffect(() => {
     async function loadUserData() {
       const result = await fetchUserData();
@@ -583,20 +632,6 @@ export default function OpportunitiesPage({
     }
 
     return false;
-  };
-
-  const canCreateOpportunities = () => {
-    if (clubId) {
-      if (userBoardsWithOpportunityPermission.includes(clubId)) {
-        return true;
-      }
-      return isSuperAdmin;
-    }
-    return (
-      isSuperAdmin ||
-      userClubsWithOpportunityPermission.length > 0 ||
-      userBoardsWithOpportunityPermission.length > 0
-    );
   };
 
   const getDefaultClubOrBoardId = () => {
@@ -871,7 +906,7 @@ export default function OpportunitiesPage({
         creatorId={userId}
       />
 
-      {canCreateOpportunities() && (
+      {canCreateOpportunities && (
         <Fab
           color="primary"
           aria-label="add"

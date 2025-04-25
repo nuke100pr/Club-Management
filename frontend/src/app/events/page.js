@@ -617,7 +617,7 @@ export default function EventsPage() {
 
         // If you must use the async version of hasPermission
         const hasAccess = await hasPermission(
-          "opportunities",
+          "events",
           userData,
           boardId,
           clubId

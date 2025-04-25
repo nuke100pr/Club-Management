@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Card,
@@ -40,7 +40,7 @@ import PeopleIcon from "@mui/icons-material/People";
 import PersonRemoveIcon from "@mui/icons-material/PersonRemove";
 import SearchIcon from "@mui/icons-material/Search";
 import ForumCreateDialog from "../../components/forums/ForumCreateDialog";
-import { fetchUserData } from "@/utils/auth";
+import { fetchUserData,hasPermission } from "@/utils/auth";
 
 const ForumMembersDialog = ({ open, onClose, forumId }) => {
   const [members, setMembers] = useState([]);
@@ -712,6 +712,8 @@ const ForumCard = ({
   onEditForum,
   hasPermission,
 }) => {
+
+  console.log(hasPermission)
   const truncateText = (text, maxLength = 100) => {
     if (text.length <= maxLength) return text;
     return text.substr(0, maxLength) + "...";
@@ -788,7 +790,7 @@ const ForumCard = ({
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
             {forum.title}
           </Typography>
-          {hasPermission && (
+          {hasPermission[forum._id] && (
             <Box>
               <IconButton onClick={handleEdit} color="primary" size="small">
                 <EditIcon fontSize="small" />
@@ -954,7 +956,7 @@ const ForumList = ({ boardId }) => {
   const [loading, setLoading] = useState(true);
   const [minLoadingEndTime, setMinLoadingEndTime] = useState(0);
   const router = useRouter();
-
+  
   const sampleBoards = {
     "65f1a2b3c4d5e6f7890pqrst": "Arts & Culture",
     board2: "Technology & Innovation",
@@ -965,13 +967,80 @@ const ForumList = ({ boardId }) => {
     club2: "Coding Club",
     club3: "Music Club",
   };
+  const [arrayPermissions, setArrayPermissions] = useState({});
+  const [canCreateForums, setCanCreateForums] = useState(false);
+
+  // const filteredForums = forums.filter(
+  //   (forum) =>
+  //     forum.title.toLowerCase().includes(search.toLowerCase()) &&
+  //     (boardId ? forum.board_id === boardId : true) &&
+  //     (!selectedBoard || forum.board_id === selectedBoard) &&
+  //     (!selectedClub || forum.club_id === selectedClub) &&
+  //     (!privacyFilter || forum.public_or_private === privacyFilter)
+  // );
+
+  const filteredForums = useMemo(() => {
+    return forums.filter(
+      (forum) =>
+        forum.title.toLowerCase().includes(search.toLowerCase()) &&
+        (boardId ? forum.board_id === boardId : true) &&
+        (!selectedBoard || forum.board_id === selectedBoard) &&
+        (!selectedClub || forum.club_id === selectedClub) &&
+        (!privacyFilter || forum.public_or_private === privacyFilter)
+    );
+  }, [forums, search, boardId, selectedBoard, selectedClub, privacyFilter]);
+
+  useEffect(() => {
+    async function checkForumCreationPermission() {
+      if (isSuperAdmin) {
+        setCanCreateForums(true);
+        return;
+      }
+      if (!userData) {
+        setCanCreateForums(false);
+        return;
+      }
+      if (boardId) {
+        const hasForumPermission = await hasPermission("forums", userData, boardId, null);
+        setCanCreateForums(hasForumPermission);
+        return;
+      }
+      setCanCreateForums(false);
+    }
+  
+    checkForumCreationPermission();
+  }, [isSuperAdmin, userData, boardId]);
+
+  useEffect(() => {
+    // Check permissions for all resources
+    if (userData && filteredForums.length > 0) {
+      filteredForums.forEach(async (element) => {
+        const clubId = element.club_id?._id || element.club_id;
+        const boardId = element.board_id?._id || element.board_id;
+
+        // If you must use the async version of hasPermission
+        const hasAccess = await hasPermission(
+          "opportunities",
+          userData,
+          boardId,
+          clubId
+        );
+
+        setArrayPermissions((prev) => ({
+          ...prev,
+          [element._id]: hasAccess,
+        }));
+      });
+    }
+  }, [userData, filteredForums]);
+
 
   useEffect(() => {
     async function loadUserData() {
       const result = await fetchUserData();
 
       if (result) {
-        setUserData(result.userData);
+        setUserData(result);
         setUserId(result.userId);
         setIsSuperAdmin(result.isSuperAdmin);
 
@@ -1072,16 +1141,6 @@ const ForumList = ({ boardId }) => {
       }
     }
 
-    return false;
-  };
-
-  const canCreateForums = () => {
-    if (boardId) {
-      if (userBoardsWithForumPermission.includes(boardId)) {
-        return true;
-      }
-      return isSuperAdmin;
-    }
     return false;
   };
 
@@ -1226,14 +1285,7 @@ const ForumList = ({ boardId }) => {
     setEditForumData(null);
   };
 
-  const filteredForums = forums.filter(
-    (forum) =>
-      forum.title.toLowerCase().includes(search.toLowerCase()) &&
-      (boardId ? forum.board_id === boardId : true) &&
-      (!selectedBoard || forum.board_id === selectedBoard) &&
-      (!selectedClub || forum.club_id === selectedClub) &&
-      (!privacyFilter || forum.public_or_private === privacyFilter)
-  );
+
 
   const defaultContext = getDefaultClubOrBoardId();
 
@@ -1262,7 +1314,7 @@ const ForumList = ({ boardId }) => {
                   onViewMembers={handleViewMembers}
                   onDeleteForum={handleDeleteForum}
                   onEditForum={handleEditForum}
-                  hasPermission={hasForumPermission(forum)}
+                  hasPermission={arrayPermissions}
                 />
               </Grid>
             ))
@@ -1275,7 +1327,7 @@ const ForumList = ({ boardId }) => {
           )}
         </Grid>
 
-        {canCreateForums() && (
+        {canCreateForums && (
           <Fab
             color="primary"
             aria-label="add"

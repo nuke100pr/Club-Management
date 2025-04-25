@@ -22,7 +22,7 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import AddIcon from "@mui/icons-material/Add";
 import { useRouter } from "next/navigation";
 import BlogCreateForm from "@/components/blogs/BlogCreateForm";
-import { fetchUserData } from "@/utils/auth";
+import { fetchUserData, hasPermission } from "@/utils/auth";
 
 // Styled components (keep all existing styled components)
 const StyledCard = styled(Card)(({ theme, delay }) => ({
@@ -171,6 +171,52 @@ export default function BlogCardGrid({
   const [selectedClubId, setSelectedClubId] = useState(clubId);
   const [cardsReady, setCardsReady] = useState(false);
   const router = useRouter();
+  const [arrayPermissions, setArrayPermissions] = useState({});
+  const [canCreateBlogs, setCanCreateBlogs] = useState(false);
+
+  useEffect(() => {
+    // Check permissions for all resources
+    if (userData && filteredBlogs.length > 0) {
+      filteredBlogs.forEach(async (element) => {
+        const clubId = element.club_id?._id || element.club_id;
+        const boardId = element.board_id?._id || element.board_id;
+
+        // If you must use the async version of hasPermission
+        const hasAccess = await hasPermission(
+          "blogs",
+          userData,
+          boardId,
+          clubId
+        );
+
+        setArrayPermissions((prev) => ({
+          ...prev,
+          [element._id]: hasAccess,
+        }));
+      });
+    }
+  }, [userData, filteredBlogs]);
+
+  useEffect(() => {
+    async function checkBlogCreationPermission() {
+      if (isSuperAdmin) {
+        setCanCreateBlogs(true);
+        return;
+      }
+      if (!userData) {
+        setCanCreateBlogs(false);
+        return;
+      }
+      if (boardId) {
+        const hasBlogPermission = await hasPermission("blogs", userData, null, clubId);
+        setCanCreateBlogs(hasBlogPermission);
+        return;
+      }
+      setCanCreateBlogs(false);
+    }
+  
+    checkBlogCreationPermission();
+  }, [isSuperAdmin, userData, propBoardId]);
 
   // Fetch user data on mount
   useEffect(() => {
@@ -232,21 +278,6 @@ export default function BlogCardGrid({
 
     return false;
   };
-
-  // Check if user can create blogs
-  const canCreateBlogs = () => {
-    if (isSuperAdmin) {
-      return true;
-    }
-    if (clubId) {
-      if (userBoardsWithBlogPermission.includes(clubId)) {
-        return true;
-      }
-      return isSuperAdmin;
-    }
-    return false;
-  };
-
 
   useEffect(() => {
     const fetchBlogs = async () => {
@@ -671,7 +702,7 @@ export default function BlogCardGrid({
                       alignItems="center"
                     >
                       <Box>
-                        {hasBlogPermission(blog) && (
+                        {arrayPermissions[blog._id] && (
                           <>
                             <IconButton
                               size="small"
@@ -714,7 +745,7 @@ export default function BlogCardGrid({
         </Typography>
       )}
 
-      {canCreateBlogs() && (
+      {canCreateBlogs && (
         <Fab
           color="primary"
           aria-label="add"
