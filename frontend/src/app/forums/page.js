@@ -672,25 +672,8 @@ const ForumCard = ({
             mb: 2,
           }}
         >
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <VisibilityIcon
-              fontSize="small"
-              sx={{ mr: 0.5, color: "text.secondary" }}
-            />
-            <Typography variant="body2" color="text.secondary">
-              {forum.number_of_views.trim()}
-            </Typography>
-          </Box>
 
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <CommentIcon
-              fontSize="small"
-              sx={{ mr: 0.5, color: "text.secondary" }}
-            />
-            <Typography variant="body2" color="text.secondary">
-              {forum.number_of_replies.trim()}
-            </Typography>
-          </Box>
+
         </Box>
 
         <Box sx={{ display: "flex", gap: 1 }}>
@@ -801,7 +784,7 @@ const ForumList = ({ boards: propBoards = {}, clubs: propClubs = {} }) => {
       const result = await fetchUserData();
 
       if (result) {
-        setUserData(result.userData);
+        setUserData(result);
         setUserId(result.userId);
         setIsSuperAdmin(result.isSuperAdmin);
 

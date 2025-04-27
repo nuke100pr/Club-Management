@@ -287,7 +287,7 @@ useEffect(() => {
           .map((blog) => ({
             id: blog._id,
             title: blog.title || "Untitled Blog",
-            publisher: blog.publisher || "Unknown",
+            publisher: blog?.board_id?.name || blog?.club_id?.name || "Unknown",
             excerpt: blog.introduction || "",
             mainContent: blog.main_content || "",
             conclusion: blog.conclusion || "",
@@ -424,8 +424,23 @@ useEffect(() => {
     setOpenDialog(true);
   };
 
-  const handleView = (id) => {
-    router.push(`/current_blog/${id}`);
+
+  const handleView = async (blogId) => {
+    // Increment view count before navigation
+    try {
+      await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/blogs/blogs/${blogId}/views`,
+        {
+          method: "PATCH",
+        }
+      );
+    } catch (error) {
+      console.error("Failed to update view count:", error);
+      // Continue with navigation even if the view count update fails
+    }
+
+    // Navigate to the blog page
+    router.push(`/current_blog/${blogId}`);
   };
 
   const handleFormSubmit = async (formData) => {

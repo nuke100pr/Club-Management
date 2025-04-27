@@ -973,12 +973,11 @@ const ForumList = ({ clubId }) => {
     return forums.filter(
       (forum) =>
         forum.title.toLowerCase().includes(search.toLowerCase()) &&
-        (boardId ? forum.board_id === boardId : true) &&
-        (!selectedBoard || forum.board_id === selectedBoard) &&
+        (clubId ? forum.club_id === clubId : true) &&
         (!selectedClub || forum.club_id === selectedClub) &&
         (!privacyFilter || forum.public_or_private === privacyFilter)
     );
-  }, [forums, search, boardId, selectedBoard, selectedClub, privacyFilter]);
+  }, [forums, search, clubId,  selectedClub, privacyFilter]);
 
   useEffect(() => {
     async function checkForumCreationPermission() {
@@ -999,7 +998,7 @@ const ForumList = ({ clubId }) => {
     }
   
     checkForumCreationPermission();
-  }, [isSuperAdmin, userData, boardId]);
+  }, [isSuperAdmin, userData, clubId]);
 
   useEffect(() => {
     // Check permissions for all resources

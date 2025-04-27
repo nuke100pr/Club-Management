@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import {useRouter} from "next/navigation"
 import {
   Box,
   Button,
@@ -37,6 +38,7 @@ import {
   ViewWeek,
   Today,
   Search as SearchIcon,
+  Launch
 } from "@mui/icons-material";
 
 // Custom styled components using theme
@@ -96,8 +98,8 @@ const ViewButton = styled(Button)(({ active, theme }) => ({
   borderRadius: 8,
   background: active ? alpha(theme.palette.primary.main, 0.1) : "transparent",
   "&:hover": {
-    background: active 
-      ? alpha(theme.palette.primary.main, 0.15) 
+    background: active
+      ? alpha(theme.palette.primary.main, 0.15)
       : alpha(theme.palette.primary.main, 0.05),
   },
   padding: "6px 12px",
@@ -105,8 +107,8 @@ const ViewButton = styled(Button)(({ active, theme }) => ({
   marginLeft: 8,
   textTransform: "none",
   fontWeight: 500,
-  border: active 
-    ? `1px solid ${alpha(theme.palette.primary.main, 0.3)}` 
+  border: active
+    ? `1px solid ${alpha(theme.palette.primary.main, 0.3)}`
     : `1px solid ${theme.palette.divider}`,
 }));
 
@@ -117,7 +119,7 @@ const DayCell = styled(Paper)(({ selected, isToday, theme }) => ({
   overflow: "hidden",
   borderRadius: 8,
   background: theme.palette.background.paper,
-  border: isToday 
+  border: isToday
     ? `2px solid ${theme.palette.primary.main}`
     : selected
     ? `1px solid ${alpha(theme.palette.primary.main, 0.5)}`
@@ -165,7 +167,13 @@ const SearchField = styled(TextField)(({ theme }) => ({
 
 const EventModal = ({ open, onClose, selectedDate, events }) => {
   const theme = useTheme();
+  const router = useRouter();
   const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
+
+  const handleGoToEvent = (eventId) => {
+    router.push(`/current_event/${eventId}`);
+    onClose();
+  };
 
   return (
     <Dialog
@@ -183,39 +191,46 @@ const EventModal = ({ open, onClose, selectedDate, events }) => {
         },
       }}
     >
-      <DialogTitle sx={{ 
-        p: 0, 
-        position: "relative",
-        overflow: "hidden",
-      }}>
-        <Box sx={{ 
-          background: theme.palette.background.paper,
-          p: 2,
-          color: theme.palette.text.primary,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          borderBottom: `1px solid ${theme.palette.divider}`,
-        }}>
+      <DialogTitle
+        sx={{
+          p: 0,
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        <Box
+          sx={{
+            background: theme.palette.background.paper,
+            p: 2,
+            color: theme.palette.text.primary,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            borderBottom: `1px solid ${theme.palette.divider}`,
+          }}
+        >
           <Typography variant="h6" fontWeight={600}>
             {selectedDate?.month} {selectedDate?.day}, {selectedDate?.year}
           </Typography>
-          <IconButton 
-            edge="end" 
-            onClick={onClose} 
+          <IconButton
+            edge="end"
+            onClick={onClose}
             aria-label="close"
-            sx={{ 
+            sx={{
               color: theme.palette.text.secondary,
               "&:hover": {
                 background: alpha(theme.palette.primary.main, 0.1),
-              }
+              },
             }}
           >
             <Close />
           </IconButton>
         </Box>
       </DialogTitle>
-      <DialogContent dividers sx={{ p: 2, background: theme.palette.background.default }}>
+      <DialogContent
+        dividers
+        sx={{ p: 2, background: theme.palette.background.default }}
+      >
         {events.length > 0 ? (
           <Stack spacing={2}>
             {events.map((event) => (
@@ -229,43 +244,74 @@ const EventModal = ({ open, onClose, selectedDate, events }) => {
                   borderLeft: `3px solid ${theme.palette.primary.main}`,
                   transition: "all 0.2s ease",
                   "&:hover": {
-                    boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.1)}`,
-                  }
+                    boxShadow: `0 4px 12px ${alpha(
+                      theme.palette.primary.main,
+                      0.1
+                    )}`,
+                  },
                 }}
               >
-                <Typography variant="subtitle1" fontWeight={600} color={theme.palette.text.primary}>
+                <Typography
+                  variant="subtitle1"
+                  fontWeight={600}
+                  color={theme.palette.text.primary}
+                >
                   {event.name}
                 </Typography>
                 <Stack spacing={1.5} mt={1.5}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <AccessTime 
-                      fontSize="small" 
+                    <AccessTime
+                      fontSize="small"
                       sx={{ color: theme.palette.primary.main }}
                     />
-                    <Typography variant="body2" color={theme.palette.text.secondary}>
-                      {new Date(event.timestamp).toLocaleTimeString([], { 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
-                      })} - Duration: {event.duration}
+                    <Typography
+                      variant="body2"
+                      color={theme.palette.text.secondary}
+                    >
+                      {new Date(event.timestamp).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}{" "}
+                      - Duration: {event.duration}
                     </Typography>
                   </Box>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <LocationOn 
-                      fontSize="small" 
+                    <LocationOn
+                      fontSize="small"
                       sx={{ color: theme.palette.primary.main }}
                     />
-                    <Typography variant="body2" color={theme.palette.text.secondary}>
+                    <Typography
+                      variant="body2"
+                      color={theme.palette.text.secondary}
+                    >
                       {event.venue}
                     </Typography>
                   </Box>
                   <Divider sx={{ my: 1 }} />
-                  <Typography 
-                    variant="body2" 
+                  <Typography
+                    variant="body2"
                     color={theme.palette.text.secondary}
                     sx={{ mt: 1, lineHeight: 1.6 }}
                   >
                     {event.description}
                   </Typography>
+
+                  {/* Go to Event Button */}
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    startIcon={<Launch />}
+                    onClick={() => handleGoToEvent(event._id)}
+                    sx={{
+                      mt: 2,
+                      alignSelf: "flex-end",
+                      borderRadius: 1.5,
+                      textTransform: "none",
+                      fontWeight: 500,
+                    }}
+                  >
+                    Go to Event Page
+                  </Button>
                 </Stack>
               </Paper>
             ))}
@@ -278,7 +324,13 @@ const EventModal = ({ open, onClose, selectedDate, events }) => {
           </Box>
         )}
       </DialogContent>
-      <DialogActions sx={{ p: 2, background: theme.palette.background.paper, justifyContent: "center" }}>
+      <DialogActions
+        sx={{
+          p: 2,
+          background: theme.palette.background.paper,
+          justifyContent: "center",
+        }}
+      >
         <GradientButton onClick={onClose} sx={{ px: 4 }}>
           Close
         </GradientButton>
@@ -292,7 +344,7 @@ const CalendarView = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -310,13 +362,15 @@ const CalendarView = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const isSmall = useMediaQuery(theme.breakpoints.down("sm"));
-  
+
   // Today's date for highlighting
   const today = new Date();
   const isToday = (day) => {
-    return day === today.getDate() && 
-           currentMonth === today.getMonth() && 
-           currentYear === today.getFullYear();
+    return (
+      day === today.getDate() &&
+      currentMonth === today.getMonth() &&
+      currentYear === today.getFullYear()
+    );
   };
 
   // Fetch events from API
@@ -324,9 +378,11 @@ const CalendarView = () => {
     const fetchEvents = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/events`);
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/events`
+        );
         const result = await response.json();
-        
+
         if (result.success) {
           setEvents(result.data);
         } else {
@@ -411,14 +467,17 @@ const CalendarView = () => {
 
   // Transform API events to a format we can use with our calendar
   const transformEvents = (events) => {
-    return events.map(event => {
+    return events.map((event) => {
       const date = new Date(event.timestamp);
       return {
         ...event,
         day: date.getDate(),
         month: date.getMonth(),
         year: date.getFullYear(),
-        time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        time: date.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
       };
     });
   };
@@ -518,9 +577,9 @@ const CalendarView = () => {
   // Get upcoming events
   const getUpcomingEvents = () => {
     const today = new Date();
-    
+
     return filteredEvents
-      .filter(event => {
+      .filter((event) => {
         const eventDate = new Date(event.timestamp);
         return eventDate >= today;
       })
@@ -592,7 +651,11 @@ const CalendarView = () => {
                 variant={isSmall ? "caption" : "body2"}
                 fontWeight={500}
                 mb={1}
-                color={isToday(day) ? theme.palette.primary.main : theme.palette.text.primary}
+                color={
+                  isToday(day)
+                    ? theme.palette.primary.main
+                    : theme.palette.text.primary
+                }
                 sx={{
                   display: "inline-block",
                   width: 24,
@@ -600,8 +663,8 @@ const CalendarView = () => {
                   textAlign: "center",
                   lineHeight: "24px",
                   borderRadius: "50%",
-                  background: isToday(day) 
-                    ? alpha(theme.palette.primary.main, 0.1) 
+                  background: isToday(day)
+                    ? alpha(theme.palette.primary.main, 0.1)
                     : "transparent",
                 }}
               >
@@ -621,14 +684,14 @@ const CalendarView = () => {
                   ))}
                 {getEventsForDay(day).length >
                   (isSmall ? 1 : isMobile ? 2 : 3) && (
-                  <Typography 
-                    variant="caption" 
+                  <Typography
+                    variant="caption"
                     color={theme.palette.text.secondary}
-                    sx={{ 
-                      display: "inline-block", 
-                      background: alpha(theme.palette.primary.main, 0.05), 
-                      px: 1, 
-                      py: 0.5, 
+                    sx={{
+                      display: "inline-block",
+                      background: alpha(theme.palette.primary.main, 0.05),
+                      px: 1,
+                      py: 0.5,
                       borderRadius: 1,
                       fontSize: "0.65rem",
                     }}
@@ -669,13 +732,17 @@ const CalendarView = () => {
               borderRadius: 2,
               overflow: "hidden",
               background: theme.palette.background.paper,
-              border: index === 0 
-                ? `2px solid ${theme.palette.primary.main}`
-                : `1px solid ${theme.palette.divider}`,
+              border:
+                index === 0
+                  ? `2px solid ${theme.palette.primary.main}`
+                  : `1px solid ${theme.palette.divider}`,
               transition: "transform 0.2s ease, box-shadow 0.2s ease",
               "&:hover": {
                 transform: "translateY(-3px)",
-                boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.1)}`,
+                boxShadow: `0 4px 12px ${alpha(
+                  theme.palette.primary.main,
+                  0.1
+                )}`,
               },
             }}
             onClick={() => {
@@ -687,10 +754,18 @@ const CalendarView = () => {
               setIsModalOpen(true);
             }}
           >
-            <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
-              <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <Typography 
-                  variant="caption" 
+            <Box
+              sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}
+            >
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                }}
+              >
+                <Typography
+                  variant="caption"
                   color={theme.palette.text.secondary}
                   fontWeight={500}
                 >
@@ -700,13 +775,13 @@ const CalendarView = () => {
                   variant="h6"
                   fontWeight={600}
                   color={
-                    dayInfo.day === today.getDate() && 
-                    dayInfo.month === today.getMonth() && 
-                    dayInfo.year === today.getFullYear() 
-                      ? theme.palette.primary.main 
-                      : dayInfo.isCurrentMonth 
-                        ? theme.palette.text.primary 
-                        : theme.palette.text.secondary
+                    dayInfo.day === today.getDate() &&
+                    dayInfo.month === today.getMonth() &&
+                    dayInfo.year === today.getFullYear()
+                      ? theme.palette.primary.main
+                      : dayInfo.isCurrentMonth
+                      ? theme.palette.text.primary
+                      : theme.palette.text.secondary
                   }
                   sx={{
                     mt: 0.5,
@@ -716,12 +791,12 @@ const CalendarView = () => {
                     width: 32,
                     height: 32,
                     borderRadius: "50%",
-                    background: 
-                      dayInfo.day === today.getDate() && 
-                      dayInfo.month === today.getMonth() && 
-                      dayInfo.year === today.getFullYear() 
-                        ? alpha(theme.palette.primary.main, 0.1) 
-                        : "transparent"
+                    background:
+                      dayInfo.day === today.getDate() &&
+                      dayInfo.month === today.getMonth() &&
+                      dayInfo.year === today.getFullYear()
+                        ? alpha(theme.palette.primary.main, 0.1)
+                        : "transparent",
                   }}
                 >
                   {dayInfo.day}
@@ -733,37 +808,41 @@ const CalendarView = () => {
               {getEventsForDay(dayInfo.day, dayInfo.month, dayInfo.year)
                 .slice(0, 3)
                 .map((event) => (
-                <Box
-                  key={event._id}
-                  sx={{
-                    p: 1,
-                    fontSize: "0.75rem",
-                    borderRadius: 2,
-                    background: alpha(theme.palette.primary.main, 0.05),
-                    color: theme.palette.primary.main,
-                    borderLeft: `3px solid ${theme.palette.primary.main}`,
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    fontWeight: 500,
-                  }}
-                >
-                  {event.name}
-                </Box>
-              ))}
-              {getEventsForDay(dayInfo.day, dayInfo.month, dayInfo.year).length > 3 && (
-                <Typography 
-                  variant="caption" 
+                  <Box
+                    key={event._id}
+                    sx={{
+                      p: 1,
+                      fontSize: "0.75rem",
+                      borderRadius: 2,
+                      background: alpha(theme.palette.primary.main, 0.05),
+                      color: theme.palette.primary.main,
+                      borderLeft: `3px solid ${theme.palette.primary.main}`,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      fontWeight: 500,
+                    }}
+                  >
+                    {event.name}
+                  </Box>
+                ))}
+              {getEventsForDay(dayInfo.day, dayInfo.month, dayInfo.year)
+                .length > 3 && (
+                <Typography
+                  variant="caption"
                   color={theme.palette.text.secondary}
-                  sx={{ 
-                    textAlign: "center", 
-                    display: "block", 
-                    background: alpha(theme.palette.primary.main, 0.05), 
-                    p: 0.5, 
-                    borderRadius: 1 
+                  sx={{
+                    textAlign: "center",
+                    display: "block",
+                    background: alpha(theme.palette.primary.main, 0.05),
+                    p: 0.5,
+                    borderRadius: 1,
                   }}
                 >
-                  + {getEventsForDay(dayInfo.day, dayInfo.month, dayInfo.year).length - 3} more
+                  +{" "}
+                  {getEventsForDay(dayInfo.day, dayInfo.month, dayInfo.year)
+                    .length - 3}{" "}
+                  more
                 </Typography>
               )}
             </Stack>
@@ -788,9 +867,9 @@ const CalendarView = () => {
             boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.05)}`,
           }}
         >
-          <Typography 
-            variant="h5" 
-            sx={{ 
+          <Typography
+            variant="h5"
+            sx={{
               fontWeight: 600,
               color: theme.palette.text.primary,
               mb: 1,
@@ -799,7 +878,8 @@ const CalendarView = () => {
             {months[currentMonth]} {selectedDay}, {currentYear}
           </Typography>
           <Typography variant="body2" color={theme.palette.text.secondary}>
-            {dayEvents.length} {dayEvents.length === 1 ? "event" : "events"} scheduled
+            {dayEvents.length} {dayEvents.length === 1 ? "event" : "events"}{" "}
+            scheduled
           </Typography>
         </Paper>
 
@@ -817,16 +897,29 @@ const CalendarView = () => {
                   borderLeft: `4px solid ${theme.palette.primary.main}`,
                   transition: "all 0.2s ease",
                   "&:hover": {
-                    boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.1)}`,
-                  }
+                    boxShadow: `0 4px 12px ${alpha(
+                      theme.palette.primary.main,
+                      0.1
+                    )}`,
+                  },
                 }}
               >
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <Typography variant="h6" fontWeight={600} color={theme.palette.text.primary}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                  }}
+                >
+                  <Typography
+                    variant="h6"
+                    fontWeight={600}
+                    color={theme.palette.text.primary}
+                  >
                     {event.name}
                   </Typography>
-                  <Chip 
-                    label={event.event_type_id} 
+                  <Chip
+                    label={event.event_type_id}
                     size="small"
                     sx={{
                       borderRadius: 6,
@@ -841,26 +934,32 @@ const CalendarView = () => {
                 </Box>
                 <Stack spacing={1.5} mt={2}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <AccessTime 
-                      fontSize="small" 
+                    <AccessTime
+                      fontSize="small"
                       sx={{ color: theme.palette.primary.main }}
                     />
-                    <Typography variant="body2" color={theme.palette.text.secondary}>
+                    <Typography
+                      variant="body2"
+                      color={theme.palette.text.secondary}
+                    >
                       {event.time} - Duration: {event.duration}
                     </Typography>
                   </Box>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <LocationOn 
-                      fontSize="small" 
+                    <LocationOn
+                      fontSize="small"
                       sx={{ color: theme.palette.primary.main }}
                     />
-                    <Typography variant="body2" color={theme.palette.text.secondary}>
+                    <Typography
+                      variant="body2"
+                      color={theme.palette.text.secondary}
+                    >
                       {event.venue}
                     </Typography>
                   </Box>
                   <Divider sx={{ my: 1 }} />
-                  <Typography 
-                    variant="body2" 
+                  <Typography
+                    variant="body2"
                     color={theme.palette.text.secondary}
                     sx={{ mt: 1, lineHeight: 1.6 }}
                   >
@@ -875,7 +974,11 @@ const CalendarView = () => {
             <Typography color={theme.palette.text.secondary} variant="h6">
               No events scheduled for this day
             </Typography>
-            <Typography color={theme.palette.text.secondary} variant="body2" sx={{ mt: 1 }}>
+            <Typography
+              color={theme.palette.text.secondary}
+              variant="body2"
+              sx={{ mt: 1 }}
+            >
               Select a different day or create a new event
             </Typography>
           </Box>
@@ -895,13 +998,24 @@ const CalendarView = () => {
         border: `1px solid ${theme.palette.divider}`,
       }}
     >
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-        <Typography variant="h6" fontWeight={600} color={theme.palette.text.primary}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+        }}
+      >
+        <Typography
+          variant="h6"
+          fontWeight={600}
+          color={theme.palette.text.primary}
+        >
           Filters
         </Typography>
-        <Button 
-          variant="text" 
-          color="primary" 
+        <Button
+          variant="text"
+          color="primary"
           onClick={handleResetFilters}
           sx={{ textTransform: "none", color: theme.palette.primary.main }}
         >
@@ -911,81 +1025,102 @@ const CalendarView = () => {
       <Grid container spacing={3}>
         <Grid item xs={12} md={4}>
           <FormControl fullWidth>
-            <Typography variant="body2" fontWeight={500} color={theme.palette.text.secondary} gutterBottom>
+            <Typography
+              variant="body2"
+              fontWeight={500}
+              color={theme.palette.text.secondary}
+              gutterBottom
+            >
               Club
             </Typography>
             <RadioGroup
               value={selectedClub || ""}
-              onChange={(e) => setSelectedClub(e.target.value !== "" ? e.target.value : null)}
+              onChange={(e) =>
+                setSelectedClub(e.target.value !== "" ? e.target.value : null)
+              }
             >
-              <FormControlLabel 
-                value="IEEE" 
-                control={<Radio color="primary" />} 
-                label="IEEE" 
+              <FormControlLabel
+                value="IEEE"
+                control={<Radio color="primary" />}
+                label="IEEE"
               />
-              <FormControlLabel 
-                value="ACM" 
-                control={<Radio color="primary" />} 
-                label="ACM" 
+              <FormControlLabel
+                value="ACM"
+                control={<Radio color="primary" />}
+                label="ACM"
               />
-              <FormControlLabel 
-                value="GDSC" 
-                control={<Radio color="primary" />} 
-                label="GDSC" 
+              <FormControlLabel
+                value="GDSC"
+                control={<Radio color="primary" />}
+                label="GDSC"
               />
             </RadioGroup>
           </FormControl>
         </Grid>
         <Grid item xs={12} md={4}>
           <FormControl fullWidth>
-            <Typography variant="body2" fontWeight={500} color={theme.palette.text.secondary} gutterBottom>
+            <Typography
+              variant="body2"
+              fontWeight={500}
+              color={theme.palette.text.secondary}
+              gutterBottom
+            >
               Board
             </Typography>
             <RadioGroup
               value={selectedBoard || ""}
-              onChange={(e) => setSelectedBoard(e.target.value !== "" ? e.target.value : null)}
+              onChange={(e) =>
+                setSelectedBoard(e.target.value !== "" ? e.target.value : null)
+              }
             >
-              <FormControlLabel 
-                value="PR" 
-                control={<Radio color="primary" />} 
-                label="PR Board" 
+              <FormControlLabel
+                value="PR"
+                control={<Radio color="primary" />}
+                label="PR Board"
               />
-              <FormControlLabel 
-                value="Technical" 
-                control={<Radio color="primary" />} 
-                label="Technical Board" 
+              <FormControlLabel
+                value="Technical"
+                control={<Radio color="primary" />}
+                label="Technical Board"
               />
-              <FormControlLabel 
-                value="HR" 
-                control={<Radio color="primary" />} 
-                label="HR Board" 
+              <FormControlLabel
+                value="HR"
+                control={<Radio color="primary" />}
+                label="HR Board"
               />
             </RadioGroup>
           </FormControl>
         </Grid>
         <Grid item xs={12} md={4}>
           <FormControl fullWidth>
-            <Typography variant="body2" fontWeight={500} color={theme.palette.text.secondary} gutterBottom>
+            <Typography
+              variant="body2"
+              fontWeight={500}
+              color={theme.palette.text.secondary}
+              gutterBottom
+            >
               Event Type
             </Typography>
             <RadioGroup
               value={eventType || ""}
-              onChange={(e) => setEventType(e.target.value !== "" ? e.target.value : null)}
+              onChange={(e) =>
+                setEventType(e.target.value !== "" ? e.target.value : null)
+              }
             >
-              <FormControlLabel 
-                value="Workshop" 
-                control={<Radio color="primary" />} 
-                label="Workshop" 
+              <FormControlLabel
+                value="Workshop"
+                control={<Radio color="primary" />}
+                label="Workshop"
               />
-              <FormControlLabel 
-                value="Meeting" 
-                control={<Radio color="primary" />} 
-                label="Meeting" 
+              <FormControlLabel
+                value="Meeting"
+                control={<Radio color="primary" />}
+                label="Meeting"
               />
-              <FormControlLabel 
-                value="Competition" 
-                control={<Radio color="primary" />} 
-                label="Competition" 
+              <FormControlLabel
+                value="Competition"
+                control={<Radio color="primary" />}
+                label="Competition"
               />
             </RadioGroup>
           </FormControl>
@@ -995,18 +1130,28 @@ const CalendarView = () => {
   );
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 }, background: theme.palette.background.default, minHeight: "100vh" }}>
+    <Box
+      sx={{
+        p: { xs: 2, md: 3 },
+        background: theme.palette.background.default,
+        minHeight: "100vh",
+      }}
+    >
       <StyledHeader>
         <Box>
           <Typography variant="h5" fontWeight={600}>
             Event Calendar
           </Typography>
-          <Typography variant="body2" color={theme.palette.text.secondary} sx={{ mt: 0.5 }}>
+          <Typography
+            variant="body2"
+            color={theme.palette.text.secondary}
+            sx={{ mt: 0.5 }}
+          >
             {getViewTitle()}
           </Typography>
         </Box>
         <Box sx={{ display: "flex", alignItems: "center" }}>
-          <Box sx={{ display: { xs: 'none', md: 'flex' }}}>
+          <Box sx={{ display: { xs: "none", md: "flex" } }}>
             <ViewButton
               active={currentView === "month"}
               onClick={() => handleViewChange("month")}
@@ -1041,8 +1186,15 @@ const CalendarView = () => {
       <Grid container spacing={3}>
         <Grid item xs={12} lg={currentView === "day" ? 8 : 9}>
           <Box sx={{ mb: 3 }}>
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-              <Box sx={{ display: { xs: 'flex', md: 'none' }, mb: 2 }}>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                mb: 2,
+              }}
+            >
+              <Box sx={{ display: { xs: "flex", md: "none" }, mb: 2 }}>
                 <ViewButton
                   active={currentView === "month"}
                   onClick={() => handleViewChange("month")}
@@ -1073,143 +1225,183 @@ const CalendarView = () => {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   InputProps={{
-                    startAdornment: <SearchIcon sx={{ mr: 1, color: theme.palette.primary.main }} />,
+                    startAdornment: (
+                      <SearchIcon
+                        sx={{ mr: 1, color: theme.palette.primary.main }}
+                      />
+                    ),
                   }}
                   size="small"
-                  />
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    onClick={handleFilterToggle}
-                    startIcon={<FilterList />}
-                    sx={{
-                      borderRadius: 2,
-                      whiteSpace: "nowrap",
-                      display: { xs: "none", md: "flex" },
-                      borderColor: alpha(theme.palette.primary.main, 0.3),
-                      color: theme.palette.primary.main,
-                      "&:hover": {
-                        borderColor: theme.palette.primary.main,
-                        background: alpha(theme.palette.primary.main, 0.05),
-                      }
-                    }}
-                  >
-                    Filters
-                  </Button>
-                  <IconButton 
-                    onClick={handleFilterToggle}
-                    sx={{ 
-                      display: { xs: "flex", md: "none" },
-                      background: alpha(theme.palette.primary.main, 0.1),
-                      color: theme.palette.primary.main,
-                      "&:hover": {
-                        background: alpha(theme.palette.primary.main, 0.2),
-                      }
-                    }}
-                  >
-                    <FilterList />
-                  </IconButton>
-                </Box>
+                />
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  onClick={handleFilterToggle}
+                  startIcon={<FilterList />}
+                  sx={{
+                    borderRadius: 2,
+                    whiteSpace: "nowrap",
+                    display: { xs: "none", md: "flex" },
+                    borderColor: alpha(theme.palette.primary.main, 0.3),
+                    color: theme.palette.primary.main,
+                    "&:hover": {
+                      borderColor: theme.palette.primary.main,
+                      background: alpha(theme.palette.primary.main, 0.05),
+                    },
+                  }}
+                >
+                  Filters
+                </Button>
+                <IconButton
+                  onClick={handleFilterToggle}
+                  sx={{
+                    display: { xs: "flex", md: "none" },
+                    background: alpha(theme.palette.primary.main, 0.1),
+                    color: theme.palette.primary.main,
+                    "&:hover": {
+                      background: alpha(theme.palette.primary.main, 0.2),
+                    },
+                  }}
+                >
+                  <FilterList />
+                </IconButton>
               </Box>
-  
-              {filterOpen && renderFilterPanel()}
-  
-              {currentView === "month" && renderMonthView()}
-              {currentView === "week" && renderWeekView()}
-              {currentView === "day" && renderDayView()}
             </Box>
-          </Grid>
-  
-          <Grid item xs={12} lg={currentView === "day" ? 4 : 3}>
-            <StyledCard>
-              <Box
-                sx={{
-                  p: 3,
-                  background: theme.palette.background.paper,
-                  color: theme.palette.text.primary,
-                  borderRadius: "12px 12px 0 0",
-                  borderBottom: `1px solid ${theme.palette.divider}`,
-                }}
+
+            {filterOpen && renderFilterPanel()}
+
+            {currentView === "month" && renderMonthView()}
+            {currentView === "week" && renderWeekView()}
+            {currentView === "day" && renderDayView()}
+          </Box>
+        </Grid>
+
+        <Grid item xs={12} lg={currentView === "day" ? 4 : 3}>
+          <StyledCard>
+            <Box
+              sx={{
+                p: 3,
+                background: theme.palette.background.paper,
+                color: theme.palette.text.primary,
+                borderRadius: "12px 12px 0 0",
+                borderBottom: `1px solid ${theme.palette.divider}`,
+              }}
+            >
+              <Typography variant="h6" fontWeight={600}>
+                Upcoming Events
+              </Typography>
+              <Typography
+                variant="body2"
+                color={theme.palette.text.secondary}
+                sx={{ mt: 0.5 }}
               >
-                <Typography variant="h6" fontWeight={600}>
-                  Upcoming Events
-                </Typography>
-                <Typography variant="body2" color={theme.palette.text.secondary} sx={{ mt: 0.5 }}>
-                  Next 5 events on your calendar
-                </Typography>
-              </Box>
-              <CardContent sx={{ p: 0 }}>
-                {getUpcomingEvents().length > 0 ? (
-                  <Stack divider={<Divider sx={{ borderColor: theme.palette.divider }} />}>
-                    {getUpcomingEvents().map((event) => (
-                      <Box 
-                        key={event._id} 
-                        sx={{ 
-                          p: 2,
-                          transition: "all 0.2s ease",
-                          "&:hover": {
-                            background: alpha(theme.palette.primary.main, 0.03),
-                          }
+                Next 5 events on your calendar
+              </Typography>
+            </Box>
+            <CardContent sx={{ p: 0 }}>
+              {getUpcomingEvents().length > 0 ? (
+                <Stack
+                  divider={
+                    <Divider sx={{ borderColor: theme.palette.divider }} />
+                  }
+                >
+                  {getUpcomingEvents().map((event) => (
+                    <Box
+                      key={event._id}
+                      sx={{
+                        p: 2,
+                        transition: "all 0.2s ease",
+                        "&:hover": {
+                          background: alpha(theme.palette.primary.main, 0.03),
+                        },
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
                         }}
                       >
-                        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                          <Typography variant="subtitle2" fontWeight={600} color={theme.palette.text.primary}>
-                            {event.name}
-                          </Typography>
-                          <Chip
-                            label={event.event_type_id}
-                            size="small"
-                            sx={{ 
-                              height: 20, 
-                              fontSize: "0.6rem",
-                              fontWeight: 500,
-                              background: alpha(theme.palette.primary.main, 0.1),
-                              color: theme.palette.primary.main,
-                            }}
-                          />
-                        </Box>
-                        <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
-                          <CalendarMonth 
-                            fontSize="small" 
-                            sx={{ color: theme.palette.primary.main, mr: 1, fontSize: 16 }}
-                          />
-                          <Typography variant="caption" color={theme.palette.text.secondary}>
-                            {months[event.month]} {event.day}, {event.year}
-                          </Typography>
-                          <Box sx={{ mx: 1, color: theme.palette.divider }}>•</Box>
-                          <AccessTime 
-                            fontSize="small" 
-                            sx={{ color: theme.palette.primary.main, mr: 1, fontSize: 16 }}
-                          />
-                          <Typography variant="caption" color={theme.palette.text.secondary}>
-                            {event.time}
-                          </Typography>
-                        </Box>
+                        <Typography
+                          variant="subtitle2"
+                          fontWeight={600}
+                          color={theme.palette.text.primary}
+                        >
+                          {event.name}
+                        </Typography>
+                        <Chip
+                          label={event.event_type_id}
+                          size="small"
+                          sx={{
+                            height: 20,
+                            fontSize: "0.6rem",
+                            fontWeight: 500,
+                            background: alpha(theme.palette.primary.main, 0.1),
+                            color: theme.palette.primary.main,
+                          }}
+                        />
                       </Box>
-                    ))}
-                  </Stack>
-                ) : (
-                  <Box sx={{ p: 3, textAlign: "center" }}>
-                    <Typography color={theme.palette.text.secondary}>
-                      No upcoming events
-                    </Typography>
-                  </Box>
-                )}
-              </CardContent>
-            </StyledCard>
-          </Grid>
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", mt: 1 }}
+                      >
+                        <CalendarMonth
+                          fontSize="small"
+                          sx={{
+                            color: theme.palette.primary.main,
+                            mr: 1,
+                            fontSize: 16,
+                          }}
+                        />
+                        <Typography
+                          variant="caption"
+                          color={theme.palette.text.secondary}
+                        >
+                          {months[event.month]} {event.day}, {event.year}
+                        </Typography>
+                        <Box sx={{ mx: 1, color: theme.palette.divider }}>
+                          •
+                        </Box>
+                        <AccessTime
+                          fontSize="small"
+                          sx={{
+                            color: theme.palette.primary.main,
+                            mr: 1,
+                            fontSize: 16,
+                          }}
+                        />
+                        <Typography
+                          variant="caption"
+                          color={theme.palette.text.secondary}
+                        >
+                          {event.time}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  ))}
+                </Stack>
+              ) : (
+                <Box sx={{ p: 3, textAlign: "center" }}>
+                  <Typography color={theme.palette.text.secondary}>
+                    No upcoming events
+                  </Typography>
+                </Box>
+              )}
+            </CardContent>
+          </StyledCard>
         </Grid>
-  
-        {isModalOpen && (
-          <EventModal
-            open={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-            selectedDate={selectedDate}
-            events={getEventsForDay(selectedDay)}
-          />
-        )}
-      </Box>
-    );
-  };
-  
-  export default CalendarView;
+      </Grid>
+
+      {isModalOpen && (
+        <EventModal
+          open={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          selectedDate={selectedDate}
+          events={getEventsForDay(selectedDay)}
+        />
+      )}
+    </Box>
+  );
+};
+
+export default CalendarView;

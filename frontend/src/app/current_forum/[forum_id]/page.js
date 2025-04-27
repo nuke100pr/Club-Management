@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
+import { fetchUserData, hasPermission } from "@/utils/auth";
 import {
   Container,
   TextField,
@@ -71,9 +72,10 @@ import { useParams } from "next/navigation";
 const API_URL = "http://localhost:5000/uploads";
 
 const PremiumAppBar = styled(AppBar)(({ theme }) => ({
-  background: theme.palette.mode === 'light' 
-    ? "linear-gradient(90deg, #FFFFFF, #F3F4F6)"
-    : theme.palette.background.paper,
+  background:
+    theme.palette.mode === "light"
+      ? "linear-gradient(90deg, #FFFFFF, #F3F4F6)"
+      : theme.palette.background.paper,
   color: theme.palette.text.primary,
   borderBottom: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
   boxShadow: "0 2px 10px rgba(0, 0, 0, 0.05)",
@@ -108,24 +110,24 @@ const MessageBubble = styled(Paper)(({ theme, isUser }) => ({
   borderRadius: "18px",
   maxWidth: "75%",
   background: isUser
-    ? theme.palette.mode === 'light'
+    ? theme.palette.mode === "light"
       ? "linear-gradient(90deg, #6B46C1, #A78BFA)"
       : theme.palette.primary.dark
-    : theme.palette.mode === 'light'
-      ? "linear-gradient(90deg, #E5E7EB, #F3F4F6)"
-      : theme.palette.grey[800],
+    : theme.palette.mode === "light"
+    ? "linear-gradient(90deg, #E5E7EB, #F3F4F6)"
+    : theme.palette.grey[800],
   color: isUser ? "#FFFFFF" : theme.palette.text.primary,
   wordBreak: "break-word",
   display: "inline-block",
   minWidth: "100px",
-  boxShadow: isUser 
-    ? "0 2px 10px rgba(107, 70, 193, 0.3)" 
+  boxShadow: isUser
+    ? "0 2px 10px rgba(107, 70, 193, 0.3)"
     : "0 1px 5px rgba(0, 0, 0, 0.1)",
   transition: "transform 0.2s ease, box-shadow 0.2s ease",
   "&:hover": {
     transform: isUser ? "translateY(-2px)" : "none",
-    boxShadow: isUser 
-      ? "0 4px 15px rgba(107, 70, 193, 0.4)" 
+    boxShadow: isUser
+      ? "0 4px 15px rgba(107, 70, 193, 0.4)"
       : "0 2px 8px rgba(0, 0, 0, 0.15)",
   },
 }));
@@ -174,6 +176,10 @@ export default function ChatApp() {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
 
+  const [userData, setUserData] = useState(null);
+  const [user_id, setUserId] = useState(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
   const [membersList] = useState([
     { id: 1, name: "John Doe", avatar: "J", role: "Admin", online: true },
     { id: 2, name: "Jane Smith", avatar: "J", role: "Member", online: true },
@@ -181,6 +187,18 @@ export default function ChatApp() {
     { id: 4, name: "Sara Wilson", avatar: "S", role: "Member", online: true },
   ]);
 
+  useEffect(() => {
+    async function loadUserData() {
+      const result = await fetchUserData();
+
+      if (result) {
+        setUserData(result);
+        setUserId(result.userId);
+        setIsSuperAdmin(result.isSuperAdmin);
+      }
+    }
+    loadUserData();
+  }, []);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const recordingIntervalRef = useRef(null);
@@ -192,13 +210,16 @@ export default function ChatApp() {
   useEffect(() => {
     const fetchForumName = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/forums/${forum_id}`);
+        const response = await fetch(
+          `http://localhost:5000/forums2/forums/${forum_id}`
+        );
         if (!response.ok) throw new Error("Failed to fetch forum name");
         const data = await response.json();
-        setForumName(data.title);
+        console.log(data);
+        setForumName(data.data.title);
       } catch (error) {
         console.error("Error fetching forum name:", error);
-        setForumName("Forum Names");
+        setForumName("d");
       }
     };
 
@@ -309,7 +330,7 @@ export default function ChatApp() {
 
     const formData = new FormData();
     formData.append("forum_id", forum_id);
-    formData.append("user_id", "67d824cfe5cfbbf1ee400416");
+    formData.append("user_id", user_id);
     formData.append("text", input);
     if (replyingTo) formData.append("parent_id", replyingTo);
     if (file) formData.append("file", file);
@@ -408,7 +429,7 @@ export default function ChatApp() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            userId: "67d824cfe5cfbbf1ee400416",
+            userId: user_id,
             optionIndex,
             voteType: "single",
           }),
@@ -430,7 +451,7 @@ export default function ChatApp() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            userId: "67d824cfe5cfbbf1ee400416",
+            userId: user_id,
           }),
         }
       );
@@ -683,8 +704,7 @@ export default function ChatApp() {
                     : 0;
                 const isSelected = userVotes.some(
                   (vote) =>
-                    vote.userId === "67d824cfe5cfbbf1ee400416" &&
-                    vote.optionIndex === optIndex
+                    vote.userId === user_id && vote.optionIndex === optIndex
                 );
 
                 return (
@@ -731,8 +751,7 @@ export default function ChatApp() {
                     : 0;
                 const isSelected = userVotes.some(
                   (vote) =>
-                    vote.userId === "67d824cfe5cfbbf1ee400416" &&
-                    vote.optionIndex === optIndex
+                    vote.userId === user_id && vote.optionIndex === optIndex
                 );
 
                 return (
@@ -866,7 +885,7 @@ export default function ChatApp() {
 
     const pollData = {
       forum_id: forum_id,
-      user_id: "67d824cfe5cfbbf1ee400416",
+      user_id: user_id,
       type: "poll",
       text: pollQuestion,
       poll: {
@@ -986,28 +1005,40 @@ export default function ChatApp() {
                   >
                     <ListItemAvatar sx={{ minWidth: 56 }}>
                       <Avatar sx={{ width: 40, height: 40 }}>
-                        {msg.username
-                          ? msg.username[0]
+                        {msg.user_id?.name
+                          ? msg.user_id?.name[0]
                           : index % 2 === 0
                           ? "U"
                           : "A"}
                       </Avatar>
                     </ListItemAvatar>
                     <Box sx={{ flexGrow: 1 }}>
-                      <Box sx={{ display: "flex", alignItems: "center", mb: 0.5 }}>
-                        <Typography variant="subtitle2" fontWeight="600">
-                          {msg.username || "Unknown User"}
-                        </Typography>
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", mb: 0.5 }}
+                      >
+                        <Box>
+                          <Typography
+                            variant="subtitle2"
+                            fontWeight="600"
+                            sx={{ color: "#7c4dff" }}
+                          >
+                            {msg?.user_id?.name || "Unknown User"}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {msg?.user_id?.email_id || "No Email"}
+                          </Typography>
+                        </Box>
+
                         <Typography
                           variant="caption"
                           color="text.secondary"
-                          sx={{ ml: 1 }}
+                          sx={{ ml: 2 }}
                         >
                           {formatTimestamp(msg.created_at)}
                         </Typography>
                       </Box>
 
-                      <MessageBubble isUser={msg.user_id === "67d824cfe5cfbbf1ee400416"}>
+                      <MessageBubble isUser={msg.user_id === user_id}>
                         {msg.text}
                       </MessageBubble>
 
@@ -1027,7 +1058,11 @@ export default function ChatApp() {
                           <Button
                             size="small"
                             startIcon={
-                              expandedReplies[msg._id] ? <ExpandLess /> : <ExpandMore />
+                              expandedReplies[msg._id] ? (
+                                <ExpandLess />
+                              ) : (
+                                <ExpandMore />
+                              )
                             }
                             onClick={() => toggleReplies(msg._id)}
                             sx={{
@@ -1051,8 +1086,8 @@ export default function ChatApp() {
                                 >
                                   <ListItemAvatar sx={{ minWidth: 48 }}>
                                     <Avatar sx={{ width: 36, height: 36 }}>
-                                      {reply.username
-                                        ? reply.username[0]
+                                      {reply.user_id?.name
+                                        ? reply.user_id?.name[0]
                                         : (index + replyIndex + 1) % 2 === 0
                                         ? "U"
                                         : "A"}
@@ -1066,9 +1101,23 @@ export default function ChatApp() {
                                         mb: 0.5,
                                       }}
                                     >
-                                      <Typography variant="subtitle2" fontWeight="600">
-                                        {reply.username || "Unknown User"}
-                                      </Typography>
+                                      <Box>
+                                        <Typography
+                                          variant="subtitle2"
+                                          fontWeight="600"
+                                          sx={{ color: "#7c4dff" }}
+                                        >
+                                          {reply.user_id?.name ||
+                                            "Unknowndvav User"}
+                                        </Typography>
+                                        <Typography
+                                          variant="caption"
+                                          color="text.secondary"
+                                        >
+                                          {reply?.user_id?.email_id ||
+                                            "No Email"}
+                                        </Typography>
+                                      </Box>
                                       <Typography
                                         variant="caption"
                                         color="text.secondary"
@@ -1079,7 +1128,7 @@ export default function ChatApp() {
                                     </Box>
 
                                     <MessageBubble
-                                      isUser={reply.user_id === "67d824cfe5cfbbf1ee400416"}
+                                      isUser={reply.user_id === user_id}
                                     >
                                       {reply.text}
                                     </MessageBubble>
@@ -1161,8 +1210,17 @@ export default function ChatApp() {
                 borderRadius: 2,
               }}
             >
-              <Box sx={{ display: "flex", alignItems: "center", overflow: "hidden" }}>
-                <ReplyOutlined fontSize="small" sx={{ mr: 1, color: "text.secondary" }} />
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  overflow: "hidden",
+                }}
+              >
+                <ReplyOutlined
+                  fontSize="small"
+                  sx={{ mr: 1, color: "text.secondary" }}
+                />
                 <Typography variant="body2" noWrap>
                   Replying to: {getReplyingToMessage().text}
                 </Typography>
@@ -1428,7 +1486,9 @@ export default function ChatApp() {
                 <TextField
                   fullWidth
                   value={option}
-                  onChange={(e) => handlePollOptionChange(index, e.target.value)}
+                  onChange={(e) =>
+                    handlePollOptionChange(index, e.target.value)
+                  }
                   disabled={isSending}
                   size="small"
                 />

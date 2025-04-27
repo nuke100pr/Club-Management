@@ -49,7 +49,7 @@ const ResourceCards = () => {
   const [userData, setUserData] = useState(null);
   const [userId, setUserId] = useState(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-  
+
   const [arrayPermissions, setArrayPermissions] = useState({});
 
   const [userClubsWithResourcePermission, setUserClubsWithResourcePermission] =
@@ -63,25 +63,28 @@ const ResourceCards = () => {
   const [shareMenuAnchor, setShareMenuAnchor] = useState(null);
   const [currentSharedResource, setCurrentSharedResource] = useState(null);
 
-
   useEffect(() => {
     // Check permissions for all resources
     if (userData && filteredResources.length > 0) {
       filteredResources.forEach(async (resource) => {
         const clubId = resource.club_id?._id || resource.club_id;
         const boardId = resource.board_id?._id || resource.board_id;
-        
+
         // If you must use the async version of hasPermission
-        const hasAccess = await hasPermission("resources", userData, boardId, clubId);
-        
-        setArrayPermissions(prev => ({
+        const hasAccess = await hasPermission(
+          "resources",
+          userData,
+          boardId,
+          clubId
+        );
+
+        setArrayPermissions((prev) => ({
           ...prev,
-          [resource.id]: hasAccess
+          [resource.id]: hasAccess,
         }));
       });
     }
   }, [userData, filteredResources]);
-
 
   useEffect(() => {
     async function loadUserData() {
@@ -119,6 +122,7 @@ const ResourceCards = () => {
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/users/${userId}/details`
       );
       const result = await response.json();
+
       if (result.success && result.data) {
         return result.data.name || "Unknown User";
       }
@@ -182,6 +186,7 @@ const ResourceCards = () => {
             board_id: resource.board_id || null,
           }));
           setAllResources(formattedResources);
+          console.log(result.data);
         }
       } catch (error) {
         console.error("Error fetching resources:", error);
@@ -518,7 +523,9 @@ const ResourceCards = () => {
                     sx={{ color: theme.palette.text.secondary }}
                   >
                     By:{" "}
-                    {userNames[resource.publishedBy] || resource.publishedBy}
+                    {`${resource.board_id?.name} Board` ||
+                      `${resource.club_id?.name} Club` ||
+                      "Unknown"}
                   </Typography>
                   <Typography
                     variant="caption"

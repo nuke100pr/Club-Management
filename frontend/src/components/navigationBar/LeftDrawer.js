@@ -1,6 +1,6 @@
 // LeftDrawer.jsx
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Drawer,
@@ -29,39 +29,86 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
-
-// Sidebar navigation items
-const sidebarItems = [
-  { label: "Events", path: "/events", icon: <EventIcon /> },
-  { label: "Projects", path: "/projects", icon: <WorkIcon /> },
-  {
-    label: "Opportunities",
-    path: "/opportunities",
-    icon: <BusinessCenterIcon />,
-  },
-  { label: "Calendar", path: "/calendar", icon: <CalendarTodayIcon /> },
-  { label: "Resources", path: "/resources", icon: <LibraryBooksIcon /> },
-  { label: "Blogs", path: "/blogs", icon: <DescriptionIcon /> },
-  { label: "Forums", path: "/forums", icon: <ForumIcon /> },
-  { label: "Clubs", path: "/clubs", icon: <GroupsIcon /> },
-  {
-    label: "Admin Panel",
-    path: "/admin_panel",
-    icon: <AdminPanelSettingsIcon />,
-  },
-  { label: "Manage", path: "/test3", icon: <ManageAccountsIcon /> },
-  { label: "Settings", path: "/settings", icon: <SettingsIcon /> },
-];
+import { fetchUserData, hasPermission } from "@/utils/auth";
 
 const LeftDrawer = ({ open, onClose }) => {
   const theme = useTheme();
   const router = useRouter();
+  const [userData, setUserData] = useState(null);
+  const [userId, setUserId] = useState(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [isBoardAdmin, setIsBoardAdmin] = useState(false);
+  const [isClubAdmin, setIsClubAdmin] = useState(false);
+
+  useEffect(() => {
+    async function loadUserData() {
+      const result = await fetchUserData();
+
+      if (result) {
+        setUserData(result.userData);
+        setUserId(result.userId);
+        setIsSuperAdmin(result.isSuperAdmin);
+        setIsBoardAdmin(result.isBoardAdmin);
+        setIsClubAdmin(result.isClubAdmin);
+      }
+    }
+    loadUserData();
+  }, []);
 
   const handleLogout = () => {
     // Remove the auth_token cookie
     Cookies.remove("auth_token");
     // Redirect to login page
     router.push("/login");
+  };
+
+  // Generate sidebar items based on user role
+  const generateSidebarItems = () => {
+    // Common items for all users
+    const commonItems = [
+      { label: "Events", path: "/events", icon: <EventIcon /> },
+      { label: "Projects", path: "/projects", icon: <WorkIcon /> },
+      {
+        label: "Opportunities",
+        path: "/opportunities",
+        icon: <BusinessCenterIcon />,
+      },
+      { label: "Calendar", path: "/calendar", icon: <CalendarTodayIcon /> },
+      { label: "Resources", path: "/resources", icon: <LibraryBooksIcon /> },
+      { label: "Blogs", path: "/blogs", icon: <DescriptionIcon /> },
+      { label: "Forums", path: "/forums", icon: <ForumIcon /> },
+      { label: "Clubs", path: "/clubs", icon: <GroupsIcon /> },
+    ];
+
+    // Role-specific items
+    const roleSpecificItems = [];
+
+    // Only super admins can see Admin Panel
+    if (isSuperAdmin) {
+      roleSpecificItems.push({
+        label: "Admin Panel",
+        path: "/admin_panel",
+        icon: <AdminPanelSettingsIcon />,
+      });
+    }
+
+    // Only board admins and club admins can see Manage
+    if (isBoardAdmin || isClubAdmin) {
+      roleSpecificItems.push({
+        label: "Manage",
+        path: "/test3",
+        icon: <ManageAccountsIcon />,
+      });
+    }
+
+    // Settings is available to all users
+    roleSpecificItems.push({
+      label: "Settings",
+      path: "/settings",
+      icon: <SettingsIcon />,
+    });
+
+    return [...commonItems, ...roleSpecificItems];
   };
 
   return (
@@ -139,7 +186,7 @@ const LeftDrawer = ({ open, onClose }) => {
             },
           }}
         >
-          {sidebarItems.map(({ label, path, icon }) => (
+          {generateSidebarItems().map(({ label, path, icon }) => (
             <Link key={label} href={path} passHref legacyBehavior>
               <ListItemButton
                 component="a"

@@ -1,4 +1,3 @@
-
 "use client";
 import { useState, useEffect } from "react";
 import {
@@ -24,7 +23,7 @@ import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import BlogCreateForm from "../../components/blogs/BlogCreateForm";
 import SearchBar from "../../components/blogs/SearchBar";
-import { fetchUserData,hasPermission } from "@/utils/auth";
+import { fetchUserData, hasPermission } from "@/utils/auth";
 import { useRouter } from "next/navigation";
 import ShareIcon from "@mui/icons-material/Share";
 import UniversalShareMenu from "../../components/shared/UniversalShareMenu";
@@ -45,10 +44,12 @@ export default function BLOGS() {
   const [userData, setUserData] = useState(null);
   const [userId, setUserId] = useState(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-  const [userClubsWithBlogPermission, setUserClubsWithBlogPermission] = useState([]);
+  const [userClubsWithBlogPermission, setUserClubsWithBlogPermission] =
+    useState([]);
   const [shareMenuAnchorEl, setShareMenuAnchorEl] = useState(null);
   const [blogToShare, setBlogToShare] = useState(null);
-  const [userBoardsWithBlogPermission, setUserBoardsWithBlogPermission] = useState([]);
+  const [userBoardsWithBlogPermission, setUserBoardsWithBlogPermission] =
+    useState([]);
   const [selectedClubId, setSelectedClubId] = useState(null);
   const [selectedBoardId, setSelectedBoardId] = useState(null);
   const [selectedFilters, setSelectedFilters] = useState({});
@@ -68,7 +69,9 @@ export default function BLOGS() {
 
         // Extract clubs with blogs permission
         if (result.userData?.data?.clubs) {
-          const clubsWithPermission = Object.keys(result.userData.data.clubs).filter(
+          const clubsWithPermission = Object.keys(
+            result.userData.data.clubs
+          ).filter(
             (clubId) => result.userData.data.clubs[clubId].blogs === true
           );
           setUserClubsWithBlogPermission(clubsWithPermission);
@@ -81,7 +84,9 @@ export default function BLOGS() {
 
         // Extract boards with blogs permission
         if (result.userData?.data?.boards) {
-          const boardsWithPermission = Object.keys(result.userData.data.boards).filter(
+          const boardsWithPermission = Object.keys(
+            result.userData.data.boards
+          ).filter(
             (boardId) => result.userData.data.boards[boardId].blogs === true
           );
           setUserBoardsWithBlogPermission(boardsWithPermission);
@@ -96,8 +101,6 @@ export default function BLOGS() {
     loadUserData();
   }, []);
 
-
-
   const handleShareClick = (event, blog) => {
     event.stopPropagation();
     setShareMenuAnchorEl(event.currentTarget);
@@ -109,13 +112,14 @@ export default function BLOGS() {
     setBlogToShare(null);
   };
 
-
   // Fetch blogs from backend
   useEffect(() => {
     const fetchBlogs = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/blogs/blogs`);
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/blogs/blogs`
+        );
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -143,12 +147,12 @@ export default function BLOGS() {
               : { url: "/api/placeholder/800/500", alt: "Blog image" },
             club_id: blog.club_id || null,
             board_id: blog.board_id || null,
-            createdAt: new Date(blog.createdAt).toLocaleDateString("en-US", {
+            createdAt: new Date(blog.published_at).toLocaleDateString("en-US", {
               year: "numeric",
               month: "long",
               day: "numeric",
             }),
-            views: Math.floor(Math.random() * 5000),
+            views: blog?.number_of_views || 0,
           }))
           .filter((blog) => blog.title !== "Untitled Blog");
 
@@ -198,10 +202,16 @@ export default function BLOGS() {
     if (hasActiveFilters) {
       filtered = filtered.filter((blog) => {
         const matchesClubFilter = selectedFilters["My Clubs"]
-          ? blog.club_id && userClubsWithBlogPermission.includes(blog.club_id._id || blog.club_id)
+          ? blog.club_id &&
+            userClubsWithBlogPermission.includes(
+              blog.club_id._id || blog.club_id
+            )
           : true;
         const matchesBoardFilter = selectedFilters["My Boards"]
-          ? blog.board_id && userBoardsWithBlogPermission.includes(blog.board_id._id || blog.board_id)
+          ? blog.board_id &&
+            userBoardsWithBlogPermission.includes(
+              blog.board_id._id || blog.board_id
+            )
           : true;
 
         return matchesClubFilter && matchesBoardFilter;
@@ -209,7 +219,13 @@ export default function BLOGS() {
     }
 
     setFilteredBlogs(filtered);
-  }, [searchQuery, blogs, selectedFilters, userClubsWithBlogPermission, userBoardsWithBlogPermission]);
+  }, [
+    searchQuery,
+    blogs,
+    selectedFilters,
+    userClubsWithBlogPermission,
+    userBoardsWithBlogPermission,
+  ]);
 
   const handleDelete = async (blogId) => {
     try {
@@ -378,7 +394,21 @@ export default function BLOGS() {
     setSearchQuery(query);
   };
 
-  const handleReadMore = (blogId) => {
+  const handleReadMore = async (blogId) => {
+    // Increment view count before navigation
+    try {
+      await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/blogs/blogs/${blogId}/views`,
+        {
+          method: "PATCH",
+        }
+      );
+    } catch (error) {
+      console.error("Failed to update view count:", error);
+      // Continue with navigation even if the view count update fails
+    }
+
+    // Navigate to the blog page
     router.push(`/current_blog/${blogId}`);
   };
 
@@ -405,19 +435,21 @@ export default function BLOGS() {
     }
   }, [userData, filteredBlogs]);
 
-
-  
-
   if (isLoading) {
     return (
-      <Box sx={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        minHeight: '80vh', 
-        bgcolor: theme.palette.background.default,
-      }}>
-        <Typography variant="h6" sx={{ fontWeight: 500, color: theme.palette.primary.main }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "80vh",
+          bgcolor: theme.palette.background.default,
+        }}
+      >
+        <Typography
+          variant="h6"
+          sx={{ fontWeight: 500, color: theme.palette.primary.main }}
+        >
           Loading blogs...
         </Typography>
       </Box>
@@ -426,14 +458,19 @@ export default function BLOGS() {
 
   if (error) {
     return (
-      <Box sx={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        minHeight: '80vh',
-        bgcolor: theme.palette.background.default,
-      }}>
-        <Typography variant="h6" sx={{ fontWeight: 500, color: theme.palette.error.main }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "80vh",
+          bgcolor: theme.palette.background.default,
+        }}
+      >
+        <Typography
+          variant="h6"
+          sx={{ fontWeight: 500, color: theme.palette.error.main }}
+        >
           Error loading blogs: {error}
         </Typography>
       </Box>
@@ -444,7 +481,7 @@ export default function BLOGS() {
     <Box
       sx={{
         bgcolor: theme.palette.background.default,
-        minHeight: '100vh',
+        minHeight: "100vh",
         p: { xs: 2, md: 4 },
       }}
     >
@@ -458,14 +495,19 @@ export default function BLOGS() {
         />
 
         {filteredBlogs.length === 0 ? (
-          <Box sx={{ 
-            textAlign: 'center', 
-            py: 10, 
-            bgcolor: theme.palette.background.paper, 
-            borderRadius: 3,
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
-          }}>
-            <Typography variant="h6" sx={{ color: theme.palette.text.secondary, fontWeight: 500 }}>
+          <Box
+            sx={{
+              textAlign: "center",
+              py: 10,
+              bgcolor: theme.palette.background.paper,
+              borderRadius: 3,
+              boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
+            }}
+          >
+            <Typography
+              variant="h6"
+              sx={{ color: theme.palette.text.secondary, fontWeight: 500 }}
+            >
               No blogs found. Try a different search term.
             </Typography>
           </Box>
@@ -475,51 +517,53 @@ export default function BLOGS() {
               <Grid item xs={12} sm={6} md={4} lg={3} key={blog.id}>
                 <Card
                   sx={{
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
                     borderRadius: 3,
-                    overflow: 'hidden',
-                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                      transform: 'translateY(-8px)',
-                      boxShadow: '0 16px 32px rgba(0, 0, 0, 0.18)',
+                    overflow: "hidden",
+                    boxShadow: "0 8px 24px rgba(0, 0, 0, 0.12)",
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      transform: "translateY(-8px)",
+                      boxShadow: "0 16px 32px rgba(0, 0, 0, 0.18)",
                     },
-                    position: 'relative',
-                    border: 'none',
+                    position: "relative",
+                    border: "none",
                     bgcolor: theme.palette.background.paper,
                   }}
                 >
-                  <Box sx={{ position: 'relative' }}>
+                  <Box sx={{ position: "relative" }}>
                     <CardMedia
                       component="img"
                       height="180"
                       image={blog.image.url}
                       alt={blog.image.alt}
-                      sx={{ 
-                        objectFit: 'cover',
+                      sx={{
+                        objectFit: "cover",
                       }}
                     />
                     {blog.tags && blog.tags.length > 0 && (
-                      <Box sx={{ 
-                        position: 'absolute', 
-                        bottom: 8, 
-                        left: 8, 
-                        display: 'flex', 
-                        flexWrap: 'wrap', 
-                        gap: 0.5 
-                      }}>
+                      <Box
+                        sx={{
+                          position: "absolute",
+                          bottom: 8,
+                          left: 8,
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: 0.5,
+                        }}
+                      >
                         {blog.tags.slice(0, 2).map((tag, index) => (
                           <Chip
                             key={index}
                             label={tag}
                             size="small"
                             sx={{
-                              bgcolor: 'rgba(255, 255, 255, 0.85)',
+                              bgcolor: "rgba(255, 255, 255, 0.85)",
                               color: theme.palette.primary.main,
                               fontWeight: 500,
-                              fontSize: '0.7rem',
+                              fontSize: "0.7rem",
                               height: 24,
                             }}
                           />
@@ -529,10 +573,10 @@ export default function BLOGS() {
                             label={`+${blog.tags.length - 2}`}
                             size="small"
                             sx={{
-                              bgcolor: 'rgba(255, 255, 255, 0.85)',
+                              bgcolor: "rgba(255, 255, 255, 0.85)",
                               color: theme.palette.text.secondary,
                               fontWeight: 500,
-                              fontSize: '0.7rem',
+                              fontSize: "0.7rem",
                               height: 24,
                             }}
                           />
@@ -541,20 +585,22 @@ export default function BLOGS() {
                     )}
                   </Box>
 
-                  <CardContent sx={{ 
-                    p: 3, 
-                    flexGrow: 1, 
-                    display: 'flex', 
-                    flexDirection: 'column',
-                    bgcolor: theme.palette.background.paper,
-                  }}>
+                  <CardContent
+                    sx={{
+                      p: 3,
+                      flexGrow: 1,
+                      display: "flex",
+                      flexDirection: "column",
+                      bgcolor: theme.palette.background.paper,
+                    }}
+                  >
                     {arrayPermissions[blog._id] && (
                       <Box
                         sx={{
-                          position: 'absolute',
+                          position: "absolute",
                           top: 8,
                           right: 8,
-                          display: 'flex',
+                          display: "flex",
                           gap: 1,
                           zIndex: 2,
                         }}
@@ -566,10 +612,10 @@ export default function BLOGS() {
                           }}
                           size="small"
                           sx={{
-                            bgcolor: 'rgba(255, 255, 255, 0.9)',
+                            bgcolor: "rgba(255, 255, 255, 0.9)",
                             color: theme.palette.primary.main,
-                            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
-                            '&:hover': {
+                            boxShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
+                            "&:hover": {
                               bgcolor: theme.palette.primary.main,
                               color: theme.palette.primary.contrastText,
                             },
@@ -586,10 +632,10 @@ export default function BLOGS() {
                           }}
                           size="small"
                           sx={{
-                            bgcolor: 'rgba(255, 255, 255, 0.9)',
+                            bgcolor: "rgba(255, 255, 255, 0.9)",
                             color: theme.palette.error.main,
-                            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
-                            '&:hover': {
+                            boxShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
+                            "&:hover": {
                               bgcolor: theme.palette.error.main,
                               color: theme.palette.error.contrastText,
                             },
@@ -607,14 +653,14 @@ export default function BLOGS() {
                       component="h2"
                       sx={{
                         fontWeight: 600,
-                        fontSize: '1.1rem',
+                        fontSize: "1.1rem",
                         color: theme.palette.text.primary,
                         mb: 2,
-                        display: '-webkit-box',
+                        display: "-webkit-box",
                         WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
-                        minHeight: '2.75rem',
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                        minHeight: "2.75rem",
                         lineHeight: 1.25,
                       }}
                     >
@@ -628,23 +674,25 @@ export default function BLOGS() {
                       sx={{ mb: 2 }}
                     >
                       <Avatar
-                        src={blog.publisher.avatar}
-                        alt={blog.publisher.name}
-                        sx={{ 
-                          width: 28, 
+                        sx={{
+                          width: 28,
                           height: 28,
                           border: `2px solid ${theme.palette.divider}`,
                         }}
-                      />
-                      <Typography 
-                        variant="body2" 
-                        sx={{ 
+                      >
+                        {blog.board_id?.name?.charAt(0) ||
+                          blog.club_id?.name?.charAt(0)}
+                      </Avatar>
+
+                      <Typography
+                        variant="body2"
+                        sx={{
                           color: theme.palette.text.secondary,
                           fontWeight: 500,
-                          fontSize: '0.85rem',
+                          fontSize: "0.85rem",
                         }}
                       >
-                        {blog.publisher.name}
+                        {blog.board_id?.name || blog.club_id?.name}
                       </Typography>
                     </Stack>
 
@@ -652,28 +700,45 @@ export default function BLOGS() {
                       direction="row"
                       justifyContent="space-between"
                       alignItems="center"
-                      sx={{ mb: 'auto', mt: 2 }}
+                      sx={{ mb: "auto", mt: 2 }}
                     >
                       <Stack direction="row" alignItems="center" spacing={0.5}>
                         <CalendarTodayIcon
-                          sx={{ color: theme.palette.secondary.main, fontSize: '0.9rem' }}
+                          sx={{
+                            color: theme.palette.secondary.main,
+                            fontSize: "0.9rem",
+                          }}
                         />
                         <Typography
                           variant="caption"
-                          sx={{ color: theme.palette.text.secondary, fontSize: '0.75rem' }}
+                          sx={{
+                            color: theme.palette.text.secondary,
+                            fontSize: "0.75rem",
+                          }}
                         >
                           {blog.createdAt}
                         </Typography>
                       </Stack>
 
                       <Stack direction="row" alignItems="center" spacing={1.5}>
-                        <Stack direction="row" alignItems="center" spacing={0.5}>
+                        <Stack
+                          direction="row"
+                          alignItems="center"
+                          spacing={0.5}
+                        >
                           <VisibilityIcon
-                            sx={{ color: theme.palette.primary.main, fontSize: '0.9rem' }}
+                            sx={{
+                              color: theme.palette.primary.main,
+                              fontSize: "0.9rem",
+                            }}
                           />
                           <Typography
                             variant="caption"
-                            sx={{ color: theme.palette.text.secondary, fontSize: '0.75rem', fontWeight: 500 }}
+                            sx={{
+                              color: theme.palette.text.secondary,
+                              fontSize: "0.75rem",
+                              fontWeight: 500,
+                            }}
                           >
                             {blog.views.toLocaleString()}
                           </Typography>
@@ -688,7 +753,7 @@ export default function BLOGS() {
                             width: 20,
                           }}
                         >
-                          <ShareIcon sx={{ fontSize: '1rem' }} />
+                          <ShareIcon sx={{ fontSize: "1rem" }} />
                         </IconButton>
                       </Stack>
                     </Stack>
@@ -702,12 +767,12 @@ export default function BLOGS() {
                         bgcolor: theme.palette.primary.main,
                         color: theme.palette.primary.contrastText,
                         borderRadius: 2,
-                        textTransform: 'none',
+                        textTransform: "none",
                         fontWeight: 600,
                         py: 1,
-                        boxShadow: '0 4px 14px rgba(0, 0, 0, 0.3)',
-                        '&:hover': {
-                          boxShadow: '0 6px 20px rgba(0, 0, 0, 0.4)',
+                        boxShadow: "0 4px 14px rgba(0, 0, 0, 0.3)",
+                        "&:hover": {
+                          boxShadow: "0 6px 20px rgba(0, 0, 0, 0.4)",
                           bgcolor: theme.palette.primary.dark,
                         },
                       }}

@@ -549,7 +549,7 @@ export default function OpportunitiesPage({
     }
 
     checkOpportunityCreationPermission();
-  }, [isSuperAdmin, userData, boardId]);
+  }, [isSuperAdmin, userData, clubId]);
 
   useEffect(() => {
     // Check permissions for all resources

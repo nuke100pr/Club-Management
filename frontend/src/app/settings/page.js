@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Container, Typography, Box, useTheme, Paper } from "@mui/material";
 import ThemeToggle from "../../components/themeToggle";
-import { fetchUserData,getAuthToken } from "../../utils/auth"; // Assuming this is the correct path
+import { fetchUserData, getAuthToken } from "../../utils/auth"; // Assuming this is the correct path
 
 // Import our new components
 import UserProfileCard from "../../components/settings/UserProfileCard";
@@ -11,7 +11,7 @@ import AccountSettings from "../../components/settings/AccountSettings";
 
 export default function SettingsPage() {
  
-  const [authToken,setAuthToken] = useState(null);
+  const [authToken, setAuthToken] = useState(null);
   useEffect(() => {
      const ff = async () => {
         const nn = await getAuthToken();
@@ -174,14 +174,22 @@ export default function SettingsPage() {
       }}
     >
       <Container maxWidth="md">
-        <Box sx={{ display: "flex", justifyContent: "space-between", my: 3 }}>
-          <Typography variant="h4" color="text.primary">Settings</Typography>
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <Typography variant="body2" sx={{ mr: 1 }} color="text.secondary">
-              Dark Mode
-            </Typography>
-            <ThemeToggle />
+        {/* Header section with title and theme toggle - restructured to give more space */}
+        <Box sx={{ my: 3 }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+            <Typography variant="h4" color="text.primary">Settings</Typography>
           </Box>
+          
+          {/* Separated theme toggle with more space */}
+          <Paper elevation={1} sx={{ p: 2, mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <Typography variant="h6" color="text.primary">Appearance</Typography>
+            <Box sx={{ display: "flex", alignItems: "center" }}>
+              <Typography variant="body1" sx={{ mr: 2 }} color="text.secondary">
+                Dark Mode
+              </Typography>
+              <ThemeToggle />
+            </Box>
+          </Paper>
         </Box>
 
         {/* User Profile Component */}

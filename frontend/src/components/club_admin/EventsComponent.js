@@ -132,7 +132,7 @@ useEffect(() => {
   }
 
   checkEventCreationPermission();
-}, [isSuperAdmin, userData, boardId]);
+}, [isSuperAdmin, userData, clubId]);
 
   useEffect(() => {
     async function loadUserData() {

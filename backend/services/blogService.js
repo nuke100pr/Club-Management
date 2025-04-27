@@ -1,10 +1,8 @@
 const Blogs = require("../models/Blogs");
-const File = require('../models/File'); 
+const File = require("../models/File");
 const fs = require("fs");
 const path = require("path");
 const mongoose = require("mongoose");
-
-
 
 const uploadDir = path.join(__dirname, "../uploads");
 
@@ -19,14 +17,14 @@ const saveFile = async (file) => {
   }
 
   const { originalname, mimetype, buffer, size } = file; // Ensure file.buffer is available
-  const filename = `${Date.now()}-${originalname.replace(/\s+/g, '_')}`; // Replace spaces to avoid issues
+  const filename = `${Date.now()}-${originalname.replace(/\s+/g, "_")}`; // Replace spaces to avoid issues
   const filePath = path.join(uploadDir, filename);
 
   console.log("Filename:", filename);
   console.log("Saving file to:", filePath);
 
   try {
-    fs.writeFileSync(filePath, buffer); 
+    fs.writeFileSync(filePath, buffer);
     console.log("File saved successfully:", filePath);
   } catch (error) {
     console.error("Error writing file:", error);
@@ -60,14 +58,15 @@ const createBlog = async (blogData, imageFile) => {
       blogData.image = fileId;
     }
 
+    // Add created_at timestamp
+    blogData.published_at = new Date();
+
     const newBlog = new Blogs(blogData);
     await newBlog.save();
-    
 
-    
     return newBlog;
   } catch (error) {
-    // Clean up the uploaded file if event creation fails
+    // Clean up the uploaded file if blog creation fails
     if (imageFile && blogData.image) {
       try {
         const filePath = path.join(uploadDir, imageFile.filename);
@@ -75,23 +74,30 @@ const createBlog = async (blogData, imageFile) => {
           fs.unlinkSync(filePath);
         }
       } catch (cleanupError) {
-        console.error('Error cleaning up file:', cleanupError);
+        console.error("Error cleaning up file:", cleanupError);
       }
     }
-    throw new Error(`Error creating event: ${error.message}`);
+    throw new Error(`Error creating blog: ${error.message}`);
   }
 };
 
-
-
 const getAllBlogs = async (filters = {}) => {
   try {
-    return await Blogs.find(filters)
+    const blogs = await Blogs.find(filters)
       .populate("image")
-      .populate("board_id")
-      .populate("club_id")
       .sort({ published_at: -1 })
       .exec();
+
+    for (const blog of blogs) {
+      if (blog.board_id && blog.board_id !== "" && blog.board_id !== "null") {
+        await blog.populate("board_id");
+      }
+      if (blog.club_id && blog.club_id !== "" && blog.club_id !== "null") {
+        await blog.populate("club_id");
+      }
+    }
+
+    return blogs;
   } catch (error) {
     throw new Error(`Error fetching blogs: ${error.message}`);
   }
@@ -99,10 +105,21 @@ const getAllBlogs = async (filters = {}) => {
 
 const getBlogById = async (id) => {
   try {
-    const blog = await Blogs.findById(id).populate("image");
+    let blog = await Blogs.findById(id).populate("image");
+    // console.log(blog);
+
     if (!blog) {
       throw new Error("Blog not found");
     }
+
+    if (blog.board_id && blog.board_id !== "" && blog.board_id !== "null") {
+      blog = await blog.populate("board_id");
+    }
+
+    if (blog.club_id && blog.club_id !== "" && blog.club_id !== "null") {
+      blog = await blog.populate("club_id");
+    }
+
     return blog;
   } catch (error) {
     throw new Error(`Error fetching blog: ${error.message}`);
@@ -133,7 +150,7 @@ const updateBlog = async (id, updateData, imageFile) => {
             await File.findByIdAndDelete(blog.image);
           }
         } catch (cleanupError) {
-          console.error('Error cleaning up old file:', cleanupError);
+          console.error("Error cleaning up old file:", cleanupError);
         }
       }
     }
@@ -158,7 +175,7 @@ const updateBlog = async (id, updateData, imageFile) => {
           await File.findByIdAndDelete(updateData.image);
         }
       } catch (cleanupError) {
-        console.error('Error cleaning up new file:', cleanupError);
+        console.error("Error cleaning up new file:", cleanupError);
       }
     }
     throw new Error(`Error updating blog: ${error.message}`);
@@ -210,6 +227,34 @@ const getBlogsByKeyword = async (keyword) => {
   }
 };
 
+const incrementBlogViews = async (id) => {
+  try {
+    // First get the current blog to check the current number_of_views
+    const blog = await Blogs.findById(id);
+
+    if (!blog) {
+      throw new Error("Blog not found");
+    }
+
+    // Convert number_of_views to a number if it's a string
+    const currentViews =
+      typeof blog.number_of_views === "string"
+        ? parseInt(blog.number_of_views, 10) || 0
+        : blog.number_of_views || 0;
+
+    // Update with the incremented numeric value
+    const updatedBlog = await Blogs.findByIdAndUpdate(
+      id,
+      { $set: { number_of_views: currentViews + 1 } },
+      { new: true }
+    );
+
+    return updatedBlog;
+  } catch (error) {
+    throw new Error(`Error incrementing blog views: ${error.message}`);
+  }
+};
+
 module.exports = {
   createBlog,
   getAllBlogs,
@@ -218,4 +263,5 @@ module.exports = {
   deleteBlog,
   searchBlogs,
   getBlogsByKeyword,
+  incrementBlogViews,
 };

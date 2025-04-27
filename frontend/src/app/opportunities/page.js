@@ -379,7 +379,7 @@ const OPPORTUNITIES = () => {
                         sx={{ height: 200, width: "100%", overflow: "hidden" }}
                       >
                         <img
-                          src={opportunity.image}
+                          src={`http://localhost:5000/uploads/${opportunity.image?.filename}`}
                           alt={opportunity.title}
                           style={{
                             width: "100%",

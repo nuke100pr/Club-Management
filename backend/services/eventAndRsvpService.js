@@ -1,13 +1,11 @@
-const Event = require('../models/Event');
-const EventCoordinators = require('../models/EventCoordinators');
-const EventType = require('../models/EventType');
-const RSVP = require('../models/RSVP');
-const File = require('../models/File'); 
+const Event = require("../models/Event");
+const EventCoordinators = require("../models/EventCoordinators");
+const EventType = require("../models/EventType");
+const RSVP = require("../models/RSVP");
+const File = require("../models/File");
 const fs = require("fs");
 const path = require("path");
 const mongoose = require("mongoose");
-
-
 
 const uploadDir = path.join(__dirname, "../uploads");
 
@@ -22,14 +20,14 @@ const saveFile = async (file) => {
   }
 
   const { originalname, mimetype, buffer, size } = file; // Ensure file.buffer is available
-  const filename = `${Date.now()}-${originalname.replace(/\s+/g, '_')}`; // Replace spaces to avoid issues
+  const filename = `${Date.now()}-${originalname.replace(/\s+/g, "_")}`; // Replace spaces to avoid issues
   const filePath = path.join(uploadDir, filename);
 
   console.log("Filename:", filename);
   console.log("Saving file to:", filePath);
 
   try {
-    fs.writeFileSync(filePath, buffer); 
+    fs.writeFileSync(filePath, buffer);
     console.log("File saved successfully:", filePath);
   } catch (error) {
     console.error("Error writing file:", error);
@@ -65,12 +63,12 @@ const createEvent = async (eventData, imageFile) => {
 
     const newEvent = new Event(eventData);
     await newEvent.save();
-    
+
     // Populate the image field if it exists
     if (newEvent.image) {
-      await newEvent.populate('image');
+      await newEvent.populate("image");
     }
-    
+
     return newEvent;
   } catch (error) {
     // Clean up the uploaded file if event creation fails
@@ -81,7 +79,7 @@ const createEvent = async (eventData, imageFile) => {
           fs.unlinkSync(filePath);
         }
       } catch (cleanupError) {
-        console.error('Error cleaning up file:', cleanupError);
+        console.error("Error cleaning up file:", cleanupError);
       }
     }
     throw new Error(`Error creating event: ${error.message}`);
@@ -90,10 +88,22 @@ const createEvent = async (eventData, imageFile) => {
 
 const getEventById = async (eventId) => {
   try {
-    const event = await Event.findById(eventId);
+    let event = await Event.findById(eventId).populate("image");
+
     if (!event) {
-      throw new Error('Event not found');
+      throw new Error("Event not found");
     }
+
+    // Check if board_id exists and is valid
+    if (event.board_id && event.board_id !== "" && event.board_id !== "null") {
+      event = await event.populate("board_id");
+    }
+
+    // Check if club_id exists and is valid
+    if (event.club_id && event.club_id !== "" && event.club_id !== "null") {
+      event = await event.populate("club_id");
+    }
+
     return event;
   } catch (error) {
     throw new Error(`Error fetching event: ${error.message}`);
@@ -104,14 +114,14 @@ const updateEvent = async (eventId, updateData, imageFile) => {
   try {
     let event = await Event.findById(eventId);
     if (!event) {
-      throw new Error('Event not found');
+      throw new Error("Event not found");
     }
 
     // Handle image update if new image is provided
     if (imageFile) {
       // Save the new file
       const fileId = await saveFile(imageFile);
-      
+
       // If there was a previous image, delete the old file
       if (event.image) {
         try {
@@ -124,21 +134,19 @@ const updateEvent = async (eventId, updateData, imageFile) => {
             await File.findByIdAndDelete(event.image);
           }
         } catch (cleanupError) {
-          console.error('Error cleaning up old file:', cleanupError);
+          console.error("Error cleaning up old file:", cleanupError);
         }
       }
-      
+
       updateData.image = fileId;
     }
 
-    const updatedEvent = await Event.findByIdAndUpdate(
-      eventId, 
-      updateData, 
-      { new: true }
-    ).populate('image');
+    const updatedEvent = await Event.findByIdAndUpdate(eventId, updateData, {
+      new: true,
+    }).populate("image");
 
     if (!updatedEvent) {
-      throw new Error('Event not found');
+      throw new Error("Event not found");
     }
 
     return updatedEvent;
@@ -151,7 +159,7 @@ const updateEvent = async (eventId, updateData, imageFile) => {
           fs.unlinkSync(filePath);
         }
       } catch (cleanupError) {
-        console.error('Error cleaning up file:', cleanupError);
+        console.error("Error cleaning up file:", cleanupError);
       }
     }
     throw new Error(`Error updating event: ${error.message}`);
@@ -162,7 +170,7 @@ const deleteEvent = async (eventId) => {
   try {
     const deletedEvent = await Event.findByIdAndDelete(eventId);
     if (!deletedEvent) {
-      throw new Error('Event not found');
+      throw new Error("Event not found");
     }
     // Clean up related data
     await EventCoordinators.deleteMany({ event_id: eventId });
@@ -184,14 +192,17 @@ const getAllEvents = async (filters = {}) => {
 // Event Coordinators CRUD Operations
 const addEventCoordinator = async (eventId, userId) => {
   try {
-    const existingCoordinator = await EventCoordinators.findOne({ event_id: eventId, user_id: userId });
+    const existingCoordinator = await EventCoordinators.findOne({
+      event_id: eventId,
+      user_id: userId,
+    });
     if (existingCoordinator) {
-      throw new Error('User is already a coordinator for this event');
+      throw new Error("User is already a coordinator for this event");
     }
-    
+
     const newCoordinator = new EventCoordinators({
       event_id: eventId,
-      user_id: userId
+      user_id: userId,
     });
     await newCoordinator.save();
     return newCoordinator;
@@ -202,7 +213,9 @@ const addEventCoordinator = async (eventId, userId) => {
 
 const getEventCoordinators = async (eventId) => {
   try {
-    return await EventCoordinators.find({ event_id: eventId }).populate('user_id');
+    return await EventCoordinators.find({ event_id: eventId }).populate(
+      "user_id"
+    );
   } catch (error) {
     throw new Error(`Error fetching event coordinators: ${error.message}`);
   }
@@ -210,9 +223,12 @@ const getEventCoordinators = async (eventId) => {
 
 const removeEventCoordinator = async (eventId, userId) => {
   try {
-    const result = await EventCoordinators.findOneAndDelete({ event_id: eventId, user_id: userId });
+    const result = await EventCoordinators.findOneAndDelete({
+      event_id: eventId,
+      user_id: userId,
+    });
     if (!result) {
-      throw new Error('Coordinator not found for this event');
+      throw new Error("Coordinator not found for this event");
     }
     return result;
   } catch (error) {
@@ -247,7 +263,7 @@ const updateEventType = async (eventTypeId, content) => {
       { new: true }
     );
     if (!updatedEventType) {
-      throw new Error('Event type not found');
+      throw new Error("Event type not found");
     }
     return updatedEventType;
   } catch (error) {
@@ -258,14 +274,16 @@ const updateEventType = async (eventTypeId, content) => {
 const deleteEventType = async (eventTypeId) => {
   try {
     // Check if any events are using this type
-    const eventsUsingType = await Event.countDocuments({ event_type_id: eventTypeId });
+    const eventsUsingType = await Event.countDocuments({
+      event_type_id: eventTypeId,
+    });
     if (eventsUsingType > 0) {
-      throw new Error('Cannot delete event type as it is being used by events');
+      throw new Error("Cannot delete event type as it is being used by events");
     }
-    
+
     const deletedEventType = await EventType.findByIdAndDelete(eventTypeId);
     if (!deletedEventType) {
-      throw new Error('Event type not found');
+      throw new Error("Event type not found");
     }
     return deletedEventType;
   } catch (error) {
@@ -277,15 +295,18 @@ const deleteEventType = async (eventTypeId) => {
 const createRSVP = async (eventId, userId) => {
   try {
     // Check if RSVP already exists
-    const existingRSVP = await RSVP.findOne({ event_id: eventId, user_id: userId });
+    const existingRSVP = await RSVP.findOne({
+      event_id: eventId,
+      user_id: userId,
+    });
     if (existingRSVP) {
-      throw new Error('User has already RSVPed for this event');
+      throw new Error("User has already RSVPed for this event");
     }
-    
+
     const newRSVP = new RSVP({
       event_id: eventId,
       user_id: userId,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
     await newRSVP.save();
     return newRSVP;
@@ -296,7 +317,7 @@ const createRSVP = async (eventId, userId) => {
 
 const getRSVPsForEvent = async (eventId) => {
   try {
-    return await RSVP.find({ event_id: eventId }).populate('user_id');
+    return await RSVP.find({ event_id: eventId }).populate("user_id");
   } catch (error) {
     throw new Error(`Error fetching RSVPs: ${error.message}`);
   }
@@ -304,7 +325,7 @@ const getRSVPsForEvent = async (eventId) => {
 
 const getUserRSVPs = async (userId) => {
   try {
-    return await RSVP.find({ user_id: userId }).populate('event_id');
+    return await RSVP.find({ user_id: userId }).populate("event_id");
   } catch (error) {
     throw new Error(`Error fetching user RSVPs: ${error.message}`);
   }
@@ -314,7 +335,7 @@ const deleteRSVP = async (rsvpId) => {
   try {
     const deletedRSVP = await RSVP.findByIdAndDelete(rsvpId);
     if (!deletedRSVP) {
-      throw new Error('RSVP not found');
+      throw new Error("RSVP not found");
     }
     return deletedRSVP;
   } catch (error) {
@@ -329,21 +350,21 @@ module.exports = {
   updateEvent,
   deleteEvent,
   getAllEvents,
-  
+
   // Event Coordinators CRUD
   addEventCoordinator,
   getEventCoordinators,
   removeEventCoordinator,
-  
+
   // Event Type CRUD
   createEventType,
   getAllEventTypes,
   updateEventType,
   deleteEventType,
-  
+
   // RSVP CRUD
   createRSVP,
   getRSVPsForEvent,
   getUserRSVPs,
-  deleteRSVP
+  deleteRSVP,
 };

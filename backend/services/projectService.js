@@ -101,7 +101,7 @@ const getAllProjects = async (filters = {}) => {
 
 const getProjectById = async (projectId) => {
   try {
-    const project = await Project.findById(projectId);
+    const project = await Project.findById(projectId).populate("image");
     if (!project) throw new Error("Project not found");
     return project;
   } catch (error) {

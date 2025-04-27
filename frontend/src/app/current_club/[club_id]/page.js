@@ -319,6 +319,7 @@ export default function BoardPage() {
         if (!boardResponse.ok) throw new Error("Failed to fetch board details");
         const boardData = await boardResponse.json();
         setBoard(boardData);
+        console.log(boardData);
 
         const clubsUrl = userId
           ? `http://localhost:5000/clubs/clubs/board/${clubId}?user_id=${userId}`
@@ -349,7 +350,7 @@ export default function BoardPage() {
 
       if (board.isFollowing) {
         const response = await fetch(
-          `http://localhost:5000/clubs/users/${userId}/unfollow/board/${clubId}`,
+          `http://localhost:5000/clubs/users/${userId}/unfollow/club/${clubId}`,
           { method: "DELETE" }
         );
 
@@ -361,7 +362,7 @@ export default function BoardPage() {
         }));
       } else {
         const response = await fetch(
-          `http://localhost:5000/clubs/users/${userId}/follow/board/${clubId}`,
+          `http://localhost:5000/clubs/users/${userId}/follow/club/${clubId}`,
           { method: "POST" }
         );
 

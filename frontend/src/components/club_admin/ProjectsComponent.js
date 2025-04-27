@@ -80,7 +80,7 @@ import {
       }
     
       checkProjectCreationPermission();
-    }, [isSuperAdmin, userData, boardId]);
+    }, [isSuperAdmin, userData, clubId]);
     useEffect(() => {
       // Check permissions for all resources
       if (userData && projects.length > 0) {

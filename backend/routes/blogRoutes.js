@@ -30,4 +30,7 @@ router.delete("/blogs/:id", blogController.deleteBlog);
 router.get("/blogs/search", blogController.searchBlogs);
 router.get("/blogs/keyword/:keyword", blogController.getBlogsByKeyword);
 
+
+router.patch("/blogs/:id/views", blogController.incrementBlogViews);
+
 module.exports = router;

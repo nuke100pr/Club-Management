@@ -60,36 +60,59 @@ async function saveFile(file) {
 // Fetch all clubs with follow status
 exports.fetchAllClubs = async (userId) => {
   const clubs = await Club.find({}).populate("image");
-  
+
   if (!userId) {
-    return clubs.map(club => ({ ...club.toObject(), isFollowing: false, isBoardFollowing: false }));
+    return clubs.map((club) => ({
+      ...club.toObject(),
+      isFollowing: false,
+      isBoardFollowing: false,
+    }));
   }
 
   const clubFollows = await ClubFollow.find({ user_id: userId });
   const boardFollows = await BoardFollow.find({ user_id: userId });
+  // Get follower count for this board
+  const followerCount = await ClubFollow.countDocuments({ board_id: boardId });
 
-  return clubs.map(club => ({
+  return clubs.map((club) => ({
     ...club.toObject(),
-    isFollowing: clubFollows.some(follow => follow.club_id === club._id.toString()),
-    isBoardFollowing: boardFollows.some(follow => follow.board_id === club.board_id)
+    isFollowing: clubFollows.some(
+      (follow) => follow.club_id === club._id.toString()
+    ),
+    isBoardFollowing: boardFollows.some(
+      (follow) => follow.board_id === club.board_id
+    ),
+    totalFollowers: followerCount,
   }));
 };
 
 // Fetch clubs by board ID with follow status
 exports.fetchClubsByBoardId = async (boardId, userId) => {
   const clubs = await Club.find({ board_id: boardId }).populate("image");
-  
+
   if (!userId) {
-    return clubs.map(club => ({ ...club.toObject(), isFollowing: false, isBoardFollowing: false }));
+    return clubs.map((club) => ({
+      ...club.toObject(),
+      isFollowing: false,
+      isBoardFollowing: false,
+    }));
   }
 
-  const clubFollows = await ClubFollow.find({ user_id: userId, club_id: { $in: clubs.map(c => c._id) } });
-  const boardFollow = await BoardFollow.findOne({ user_id: userId, board_id: boardId });
+  const clubFollows = await ClubFollow.find({
+    user_id: userId,
+    club_id: { $in: clubs.map((c) => c._id) },
+  });
+  const boardFollow = await BoardFollow.findOne({
+    user_id: userId,
+    board_id: boardId,
+  });
 
-  return clubs.map(club => ({
+  return clubs.map((club) => ({
     ...club.toObject(),
-    isFollowing: clubFollows.some(follow => follow.club_id === club._id.toString()),
-    isBoardFollowing: !!boardFollow
+    isFollowing: clubFollows.some(
+      (follow) => follow.club_id === club._id.toString()
+    ),
+    isBoardFollowing: !!boardFollow,
   }));
 };
 
@@ -104,13 +127,16 @@ exports.fetchClubById = async (clubId, userId) => {
 
   if (userId) {
     isFollowing = await ClubFollow.exists({ user_id: userId, club_id: clubId });
-    isBoardFollowing = await BoardFollow.exists({ user_id: userId, board_id: club.board_id });
+    isBoardFollowing = await BoardFollow.exists({
+      user_id: userId,
+      board_id: club.board_id,
+    });
   }
 
   return {
     ...club.toObject(),
     isFollowing,
-    isBoardFollowing
+    isBoardFollowing,
   };
 };
 
@@ -132,12 +158,12 @@ exports.editClubById = async (clubId, updateData, imageFile) => {
   try {
     const club = await Club.findById(clubId);
     if (!club) {
-      throw new Error('Club not found');
+      throw new Error("Club not found");
     }
 
     if (imageFile) {
       const newFileId = await saveFile(imageFile);
-      
+
       if (club.image) {
         try {
           const oldFile = await File.findById(club.image);
@@ -149,18 +175,17 @@ exports.editClubById = async (clubId, updateData, imageFile) => {
             await File.findByIdAndDelete(club.image);
           }
         } catch (cleanupError) {
-          console.error('Error cleaning up old file:', cleanupError);
+          console.error("Error cleaning up old file:", cleanupError);
         }
       }
-      
+
       updateData.image = newFileId;
     }
 
-    const updatedClub = await Club.findByIdAndUpdate(
-      clubId,
-      updateData,
-      { new: true, runValidators: true }
-    ).populate('image');
+    const updatedClub = await Club.findByIdAndUpdate(clubId, updateData, {
+      new: true,
+      runValidators: true,
+    }).populate("image");
 
     return updatedClub;
   } catch (error) {
@@ -175,7 +200,7 @@ exports.editClubById = async (clubId, updateData, imageFile) => {
           await File.findByIdAndDelete(updateData.image);
         }
       } catch (cleanupError) {
-        console.error('Error cleaning up new file:', cleanupError);
+        console.error("Error cleaning up new file:", cleanupError);
       }
     }
     throw new Error(`Error updating club: ${error.message}`);
@@ -214,7 +239,9 @@ exports.createClub = async (clubData, imageFile) => {
 
 // Fetch all clubs followed by a user
 exports.fetchClubsByUserId = async (userId) => {
-  const follows = await ClubFollow.find({ user_id: userId }).populate("club_id");
+  const follows = await ClubFollow.find({ user_id: userId }).populate(
+    "club_id"
+  );
   return follows.map((follow) => follow.club_id);
 };
 
@@ -239,14 +266,17 @@ exports.unfollowClub = async (userId, clubId) => {
 // Follow a club by user_id and club_id
 // Follow a club by user_id and club_id
 exports.followClub = async (userId, clubId) => {
-  const existingFollow = await ClubFollow.findOne({ user_id: userId, club_id: clubId });
+  const existingFollow = await ClubFollow.findOne({
+    user_id: userId,
+    club_id: clubId,
+  });
   if (existingFollow) {
     return existingFollow;
   }
-  
-  const follow = new ClubFollow({ 
-    user_id: userId, 
-    club_id: clubId
+
+  const follow = new ClubFollow({
+    user_id: userId,
+    club_id: clubId,
     // timestamp will be automatically added by the default value
   });
   return await follow.save();
@@ -254,14 +284,17 @@ exports.followClub = async (userId, clubId) => {
 
 // Follow a board by user_id and board_id
 exports.followBoard = async (userId, boardId) => {
-  const existingFollow = await BoardFollow.findOne({ user_id: userId, board_id: boardId });
+  const existingFollow = await BoardFollow.findOne({
+    user_id: userId,
+    board_id: boardId,
+  });
   if (existingFollow) {
     return existingFollow;
   }
-  
-  const follow = new BoardFollow({ 
-    user_id: userId, 
-    board_id: boardId
+
+  const follow = new BoardFollow({
+    user_id: userId,
+    board_id: boardId,
     // timestamp will be automatically added by the default value
   });
   return await follow.save();

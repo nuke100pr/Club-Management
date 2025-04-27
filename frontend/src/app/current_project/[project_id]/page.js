@@ -506,11 +506,13 @@ export default function ProjectDetailsPage() {
             {project.image && (
               <CardMedia
                 component="img"
-                height="300"
-                image={`${API_BASE_URL}/Uploads/${project.image.filename}`}
+                height="200"
+                image={`${API_BASE_URL}/Uploads/${project.image?.filename}`}
                 alt={project.title}
                 sx={{
-                  objectFit: 'cover',
+                  maxHeight: "200px", // Explicit max height
+                  maxWidth: "100%", // Ensure it doesn't overflow its container
+                  objectFit: 'fill',
                   borderTopLeftRadius: '12px',
                   borderTopRightRadius: '12px',
                 }}

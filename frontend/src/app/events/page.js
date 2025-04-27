@@ -684,31 +684,6 @@ export default function EventsPage() {
                     />
                   )}
                   <ImageOverlayIcons>
-                    {event.isClubFollowed || event.isBoardFollowed ? (
-                      <IconButton
-                        size="small"
-                        sx={{
-                          backgroundColor: theme.palette.background.paper,
-                          "&:hover": {
-                            backgroundColor: theme.palette.background.paper,
-                          },
-                        }}
-                      >
-                        <Star style={{ color: theme.palette.warning.main }} />
-                      </IconButton>
-                    ) : (
-                      <IconButton
-                        size="small"
-                        sx={{
-                          backgroundColor: theme.palette.background.paper,
-                          "&:hover": {
-                            backgroundColor: theme.palette.background.paper,
-                          },
-                        }}
-                      >
-                        <StarOutline color="action" />
-                      </IconButton>
-                    )}
                     {event.registered && (
                       <IconButton
                         size="small"
@@ -867,19 +842,6 @@ export default function EventsPage() {
                         {event.club_id?.name || event.board_id?.name || "Host"}
                       </Typography>
                     </Box>
-                    <FollowingChip
-                      label={
-                        event.isClubFollowed || event.isBoardFollowed
-                          ? "Following"
-                          : "Follow"
-                      }
-                      size="small"
-                      variant={
-                        event.isClubFollowed || event.isBoardFollowed
-                          ? "filled"
-                          : "outlined"
-                      }
-                    />
                   </Box>
 
                   <Box sx={{ display: "flex", gap: 1.5, mb: 2 }}>
@@ -890,7 +852,7 @@ export default function EventsPage() {
                     />
                     <DurationChip
                       icon={<AccessTime style={{ fontSize: 16 }} />}
-                      label={`${event.duration} mins`}
+                      label={`${event.duration} `}
                       size="small"
                     />
                   </Box>
@@ -1030,27 +992,6 @@ export default function EventsPage() {
             </Grid>
           ))}
         </Grid>
-
-        <Fab
-          color="primary"
-          aria-label="add"
-          onClick={handleAddNew}
-          sx={{
-            position: "fixed",
-            bottom: 24,
-            right: 24,
-            boxShadow: theme.shadows[4],
-            background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
-            color: theme.palette.getContrastText(theme.palette.primary.main),
-            "&:hover": {
-              background: `linear-gradient(90deg, ${theme.palette.primary.dark} 0%, ${theme.palette.secondary.dark} 100%)`,
-              transform: "scale(1.05)",
-            },
-            transition: "all 0.2s ease",
-          }}
-        >
-          <Add />
-        </Fab>
 
         <Dialog
           open={openDialog}

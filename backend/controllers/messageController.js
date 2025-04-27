@@ -34,16 +34,16 @@ module.exports = {
       const forumId = req.params.forumId;
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 1000;
-      
+
       if (!mongoose.Types.ObjectId.isValid(forumId)) {
         return res.status(400).json({ error: "Invalid forum ID format" });
       }
-      
+
       const forum_id = new mongoose.Types.ObjectId(forumId);
       const skip = (page - 1) * limit;
-  
+
       const count = await Message.countDocuments({ forum_id, parent_id: null });
-      
+
       if (count === 0) {
         return res.status(200).json({
           messages: [],
@@ -55,7 +55,7 @@ module.exports = {
           },
         });
       }
-  
+
       const messages = await Message.find({
         forum_id,
         parent_id: null,
@@ -63,9 +63,15 @@ module.exports = {
         .sort({ created_at: 1 })
         .skip(skip)
         .limit(limit)
-        .populate('replies') // Populate replies
-        .lean();
-  
+        .populate("user_id")
+        .populate({
+          path: "replies",
+          populate: {
+            path: "user_id",
+            model: "User", // Make sure this matches your User model name
+          },
+        });
+
       return res.status(200).json({
         messages,
         pagination: {
@@ -134,31 +140,36 @@ module.exports = {
       if (parent_id && mongoose.Types.ObjectId.isValid(parent_id)) {
         messageObj.parent_id = parent_id;
 
-        const newReply = await Message.create(messageObj);
+        const msg = await Message.create(messageObj);
+
+        // Populate the user details before emitting
+        const newReply = await Message.findById(msg._id).populate("user_id");
 
         // Update parent message with the full reply data
         const updatedParent = await Message.findByIdAndUpdate(
           parent_id,
           { $push: { replies: newReply._id } },
           { new: true }
-        ).populate('replies');
+        ).populate("replies");
 
         // Emit socket event for new reply to both the parent message room and forum room
         if (io) {
           io.to(parent_id.toString()).emit("newReply", {
             parentId: parent_id,
-            reply: newReply
+            reply: newReply,
           });
           io.to(forum_id.toString()).emit("newReply", {
             parentId: parent_id,
-            reply: newReply
+            reply: newReply,
           });
         }
 
         return newReply;
       } else {
-        // Create new top-level message
-        const newMessage = await Message.create(messageObj);
+        const msg = await Message.create(messageObj);
+
+        // Populate the user details before emitting
+        const newMessage = await Message.findById(msg._id).populate("user_id");
 
         // Emit socket event for new message
         if (io) {
@@ -257,7 +268,10 @@ module.exports = {
       if (io) {
         io.to(message.forum_id.toString()).emit("updatePoll", updatedMessage);
         if (message.parent_id) {
-          io.to(message.parent_id.toString()).emit("updatePoll", updatedMessage);
+          io.to(message.parent_id.toString()).emit(
+            "updatePoll",
+            updatedMessage
+          );
         }
       }
 
@@ -337,7 +351,9 @@ module.exports = {
         .sort({ created_at: 1 })
         .skip(skip)
         .limit(limit)
-        .lean();
+        .populate("user_id");
+
+      console.log(replies);
 
       const total = await Message.countDocuments({
         parent_id: messageId,
@@ -405,12 +421,15 @@ module.exports = {
         };
       }
 
-      const newReply = await Message.create(replyObj);
+      const msg = await Message.create(replyObj);
+
+      // Populate the user details before emitting
+      const newReply = await Message.findById(msg._id).populate("user_id");
       const updatedParent = await Message.findByIdAndUpdate(
         messageId,
         { $push: { replies: newReply._id } },
         { new: true }
-      ).populate('replies');
+      ).populate("replies");
 
       if (!updatedParent) {
         await Message.findByIdAndDelete(newReply._id);
@@ -421,11 +440,11 @@ module.exports = {
       if (io) {
         io.to(messageId.toString()).emit("newReply", {
           parentId: messageId,
-          reply: newReply
+          reply: newReply,
         });
         io.to(parentMessage.forum_id.toString()).emit("newReply", {
           parentId: messageId,
-          reply: newReply
+          reply: newReply,
         });
       }
 

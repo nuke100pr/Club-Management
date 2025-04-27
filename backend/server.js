@@ -126,7 +126,7 @@ app.use("/api", postRoutes);
 app.use("/api/messages", messageRoutes);
 
 app.use("/forums2", forumRoutes2);
-app.use("/events",authMiddleware, eventAndRsvpRoutes);
+app.use("/events", eventAndRsvpRoutes);
 app.use("/projects", projectRoutes);
 app.use("/resources", resourceRoutes);
 app.use("/opportunities", opportunityRoutes);

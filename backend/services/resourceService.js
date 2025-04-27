@@ -12,13 +12,29 @@ class ResourceService {
     }
   }
 
-  // Get all resources with optional filtering
   static async getAllResources(filter = {}) {
     try {
-      const resources = await Resource.find(filter)
-        .populate("club_id")
-        .populate("board_id");
-      return resources;
+      const resources = await Resource.find(filter);
+
+      const populatedResources = await Promise.all(
+        resources.map(async (resource) => {
+          let populatedResource = resource;
+
+          // Populate club_id if it exists
+          if (resource.club_id && resource.club_id !== "null") {
+            populatedResource = await resource.populate("club_id");
+          }
+
+          // Populate board_id if it exists
+          if (resource.board_id && resource.board_id !== "null") {
+            populatedResource = await resource.populate("board_id");
+          }
+
+          return populatedResource;
+        })
+      );
+
+      return populatedResources;
     } catch (error) {
       throw new Error(`Error fetching resources: ${error.message}`);
     }

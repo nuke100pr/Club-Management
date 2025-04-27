@@ -20,14 +20,15 @@ const PollSchema = new Schema({
 // Main message schema
 const MessageSchema = new Schema({
   forum_id: { 
-    type: Schema.Types.ObjectId, 
+    type: String, 
     ref: 'Forum', 
     required: true,
     index: true 
   },
   user_id: { 
-    type: Schema.Types.ObjectId, 
-    required: true 
+    type: String, 
+    required: true ,
+    ref : 'User'
   },
   type: { 
     type: String, 

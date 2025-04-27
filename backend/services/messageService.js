@@ -51,9 +51,13 @@ module.exports = {
         parent_id: null,
       })
         .sort({ created_at: 1 })
+        .populate("user_id")
         .skip(skip)
         .limit(limit)
         .lean();
+
+
+      console.log(messages);
   
       // Get total count for pagination
       const total = await Message.countDocuments({

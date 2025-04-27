@@ -106,7 +106,7 @@ export default function ResourcesPage({ clubId = null, searchQuery = "" }) {
     }
 
     checkResourceCreationPermission();
-  }, [isSuperAdmin, userData, boardId]);
+  }, [isSuperAdmin, userData, clubId]);
     
   useEffect(() => {
     async function loadUserData() {
