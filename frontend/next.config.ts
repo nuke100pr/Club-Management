@@ -25,4 +25,7 @@ module.exports = withPWA({
     ignoreBuildErrors: true,
   },
   headers,
+  images: {
+    domains: ['localhost'],
+  },
 });

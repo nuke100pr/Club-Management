@@ -1,27 +1,120 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import {
   Box,
   Typography,
   LinearProgress,
   useMediaQuery,
   Divider,
+  Paper,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
+  Avatar,
+  Link,
+  Fade,
 } from "@mui/material";
 import PostFeed from "../../components/finalpage/PostFeed";
 import { useTheme } from "@mui/material/styles";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import SchoolIcon from "@mui/icons-material/School";
+import LanguageIcon from "@mui/icons-material/Language";
+import YouTubeIcon from "@mui/icons-material/YouTube";
+import PersonIcon from "@mui/icons-material/Person";
 
 export default function Home() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [activeProfiles, setActiveProfiles] = useState([]);
+  
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
-
+  
   // Determining dark mode from theme
   const isDarkMode = theme.palette.mode === "dark";
+  
+  // Campus resources links
+  const campusResources = [
+    { name: "IIT Ropar Home Page", icon: <SchoolIcon />, url: "https://www.iitrpr.ac.in" },
+    { name: "LOC YouTube Channel", icon: <YouTubeIcon />, url: "https://youtube.com/loc_iitropar" },
+    { name: "LOC Website", icon: <LanguageIcon />, url: "https://www.locrpr.com" }
+  ];
+
+  // Generate random letter for avatar
+  const getRandomLetter = () => {
+    const letters = "ABCDHLMNOPRSTU";
+    return letters[Math.floor(Math.random() * letters.length)];
+  };
+
+  // Dynamic campus activity simulation with letter avatars
+  useEffect(() => {
+    // Create initial set of active profiles (20-30)
+    const initialCount = Math.floor(Math.random() * 11) + 20; // Random number between 20-30
+    const initialProfiles = Array.from({ length: initialCount }, (_, i) => {
+      const letter = getRandomLetter();
+      const colorHue = Math.floor(Math.random() * 360); // Random hue for avatar color
+      
+      return {
+        id: i,
+        letter,
+        avatarColor: `hsl(${colorHue}, 70%, 60%)`,
+        x: Math.random() * 70 + 15, // position between 15% and 85%
+        y: Math.random() * 70 + 15, // position between 15% and 85%
+      };
+    });
+    
+    setActiveProfiles(initialProfiles);
+    
+    // Periodically update active profiles to simulate activity
+    const interval = setInterval(() => {
+      setActiveProfiles(prev => {
+        // Maintain count between 20-30
+        const targetCount = Math.floor(Math.random() * 11) + 20;
+        
+        if (prev.length < targetCount) {
+          // Add new profiles
+          const newProfiles = Array.from({ length: targetCount - prev.length }, () => {
+            const letter = getRandomLetter();
+            const colorHue = Math.floor(Math.random() * 360);
+            
+            return {
+              id: Date.now() + Math.random(),
+              letter,
+              avatarColor: `hsl(${colorHue}, 70%, 60%)`,
+              x: Math.random() * 70 + 15,
+              y: Math.random() * 70 + 15,
+              isNew: true
+            };
+          });
+          return [...prev, ...newProfiles];
+        } else if (prev.length > targetCount) {
+          // Remove random profiles
+          const numToRemove = prev.length - targetCount;
+          const indexesToRemove = Array.from({ length: numToRemove }, () => 
+            Math.floor(Math.random() * prev.length)
+          );
+          return prev.filter((_, index) => !indexesToRemove.includes(index));
+        } else {
+          // Just update positions slightly for movement effect
+          return prev.map(profile => ({
+            ...profile,
+            isNew: false,
+            // Slightly adjust positions for subtle animation
+            x: Math.max(15, Math.min(85, profile.x + (Math.random() * 6 - 3))),
+            y: Math.max(15, Math.min(85, profile.y + (Math.random() * 6 - 3)))
+          }));
+        }
+      });
+    }, 2000); // Update every 2 seconds
+    
+    return () => clearInterval(interval);
+  }, []);
+
   useEffect(() => {
     // Check if we're running on the client side
     if (typeof window !== 'undefined') {
@@ -48,30 +141,6 @@ export default function Home() {
     }, 2000); // Extended for ultra-premium feeling
     return () => clearTimeout(timer);
   }, []);
-
-  // Update time every second
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  // Format date and time
-  const formatDate = (date) => {
-    const options = {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    };
-    return date.toLocaleDateString(undefined, options);
-  };
-
-  const formatTime = (date) => {
-    const options = { hour: "2-digit", minute: "2-digit", second: "2-digit" };
-    return date.toLocaleTimeString(undefined, options);
-  };
 
   // Style to hide scrollbars while maintaining functionality
   const hideScrollbarStyle = {
@@ -122,7 +191,18 @@ export default function Home() {
     m: 2,
     display: "flex",
     flexDirection: "column",
-    justifyContent: "space-between",
+    gap: 3,
+  };
+
+  // Gradient text style
+  const gradientTextStyle = {
+    fontWeight: 800,
+    letterSpacing: 1,
+    background: "linear-gradient(135deg, #4776E6 0%, #8E54E9 100%)",
+    WebkitBackgroundClip: "text",
+    WebkitTextFillColor: "transparent",
+    backgroundClip: "text",
+    textFillColor: "transparent",
   };
 
   // Handle responsive layout
@@ -139,7 +219,7 @@ export default function Home() {
             p: 2,
           }}
         >
-          {/* Logo and time at top for mobile */}
+          {/* Logo at top for mobile */}
           <Box
             sx={{
               ...ultraPremiumGlassEffect,
@@ -147,26 +227,12 @@ export default function Home() {
               p: 2,
               mb: 2,
               display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
+              flexDirection: "column",
+              gap: 1,
             }}
           >
-            <Typography
-              variant="h5"
-              sx={{
-                fontWeight: 800,
-                letterSpacing: 1,
-                background: "linear-gradient(135deg, #4776E6 0%, #8E54E9 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-                textFillColor: "transparent",
-              }}
-            >
+            <Typography variant="h5" sx={gradientTextStyle}>
               LIFE ON CAMPUS
-            </Typography>
-            <Typography variant="h6" sx={{ fontWeight: 700 }}>
-              {formatTime(currentTime)}
             </Typography>
           </Box>
 
@@ -182,13 +248,13 @@ export default function Home() {
             }}
           >
             <ErrorBoundary>
-            <PostFeed />
+              <PostFeed />
             </ErrorBoundary>
           </Box>
         </Box>
       );
     } else {
-      // Desktop/tablet layout with sidebars
+      // Desktop/tablet layout with innovative sidebars
       return (
         <Box
           sx={{
@@ -198,52 +264,78 @@ export default function Home() {
             justifyContent: "center",
           }}
         >
-          {/* Left sidebar with logo and branding */}
-          <Box sx={{ ...sidebarStyle }}>
+          {/* Left sidebar with dynamic content */}
+          <Box sx={sidebarStyle}>
+            {/* Logo */}
             <Box>
-              <Typography
-                variant="h4"
-                sx={{
-                  fontWeight: 800,
-                  letterSpacing: 1.2,
-                  background:
-                    "linear-gradient(135deg, #4776E6 0%, #8E54E9 100%)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
-                  textFillColor: "transparent",
-                  mb: 2,
-                }}
-              >
+              <Typography variant="h4" sx={gradientTextStyle}>
                 LIFE ON CAMPUS
               </Typography>
               <Divider
                 sx={{
                   my: 2,
-                  background:
-                    "linear-gradient(90deg, rgba(71,118,230,0.5) 0%, rgba(142,84,233,0.5) 100%)",
+                  background: "linear-gradient(90deg, rgba(71,118,230,0.5) 0%, rgba(142,84,233,0.5) 100%)",
                   height: "2px",
                   border: "none",
                 }}
               />
-              <Typography
-                variant="body1"
-                sx={{ fontWeight: 500, opacity: 0.9, mb: 1 }}
-              >
+              <Typography variant="body1" sx={{ fontWeight: 500, opacity: 0.9, mb: 1 }}>
                 Your premium campus experience
               </Typography>
-              <Typography variant="body2" sx={{ opacity: 0.7 }}>
-                Stay connected with everything happening around your campus
-              </Typography>
             </Box>
-
-            <Box>
-              <Typography
-                variant="overline"
-                sx={{ opacity: 0.7, letterSpacing: 2 }}
+            
+            {/* Featured Image with fade animation */}
+            <Fade in={imageLoaded} timeout={1000}>
+              <Box 
+                sx={{ 
+                  position: "relative", 
+                  width: "100%", 
+                  height: 180, 
+                  borderRadius: 2,
+                  overflow: "hidden",
+                  ...gradientBorder,
+                }}
               >
-                Version 1.0.0
+                <Image
+                  src={`${process.env.NEXT_PUBLIC_BACKEND_URL}/uploads/home/img1.jpg`}
+                  alt="Campus Life"
+                  layout="fill"
+                  objectFit="cover"
+                  onLoad={() => setImageLoaded(true)}
+                />
+              </Box>
+            </Fade>
+            
+            {/* Campus Resources */}
+            <Box sx={{ mt: "auto" }}>
+              <Typography variant="overline" sx={{ opacity: 0.7, letterSpacing: 2 }}>
+                QUICK LINKS
               </Typography>
+              <List dense>
+                {campusResources.map((resource, index) => (
+                  <ListItem 
+                    key={index} 
+                    disableGutters 
+                    component={Link} 
+                    href={resource.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    sx={{ 
+                      color: "inherit", 
+                      textDecoration: "none",
+                      "&:hover": {
+                        textDecoration: "underline",
+                        color: theme.palette.primary.main
+                      }
+                    }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 36 }}>
+                      {resource.icon}
+                    </ListItemIcon>
+                    <ListItemText primary={resource.name} />
+                  </ListItem>
+                ))}
+              </List>
             </Box>
           </Box>
 
@@ -263,44 +355,97 @@ export default function Home() {
             <PostFeed />
           </Box>
 
-          {/* Right sidebar with date/time */}
-          <Box sx={{ ...sidebarStyle }}>
+          {/* Right sidebar with interactive features */}
+          <Box sx={sidebarStyle}>
+            {/* Campus Activity with Letter Avatars */}
             <Box>
-              <Typography
-                variant="overline"
-                sx={{ opacity: 0.7, letterSpacing: 2 }}
-              >
-                CURRENT TIME
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, display: 'flex', alignItems: 'center' }}>
+                <PersonIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
+                Campus Activity
               </Typography>
-              <Typography
-                variant="h4"
-                sx={{ fontWeight: 700, letterSpacing: 0.5, mt: 1 }}
+              <Box 
+                sx={{ 
+                  position: "relative", 
+                  height: 400, 
+                  p: 2, 
+                  ...gradientBorder, 
+                  borderRadius: 2,
+                  overflow: "hidden" 
+                }}
               >
-                {formatTime(currentTime)}
-              </Typography>
+                <Box sx={{ 
+                  position: "absolute", 
+                  bottom: 0, 
+                  left: 0, 
+                  width: "100%", 
+                  height: "30%", 
+                  background: `linear-gradient(0deg, ${theme.palette.primary.main}33 0%, transparent 100%)`,
+                  borderRadius: "0 0 8px 8px",
+                }}>
+                  <Typography 
+                    variant="h6" 
+                    sx={{ 
+                      position: "absolute", 
+                      bottom: 10, 
+                      left: 10, 
+                      fontWeight: 700,
+                      color: theme.palette.mode === "dark" ? "rgba(255,255,255,0.9)" : "rgba(0,0,0,0.7)" 
+                    }}
+                  >
+                    {activeProfiles.length} Active Now
+                  </Typography>
+                </Box>
+                
+                {/* Dynamic letter avatars */}
+                {activeProfiles.map((profile) => (
+                  <Fade key={profile.id} in={true} timeout={profile.isNew ? 800 : 400}>
+                    <Avatar 
+                      sx={{ 
+                        width: 36, 
+                        height: 36,
+                        position: "absolute",
+                        top: `${profile.y}%`,
+                        left: `${profile.x}%`,
+                        backgroundColor: profile.avatarColor,
+                        transform: "translate(-50%, -50%)",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+                        transition: "all 0.5s ease",
+                        border: profile.isNew ? "2px solid white" : "none",
+                        animation: profile.isNew ? "pulse 1.5s infinite" : "none",
+                        "@keyframes pulse": {
+                          "0%": {
+                            boxShadow: "0 0 0 0 rgba(255,255,255,0.7)"
+                          },
+                          "70%": {
+                            boxShadow: "0 0 0 6px rgba(255,255,255,0)"
+                          },
+                          "100%": {
+                            boxShadow: "0 0 0 0 rgba(255,255,255,0)"
+                          }
+                        },
+                        fontSize: 16,
+                        fontWeight: 600
+                      }}
+                    >
+                      {profile.letter}
+                    </Avatar>
+                  </Fade>
+                ))}
+              </Box>
+            </Box>
+            
+            {/* Inspirational Quote */}
+            <Box sx={{ mt: "auto" }}>
               <Divider
                 sx={{
                   my: 2,
-                  background:
-                    "linear-gradient(90deg, rgba(142,84,233,0.5) 0%, rgba(71,118,230,0.5) 100%)",
+                  background: "linear-gradient(90deg, rgba(142,84,233,0.5) 0%, rgba(71,118,230,0.5) 100%)",
                   height: "2px",
                   border: "none",
                 }}
               />
-              <Typography
-                variant="body1"
-                sx={{ fontWeight: 500, opacity: 0.9 }}
-              >
-                {formatDate(currentTime)}
-              </Typography>
-            </Box>
-
-            <Box>
-              <Typography
-                variant="body2"
-                sx={{ opacity: 0.7, fontStyle: "italic" }}
-              >
-                "Make every moment on campus count"
+              <Typography variant="body2" sx={{ opacity: 0.7, fontStyle: "italic" }}>
+                "Your campus journey is what you make of it. Connect, learn, grow."
               </Typography>
             </Box>
           </Box>
