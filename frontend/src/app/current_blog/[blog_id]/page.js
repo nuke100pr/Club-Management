@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import BlogCreateForm from "../../../components/blogs//BlogCreateForm";
-import { fetchUserData, hasPermission } from "@/utils/auth";
+import { fetchUserData, hasPermission, getAuthToken } from "@/utils/auth";
 // Material UI imports
 import {
   Box,
@@ -54,6 +54,7 @@ export default function BlogDetailPage() {
   const [error, setError] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [authToken, setAuthToken] = useState(null);
 
   const [userData, setUserData] = useState(null);
   const [userId, setUserId] = useState(null);
@@ -66,12 +67,27 @@ export default function BlogDetailPage() {
     useState([]);
   const [hasPermissionToEdit, setHasPermissionToEdit] = useState(false);
 
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
+
   // Fetch blog
   useEffect(() => {
     const fetchBlog = async () => {
+      if (!authToken) return;
+      
       setIsLoading(true);
       try {
-        const res = await fetch(`http://localhost:5000/blogs/blogs/${blog_id}`);
+        const res = await fetch(`http://localhost:5000/blogs/blogs/${blog_id}`, {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        });
         if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
         const data = await res.json();
         setBlog(data);
@@ -84,7 +100,7 @@ export default function BlogDetailPage() {
     };
 
     fetchBlog();
-  }, [blog_id]);
+  }, [blog_id, authToken]);
 
   useEffect(() => {
     async function loadUserData() {
@@ -152,11 +168,15 @@ export default function BlogDetailPage() {
   };
 
   const handleDelete = async () => {
+    if (!authToken) return;
     if (!confirm("Are you sure you want to delete this blog?")) return;
 
     try {
       const res = await fetch(`http://localhost:5000/blogs/blogs/${blog_id}`, {
         method: "DELETE",
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
       });
       if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
       alert("Blog deleted successfully!");
@@ -190,6 +210,8 @@ export default function BlogDetailPage() {
   };
 
   const handleFormSubmit = async (formData) => {
+    if (!authToken) return;
+    
     try {
       const multipartFormData = new FormData();
 
@@ -215,6 +237,9 @@ export default function BlogDetailPage() {
 
       const res = await fetch(`http://localhost:5000/blogs/blogs/${blog_id}`, {
         method: "PUT",
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        },
         body: multipartFormData,
       });
 

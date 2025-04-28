@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import {useRouter} from "next/navigation"
+import { useRouter } from "next/navigation";
 import {
   Box,
   Button,
@@ -38,8 +38,9 @@ import {
   ViewWeek,
   Today,
   Search as SearchIcon,
-  Launch
+  Launch,
 } from "@mui/icons-material";
+import { getAuthToken } from "@/utils/auth";
 
 // Custom styled components using theme
 const GradientButton = styled(Button)(({ theme }) => ({
@@ -344,6 +345,7 @@ const CalendarView = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [authToken, setAuthToken] = useState(null);
 
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
@@ -363,6 +365,15 @@ const CalendarView = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const isSmall = useMediaQuery(theme.breakpoints.down("sm"));
 
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
+
   // Today's date for highlighting
   const today = new Date();
   const isToday = (day) => {
@@ -376,10 +387,17 @@ const CalendarView = () => {
   // Fetch events from API
   useEffect(() => {
     const fetchEvents = async () => {
+      if (!authToken) return;
+
       setLoading(true);
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/events`
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/events`,
+          {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          }
         );
         const result = await response.json();
 
@@ -397,7 +415,7 @@ const CalendarView = () => {
     };
 
     fetchEvents();
-  }, []);
+  }, [authToken]);
 
   const months = [
     "January",

@@ -23,7 +23,7 @@ import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import BlogCreateForm from "../../components/blogs/BlogCreateForm";
 import SearchBar from "../../components/blogs/SearchBar";
-import { fetchUserData, hasPermission } from "@/utils/auth";
+import { fetchUserData, hasPermission, getAuthToken } from "@/utils/auth";
 import { useRouter } from "next/navigation";
 import ShareIcon from "@mui/icons-material/Share";
 import UniversalShareMenu from "../../components/shared/UniversalShareMenu";
@@ -55,7 +55,17 @@ export default function BLOGS() {
   const [selectedFilters, setSelectedFilters] = useState({});
   const [arrayPermissions, setArrayPermissions] = useState({});
   const [canCreatePermission, setCanCreatePermission] = useState({});
+  const [authToken, setAuthToken] = useState(null);
   const router = useRouter();
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   // Fetch user data on mount
   useEffect(() => {
@@ -116,9 +126,16 @@ export default function BLOGS() {
   useEffect(() => {
     const fetchBlogs = async () => {
       try {
+        if (!authToken) return;
+        
         setIsLoading(true);
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/blogs/blogs`
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/blogs/blogs`,
+          {
+            headers: {
+              'Authorization': `Bearer ${authToken}`,
+            }
+          }
         );
 
         if (!response.ok) {
@@ -167,7 +184,7 @@ export default function BLOGS() {
     };
 
     fetchBlogs();
-  }, []);
+  }, [authToken]);
 
   // Handle filter changes
   const handleFilterChange = (event) => {
@@ -229,10 +246,15 @@ export default function BLOGS() {
 
   const handleDelete = async (blogId) => {
     try {
+      if (!authToken) return;
+      
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/blogs/blogs/${blogId}`,
         {
           method: "DELETE",
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
         }
       );
 
@@ -250,8 +272,15 @@ export default function BLOGS() {
 
   const handleEdit = async (blog) => {
     try {
+      if (!authToken) return;
+      
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/blogs/blogs/${blog.id}`
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/blogs/blogs/${blog.id}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        }
       );
 
       if (!response.ok) {
@@ -291,6 +320,8 @@ export default function BLOGS() {
 
   const handleFormSubmit = async (formData) => {
     try {
+      if (!authToken) return;
+      
       const url = isEditing
         ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/blogs/blogs/${selectedBlog.id}`
         : `${process.env.NEXT_PUBLIC_BACKEND_URL}/blogs/blogs`;
@@ -329,6 +360,9 @@ export default function BLOGS() {
       const response = await fetch(url, {
         method: method,
         body: multipartFormData,
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
       });
 
       if (!response.ok) {
@@ -397,10 +431,15 @@ export default function BLOGS() {
   const handleReadMore = async (blogId) => {
     // Increment view count before navigation
     try {
+      if (!authToken) return;
+      
       await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/blogs/blogs/${blogId}/views`,
         {
           method: "PATCH",
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
         }
       );
     } catch (error) {

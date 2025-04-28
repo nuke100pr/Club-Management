@@ -273,7 +273,7 @@ const OpportunityCard = ({
           }}
         />
 
-        {arrayPermissions[opportunity._id] && (   
+        {hasPermission[opportunity._id] && (   
           <Box
             sx={{
               position: "absolute",
@@ -875,7 +875,7 @@ export default function OpportunitiesPage({
               <Grid item xs={12} sm={6} md={4} key={opportunity._id}>
                 <OpportunityCard
                   opportunity={opportunity}
-                  hasPermission={hasOpportunityPermission(opportunity)}
+                  hasPermission={arrayPermissions}
                   handleEdit={handleEdit}
                   handleDelete={handleDelete}
                   router={router}

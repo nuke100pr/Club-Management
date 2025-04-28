@@ -1,7 +1,8 @@
 // pages/create-notification.js
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Head from 'next/head';
+import { getAuthToken } from "@/utils/auth";
 
 export default function CreateNotification() {
   const [notification, setNotification] = useState({
@@ -12,6 +13,16 @@ export default function CreateNotification() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -27,11 +38,16 @@ export default function CreateNotification() {
     setError('');
     setSuccess('');
 
+    if(!authToken) {
+      return;
+    }
+
     try {
       const response = await fetch('http://localhost:5000/api/notification-queue', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
         },
         body: JSON.stringify(notification),
       });

@@ -34,7 +34,7 @@ import {
 import { Carousel } from "react-responsive-carousel";
 import "react-responsive-carousel/lib/styles/carousel.min.css";
 import { useRouter } from "next/navigation";
-import { fetchUserData } from "@/utils/auth";
+import { fetchUserData, getAuthToken } from "@/utils/auth";
 import PostEditor from "../../components/posts/PostEditor";
 
 const API_URL = "http://localhost:5000/api";
@@ -63,11 +63,23 @@ const Posts = ({ boardId, clubId }) => {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [openEditor, setOpenEditor] = useState(false);
   const [postToEdit, setPostToEdit] = useState(null);
-  const [userClubsWithPostPermission, setUserClubsWithPostPermission] = useState([]);
-  const [userBoardsWithPostPermission, setUserBoardsWithPostPermission] = useState([]);
+  const [userClubsWithPostPermission, setUserClubsWithPostPermission] =
+    useState([]);
+  const [userBoardsWithPostPermission, setUserBoardsWithPostPermission] =
+    useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [authToken, setAuthToken] = useState(null);
 
   const router = useRouter();
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   useEffect(() => {
     async function loadUserData() {
@@ -140,14 +152,21 @@ const Posts = ({ boardId, clubId }) => {
   }, [searchTerm, posts, boardId]);
 
   const fetchPosts = async () => {
+    if (!authToken) return;
+
     try {
       setLoading(true);
       const url = boardId
         ? `${API_URL}/posts?board_id=${boardId}`
         : `${API_URL}/posts`;
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
 
-      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+      if (!response.ok)
+        throw new Error(`HTTP error! Status: ${response.status}`);
 
       const data = await response.json();
       const postsArray = data.posts || [];
@@ -224,10 +243,15 @@ const Posts = ({ boardId, clubId }) => {
   };
 
   const handleDeletePost = async (postId) => {
+    if (!authToken) return;
+
     try {
       const response = await fetch(`${API_URL}/posts/${postId}`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
       });
 
       if (!response.ok) throw new Error("Delete failed");
@@ -241,19 +265,24 @@ const Posts = ({ boardId, clubId }) => {
   };
 
   const handleReactionToggle = async (emoji, postId) => {
+    if (!authToken) return;
+
     const hasReaction = userReactions[postId]?.[emoji];
 
     try {
-      const response = await fetch(
-        `${API_URL}/posts/${postId}/reactions`,
-        {
-          method: hasReaction ? "DELETE" : "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ user_id: userId, emoji }),
-        }
-      );
+      const response = await fetch(`${API_URL}/posts/${postId}/reactions`, {
+        method: hasReaction ? "DELETE" : "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({ user_id: userId, emoji }),
+      });
 
-      if (!response.ok) throw new Error(hasReaction ? "Failed to remove reaction" : "Failed to add reaction");
+      if (!response.ok)
+        throw new Error(
+          hasReaction ? "Failed to remove reaction" : "Failed to add reaction"
+        );
 
       // Optimistically update UI
       setReactions((prev) => ({
@@ -287,10 +316,15 @@ const Posts = ({ boardId, clubId }) => {
   };
 
   const handleVote = async (postId, voteValue) => {
+    if (!authToken) return;
+
     try {
       const response = await fetch(`${API_URL}/posts/${postId}/votes`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
         body: JSON.stringify({ user_id: userId, vote: voteValue }),
       });
 
@@ -566,13 +600,17 @@ const Posts = ({ boardId, clubId }) => {
                                   padding: "0 8px",
                                   borderRadius: "16px",
                                   fontSize: "0.875rem",
-                                  backgroundColor: userReactions[post._id]?.[emoji]
+                                  backgroundColor: userReactions[post._id]?.[
+                                    emoji
+                                  ]
                                     ? "rgba(25, 118, 210, 0.08)"
                                     : "transparent",
                                 }}
                               >
                                 <span>{emoji}</span>
-                                <span style={{ marginLeft: "4px" }}>{count}</span>
+                                <span style={{ marginLeft: "4px" }}>
+                                  {count}
+                                </span>
                               </Button>
                             </Tooltip>
                           ))}

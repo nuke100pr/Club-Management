@@ -1,17 +1,32 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Mail, Calendar, Award, User, Settings, Shield, Activity, FileText, Key, Medal, Users, Bell, Lock, CreditCard, Trash2, HelpCircle, Languages, Edit, Clock } from 'lucide-react';
+import { getAuthToken } from "@/utils/auth";
 
 export default function EnhancedUserProfile() {
   // State to track if the current user is viewing their own profile
   const [isOwnProfile, setIsOwnProfile] = useState(true);
   // State to track which tab is active
   const [activeTab, setActiveTab] = useState('account');
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   const toggleProfileView = () => {
     setIsOwnProfile(!isOwnProfile);
   };
+
+  if (!authToken) {
+    return;
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -656,4 +671,3 @@ export default function EnhancedUserProfile() {
     </div>
   );
 }
-

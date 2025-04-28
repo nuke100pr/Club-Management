@@ -9,7 +9,7 @@ import {
   Fab,
   Alert,
   Container,
-  useTheme
+  useTheme,
 } from "@mui/material";
 import { useRouter } from "next/navigation";
 import EditIcon from "@mui/icons-material/Edit";
@@ -17,13 +17,21 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import SearchAndFilter from "../../components/clubs/SearchAndFilter";
 import CreateClubForm from "../../components/clubs/CreateClubForm";
-import { fetchUserData } from "@/utils/auth";
+import { fetchUserData, getAuthToken } from "@/utils/auth";
 
-const ClubCard = ({ club, boardName, onFollow, onUnfollow, onEdit, onDelete, hasPermission }) => {
+const ClubCard = ({
+  club,
+  boardName,
+  onFollow,
+  onUnfollow,
+  onEdit,
+  onDelete,
+  hasPermission,
+}) => {
   const theme = useTheme();
   const [isFollowing, setIsFollowing] = useState(club.isFollowing || false);
   const router = useRouter();
-  
+
   const handleFollowClick = async (e) => {
     e.stopPropagation();
     try {
@@ -58,19 +66,19 @@ const ClubCard = ({ club, boardName, onFollow, onUnfollow, onEdit, onDelete, has
   };
 
   return (
-    <Card 
-      sx={{ 
-        width: 350, 
-        m: 1, 
-        boxShadow: theme.shadows[2], 
+    <Card
+      sx={{
+        width: 350,
+        m: 1,
+        boxShadow: theme.shadows[2],
         borderRadius: 2,
         cursor: "pointer",
         backgroundColor: theme.palette.background.paper,
         "&:hover": {
           boxShadow: theme.shadows[4],
           transform: "translateY(-2px)",
-          transition: "all 0.2s ease-in-out"
-        }
+          transition: "all 0.2s ease-in-out",
+        },
       }}
       onClick={handleCardClick}
     >
@@ -81,21 +89,27 @@ const ClubCard = ({ club, boardName, onFollow, onUnfollow, onEdit, onDelete, has
           </Typography>
           {hasPermission && (
             <Box>
-              <IconButton onClick={(e) => handleEditClick(e, club)} color="primary">
+              <IconButton
+                onClick={(e) => handleEditClick(e, club)}
+                color="primary"
+              >
                 <EditIcon />
               </IconButton>
-              <IconButton onClick={(e) => handleDeleteClick(e, club._id)} color="error">
+              <IconButton
+                onClick={(e) => handleDeleteClick(e, club._id)}
+                color="error"
+              >
                 <DeleteIcon />
               </IconButton>
             </Box>
           )}
         </Box>
-        
-        <Button 
-          variant="contained" 
+
+        <Button
+          variant="contained"
           disableElevation
-          sx={{ 
-            borderRadius: 20, 
+          sx={{
+            borderRadius: 20,
             backgroundColor: getTagColor(club.board_id),
             textTransform: "none",
             mb: 2,
@@ -103,33 +117,53 @@ const ClubCard = ({ club, boardName, onFollow, onUnfollow, onEdit, onDelete, has
             py: 0.5,
             "&:hover": {
               backgroundColor: getTagColor(club.board_id),
-            }
+            },
           }}
         >
           {boardName}
         </Button>
 
         <Box sx={{ borderTop: `1px solid ${theme.palette.divider}`, pt: 2 }}>
-          <Typography component="div" sx={{ display: 'flex', mb: 1 }}>
-            <Typography component="span" fontWeight="bold" sx={{ mr: 1 }} color="text.primary">Owner:</Typography>
-            <Typography component="span" color="text.secondary">{club.name}</Typography>
+          <Typography component="div" sx={{ display: "flex", mb: 1 }}>
+            <Typography
+              component="span"
+              fontWeight="bold"
+              sx={{ mr: 1 }}
+              color="text.primary"
+            >
+              Owner:
+            </Typography>
+            <Typography component="span" color="text.secondary">
+              {club.name}
+            </Typography>
           </Typography>
-          
-          <Typography component="div" sx={{ display: 'flex', mb: 2 }}>
-            <Typography component="span" fontWeight="bold" sx={{ mr: 1 }} color="text.primary">Description:</Typography>
-            <Typography component="span" sx={{ maxHeight: "60px", overflow: "hidden" }} color="text.secondary">
+
+          <Typography component="div" sx={{ display: "flex", mb: 2 }}>
+            <Typography
+              component="span"
+              fontWeight="bold"
+              sx={{ mr: 1 }}
+              color="text.primary"
+            >
+              Description:
+            </Typography>
+            <Typography
+              component="span"
+              sx={{ maxHeight: "60px", overflow: "hidden" }}
+              color="text.secondary"
+            >
               {club.description}
             </Typography>
           </Typography>
         </Box>
 
-        <Button 
+        <Button
           variant={isFollowing ? "contained" : "outlined"}
           fullWidth
-          color="primary" 
+          color="primary"
           onClick={handleFollowClick}
-          sx={{ 
-            borderRadius: 2, 
+          sx={{
+            borderRadius: 2,
             textTransform: "none",
             py: 1.5,
           }}
@@ -141,7 +175,13 @@ const ClubCard = ({ club, boardName, onFollow, onUnfollow, onEdit, onDelete, has
   );
 };
 
-const BoardHeader = ({ boardId, boardName, isFollowing, onFollow, onUnfollow }) => {
+const BoardHeader = ({
+  boardId,
+  boardName,
+  isFollowing,
+  onFollow,
+  onUnfollow,
+}) => {
   const theme = useTheme();
   const [following, setFollowing] = useState(isFollowing);
   const router = useRouter();
@@ -170,27 +210,33 @@ const BoardHeader = ({ boardId, boardName, isFollowing, onFollow, onUnfollow }) 
   };
 
   return (
-    <Box 
-      sx={{ 
+    <Box
+      sx={{
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
-        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)', 
-        p: 1.5, 
+        backgroundColor:
+          theme.palette.mode === "dark"
+            ? "rgba(255, 255, 255, 0.05)"
+            : "rgba(0, 0, 0, 0.05)",
+        p: 1.5,
         borderRadius: "4px 4px 0 0",
         borderBottom: `1px solid ${theme.palette.divider}`,
         mb: 2,
         cursor: "pointer",
         "&:hover": {
-          backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)',
-        }
+          backgroundColor:
+            theme.palette.mode === "dark"
+              ? "rgba(255, 255, 255, 0.08)"
+              : "rgba(0, 0, 0, 0.08)",
+        },
       }}
       onClick={handleBoardClick}
     >
       <Typography variant="subtitle1" fontWeight="bold" color="text.primary">
         {boardName}
       </Typography>
-      
+
       <Button
         variant={following ? "contained" : "outlined"}
         size="small"
@@ -200,7 +246,7 @@ const BoardHeader = ({ boardId, boardName, isFollowing, onFollow, onUnfollow }) 
           textTransform: "none",
           px: 2,
           py: 0.5,
-          fontSize: "0.75rem"
+          fontSize: "0.75rem",
         }}
       >
         {following ? "Following" : "Follow Board"}
@@ -223,6 +269,7 @@ const ClubList = () => {
   const [userId, setUserId] = useState(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [userClubsWithPermission, setUserClubsWithPermission] = useState([]);
+  const [authToken, setAuthToken] = useState(null);
 
   useEffect(() => {
     async function loadUserData() {
@@ -241,81 +288,115 @@ const ClubList = () => {
       }
     }
     loadUserData();
+
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+    fetchAuthToken();
   }, []);
 
   const hasPermission = (club) => {
     if (isSuperAdmin) return true;
-    const hasClubPermission = club._id && userClubsWithPermission.includes(club._id);
+    const hasClubPermission =
+      club._id && userClubsWithPermission.includes(club._id);
     return hasClubPermission;
   };
 
   useEffect(() => {
     const fetchClubsAndBoards = async () => {
       try {
-        const clubsUrl = userId 
+        if (!authToken) return;
+
+        const clubsUrl = userId
           ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/clubs/clubs?user_id=${userId}`
           : `${process.env.NEXT_PUBLIC_BACKEND_URL}/clubs/clubs`;
-        
-        const clubsResponse = await fetch(clubsUrl);
-        if (!clubsResponse.ok) throw new Error('Failed to fetch clubs');
+
+        const clubsResponse = await fetch(clubsUrl, {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        });
+        if (!clubsResponse.ok) throw new Error("Failed to fetch clubs");
         const clubsData = await clubsResponse.json();
         setClubs(clubsData);
 
-        const boardsResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/boards`);
-        if (!boardsResponse.ok) throw new Error('Failed to fetch boards');
+        const boardsResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/boards`,
+          {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          }
+        );
+        if (!boardsResponse.ok) throw new Error("Failed to fetch boards");
         const boardsData = await boardsResponse.json();
-        
+
         const boardsObject = boardsData.reduce((acc, board) => {
           acc[board._id] = board.name;
           return acc;
         }, {});
         setBoards(boardsObject);
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error("Error fetching data:", error);
       }
     };
 
     fetchClubsAndBoards();
-  }, [userId]);
+  }, [userId, authToken]);
 
   const handleEdit = async (club) => {
     try {
-      const url = userId 
+      if (!authToken) return;
+
+      const url = userId
         ? `http://localhost:5000/clubs/clubs/${club._id}?user_id=${userId}`
         : `http://localhost:5000/clubs/clubs/${club._id}`;
-      
-      const response = await fetch(url);
-      if (!response.ok) throw new Error('Failed to fetch club details');
+
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+      if (!response.ok) throw new Error("Failed to fetch club details");
       const clubDetails = await response.json();
       setSelectedClub(clubDetails);
       setEditDialogOpen(true);
     } catch (error) {
-      console.error('Error fetching club details:', error);
+      console.error("Error fetching club details:", error);
     }
   };
 
   const handleDelete = async (clubId) => {
     try {
-      const response = await fetch(`http://localhost:5000/clubs/clubs/${clubId}`, {
-        method: 'DELETE'
-      });
-      
-      if (!response.ok) throw new Error('Failed to delete club');
-      
-      setClubs(prevClubs => prevClubs.filter(club => club._id !== clubId));
+      if (!authToken) return;
+
+      const response = await fetch(
+        `http://localhost:5000/clubs/clubs/${clubId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to delete club");
+
+      setClubs((prevClubs) => prevClubs.filter((club) => club._id !== clubId));
     } catch (error) {
-      console.error('Error deleting club:', error);
+      console.error("Error deleting club:", error);
     }
   };
-  
+
   const handleCreateClub = async (newClub) => {
-    setClubs(prevClubs => [...prevClubs, newClub]);
+    setClubs((prevClubs) => [...prevClubs, newClub]);
     setCreateDialogOpen(false);
   };
 
   const handleUpdateClub = async (updatedClub) => {
-    setClubs(prevClubs => 
-      prevClubs.map(club => 
+    setClubs((prevClubs) =>
+      prevClubs.map((club) =>
         club._id === updatedClub._id ? updatedClub : club
       )
     );
@@ -324,104 +405,118 @@ const ClubList = () => {
 
   const handleFollowClub = async (clubId) => {
     try {
-      if (!userId) return;
-      
+      if (!authToken || !userId) return;
+
       const response = await fetch(
         `http://localhost:5000/clubs/users/${userId}/follow/club/${clubId}`,
-        { method: "POST" }
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
       );
-      
-      if (!response.ok) throw new Error('Failed to follow club');
-      
+
+      if (!response.ok) throw new Error("Failed to follow club");
+
       const updatedClub = await response.json();
-      
-      setClubs(prevClubs => 
-        prevClubs.map(club => 
-          club._id === clubId 
-            ? { ...club, isFollowing: true } 
-            : club
+
+      setClubs((prevClubs) =>
+        prevClubs.map((club) =>
+          club._id === clubId ? { ...club, isFollowing: true } : club
         )
       );
-      
+
       return updatedClub;
     } catch (error) {
-      console.error('Error following club:', error);
+      console.error("Error following club:", error);
       throw error;
     }
   };
 
   const handleUnfollowClub = async (clubId) => {
     try {
-      if (!userId) return;
-      
+      if (!authToken || !userId) return;
+
       const response = await fetch(
         `http://localhost:5000/clubs/users/${userId}/unfollow/club/${clubId}`,
-        { method: "DELETE" }
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
       );
-      
-      if (!response.ok) throw new Error('Failed to unfollow club');
-      
-      setClubs(prevClubs => 
-        prevClubs.map(club => 
-          club._id === clubId 
-            ? { ...club, isFollowing: false } 
-            : club
+
+      if (!response.ok) throw new Error("Failed to unfollow club");
+
+      setClubs((prevClubs) =>
+        prevClubs.map((club) =>
+          club._id === clubId ? { ...club, isFollowing: false } : club
         )
       );
     } catch (error) {
-      console.error('Error unfollowing club:', error);
+      console.error("Error unfollowing club:", error);
       throw error;
     }
   };
 
   const handleFollowBoard = async (boardId) => {
     try {
-      if (!userId) return;
-      
+      if (!authToken || !userId) return;
+
       const response = await fetch(
         `http://localhost:5000/clubs/users/${userId}/follow/board/${boardId}`,
-        { method: "POST" }
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
       );
-      
-      if (!response.ok) throw new Error('Failed to follow board');
-      
+
+      if (!response.ok) throw new Error("Failed to follow board");
+
       const updatedFollow = await response.json();
-      
-      setClubs(prevClubs => 
-        prevClubs.map(club => 
-          club.board_id === boardId 
-            ? { ...club, isBoardFollowing: true } 
-            : club
+
+      setClubs((prevClubs) =>
+        prevClubs.map((club) =>
+          club.board_id === boardId ? { ...club, isBoardFollowing: true } : club
         )
       );
-      
+
       return updatedFollow;
     } catch (error) {
-      console.error('Error following board:', error);
+      console.error("Error following board:", error);
       throw error;
     }
   };
 
   const handleUnfollowBoard = async (boardId) => {
     try {
-      if (!userId) return;
-      
+      if (!authToken || !userId) return;
+
       const response = await fetch(
         `http://localhost:5000/clubs/users/${userId}/unfollow/board/${boardId}`,
-        { method: "DELETE" }
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
       );
-      
-      if (!response.ok) throw new Error('Failed to unfollow board');
-      
-      setClubs(prevClubs => 
-        prevClubs.map(club => 
-          club.board_id === boardId 
-            ? { ...club, isBoardFollowing: false } 
+
+      if (!response.ok) throw new Error("Failed to unfollow board");
+
+      setClubs((prevClubs) =>
+        prevClubs.map((club) =>
+          club.board_id === boardId
+            ? { ...club, isBoardFollowing: false }
             : club
         )
       );
     } catch (error) {
-      console.error('Error unfollowing board:', error);
+      console.error("Error unfollowing board:", error);
       throw error;
     }
   };
@@ -438,81 +533,89 @@ const ClubList = () => {
     setFilterType(type);
   };
   const filteredClubs = useMemo(() => {
-    return clubs.filter(club => {
-      const matchesSearch = club.name.toLowerCase().includes(search.toLowerCase());
+    return clubs.filter((club) => {
+      const matchesSearch = club.name
+        .toLowerCase()
+        .includes(search.toLowerCase());
       const matchesBoard = !selectedBoard || club.board_id === selectedBoard;
-      
+
       let matchesFilterType = true;
       if (filterType === "myClubs") {
         matchesFilterType = club.isFollowing === true;
       } else if (filterType === "myBoards") {
         matchesFilterType = club.isBoardFollowing === true;
       }
-      
+
       return matchesSearch && matchesBoard && matchesFilterType;
     });
   }, [clubs, search, selectedBoard, filterType]);
-  
+
   const groupedClubs = useMemo(() => {
     return filteredClubs.reduce((acc, club) => {
       const boardId = club.board_id;
       const boardName = boards[boardId] || "Unknown Board";
-      
+
       if (!acc[boardName]) {
         acc[boardName] = {
           boardId: boardId,
-          clubs: []
+          clubs: [],
         };
       }
-      
+
       acc[boardName].clubs.push(club);
       return acc;
     }, {});
   }, [filteredClubs, boards]);
-  
+
   const sortedBoardNames = Object.keys(groupedClubs).sort();
   const hasResults = sortedBoardNames.length > 0;
 
   return (
-    <div style={{ backgroundColor: theme.palette.background.default, minHeight: '100vh' }}>
-      <Box sx={{ pt: 4 }}>  
+    <div
+      style={{
+        backgroundColor: theme.palette.background.default,
+        minHeight: "100vh",
+      }}
+    >
+      <Box sx={{ pt: 4 }}>
         <Container maxWidth="xl">
-          <SearchAndFilter 
+          <SearchAndFilter
             onSearchChange={setSearch}
             onBoardFilterChange={setSelectedBoard}
             availableBoards={boards}
             filterType={filterType}
             onFilterTypeChange={setFilterType}
           />
-          
+
           {!hasResults && (
             <Alert severity="info" sx={{ mt: 2 }}>
-              No clubs match your current filters. Try adjusting your filters or search term.
+              No clubs match your current filters. Try adjusting your filters or
+              search term.
             </Alert>
           )}
-          
+
           {sortedBoardNames.map((boardName) => {
             const boardData = groupedClubs[boardName];
             const boardId = boardData.boardId;
             const boardClubs = boardData.clubs;
             const isBoardFollowing = boardClubs[0]?.isBoardFollowing || false;
-            
+
             return (
               <Box key={boardName} sx={{ mb: 4 }}>
-                <BoardHeader 
-                  boardId={boardId} 
+                <BoardHeader
+                  boardId={boardId}
                   boardName={boardName}
                   isFollowing={isBoardFollowing}
                   onFollow={handleFollowBoard}
                   onUnfollow={handleUnfollowBoard}
                 />
-                
+
                 <Box sx={{ display: "flex", flexWrap: "wrap" }}>
                   {boardClubs.map((club) => (
-                    <ClubCard 
+                    <ClubCard
                       key={club._id}
-                      club={club} 
-                      boardName={boardName} 
+                      club={club}
+                      boardName={boardName}
                       onFollow={handleFollowClub}
                       onUnfollow={handleUnfollowClub}
                       onEdit={handleEdit}
@@ -524,7 +627,7 @@ const ClubList = () => {
               </Box>
             );
           })}
-          
+
           {(isSuperAdmin || userClubsWithPermission.length > 0) && (
             <Fab
               color="primary"
@@ -534,16 +637,16 @@ const ClubList = () => {
                 position: "fixed",
                 bottom: 24,
                 right: 24,
-                background: 'linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)',
-                '&:hover': {
-                  boxShadow: '0 6px 15px rgba(71, 118, 230, 0.4)',
-                }
+                background: "linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)",
+                "&:hover": {
+                  boxShadow: "0 6px 15px rgba(71, 118, 230, 0.4)",
+                },
               }}
             >
               <AddIcon />
             </Fab>
           )}
-          
+
           <CreateClubForm
             open={createDialogOpen}
             onClose={() => setCreateDialogOpen(false)}

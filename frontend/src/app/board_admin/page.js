@@ -16,7 +16,6 @@ import {
   Alert,
   CircularProgress,
   Divider,
-  Card,
   Paper
 } from "@mui/material";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
@@ -33,6 +32,7 @@ import BLOGS from "../../components/board_admin/BLOGS";
 import FORUMS from "../../components/board_admin/FORUMS";
 import TEAMS from "../../components/board_admin/TEAMS";
 import STATISTICS from "../../components/board_admin/STATISTICS";
+import {getAuthToken } from "@utils/auth";
 
 
 const SECTIONS = [
@@ -58,6 +58,7 @@ const ClubBoard = () => {
   const [club, setClub] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [authToken, setAuthToken] = useState(null);
   
   const info = useContext(noteContext);
   const value2 = {
@@ -65,15 +66,29 @@ const ClubBoard = () => {
   };
 
   useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
+
+  useEffect(() => {
     const fetchClubDetails = async () => {
       try {
+        if(!authToken) return;
         setLoading(true);
         
         const clubUrl = value2?.user_id 
           ? `http://localhost:5000/clubs/${clubId}?user_id=${value2.user_id}`
           : `http://localhost:5000/clubs/${clubId}`;
         
-        const response = await fetch(clubUrl);
+        const response = await fetch(clubUrl, {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        });
         if (!response.ok) throw new Error('Failed to fetch club details');
         const clubData = await response.json();
         setClub(clubData);
@@ -89,17 +104,23 @@ const ClubBoard = () => {
     if (clubId) {
       fetchClubDetails();
     }
-  }, [clubId, value2?.user_id]);
+  }, [clubId, value2?.user_id, authToken]);
 
   const handleFollowClub = async () => {
     try {
+      if(!authToken) return;
       if (!value2?.user_id) return;
       
       if (club.isFollowing) {
         // Unfollow club
         const response = await fetch(
           `http://localhost:5000/clubs/users/${value2.user_id}/unfollow/club/${clubId}`,
-          { method: "DELETE" }
+          { 
+            method: "DELETE",
+            headers: {
+              'Authorization': `Bearer ${authToken}`,
+            }
+          }
         );
         
         if (!response.ok) throw new Error('Failed to unfollow club');
@@ -108,7 +129,12 @@ const ClubBoard = () => {
         // Follow club
         const response = await fetch(
           `http://localhost:5000/clubs/users/${value2.user_id}/follow/club/${clubId}`,
-          { method: "POST" }
+          { 
+            method: "POST",
+            headers: {
+              'Authorization': `Bearer ${authToken}`,
+            }
+          }
         );
         
         if (!response.ok) throw new Error('Failed to follow club');
@@ -121,8 +147,12 @@ const ClubBoard = () => {
 
   const handleDeleteClub = async () => {
     try {
+      if(!authToken) return;
       const response = await fetch(`http://localhost:5000/clubs/${clubId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
       });
       
       if (!response.ok) throw new Error('Failed to delete club');
@@ -176,7 +206,6 @@ const ClubBoard = () => {
   }
 
   return (
-
       <Box sx={{ width: "100vw" }}>
         {/* Back Button */}
         <Button 
@@ -225,8 +254,6 @@ const ClubBoard = () => {
             </Typography>
           </Box>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-
-            
             {value2?.user_id && (
               <Button 
                 variant={club.isFollowing ? "contained" : "outlined"} 
@@ -277,7 +304,6 @@ const ClubBoard = () => {
           {SECTIONS[tabIndex].component}
         </Box>
       </Box>
-
   );
 };
 
