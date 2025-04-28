@@ -33,6 +33,7 @@ import {
   ListSubheader,
   useTheme,
   alpha,
+  useMediaQuery,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
@@ -41,6 +42,8 @@ import SearchIcon from "@mui/icons-material/Search";
 
 export default function BadgeManagement() {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
 
   // State for tab navigation
   const [tabValue, setTabValue] = useState(0);
@@ -375,18 +378,18 @@ export default function BadgeManagement() {
     <Container
       maxWidth="lg"
       sx={{
-        mt: 4,
-        mb: 4,
+        mt: isMobile ? 2 : 4,
+        mb: isMobile ? 2 : 4,
+        p: isMobile ? 1 : 3,
         backgroundColor:
           theme.palette.mode === "dark"
             ? "#121212"
             : theme.palette.background.default,
-        p: 3,
         borderRadius: 2,
       }}
     >
       <Typography
-        variant="h4"
+        variant={isMobile ? "h5" : "h4"}
         component="h1"
         gutterBottom
         color="primary"
@@ -396,6 +399,7 @@ export default function BadgeManagement() {
             theme.palette.mode === "dark"
               ? "0 0 10px rgba(64, 195, 255, 0.3)"
               : "none",
+          textAlign: isMobile ? "center" : "left",
         }}
       >
         Badge Management System
@@ -414,10 +418,14 @@ export default function BadgeManagement() {
           aria-label="badge management tabs"
           textColor="primary"
           indicatorColor="primary"
+          variant={isMobile ? "scrollable" : "standard"}
+          scrollButtons="auto"
           sx={{
             "& .MuiTab-root": {
               fontWeight: "medium",
-              fontSize: "1rem",
+              fontSize: isMobile ? "0.875rem" : "1rem",
+              minWidth: isMobile ? "auto" : undefined,
+              px: isMobile ? 1 : undefined,
             },
           }}
         >
@@ -434,6 +442,7 @@ export default function BadgeManagement() {
             color="primary"
             startIcon={<AddIcon />}
             onClick={() => handleOpenBadgeDialog()}
+            size={isMobile ? "small" : "medium"}
             sx={{
               fontWeight: "bold",
               boxShadow:
@@ -449,7 +458,7 @@ export default function BadgeManagement() {
               },
             }}
           >
-            Add New Badge
+            {isMobile ? "Add" : "Add New Badge"}
           </Button>
         </Box>
 
@@ -458,12 +467,12 @@ export default function BadgeManagement() {
           elevation={4}
           sx={{
             borderRadius: 2,
-            overflow: "hidden",
+            overflow: "auto",
             backgroundColor: theme.palette.background.paper,
             border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
           }}
         >
-          <Table>
+          <Table size={isMobile ? "small" : "medium"}>
             <TableHead>
               <TableRow
                 sx={{
@@ -474,10 +483,14 @@ export default function BadgeManagement() {
                 }}
               >
                 <TableCell sx={{ fontWeight: "bold" }}>Badge Type</TableCell>
-                <TableCell sx={{ fontWeight: "bold" }}>User</TableCell>
-                <TableCell sx={{ fontWeight: "bold" }}>Date Given</TableCell>
-                <TableCell sx={{ fontWeight: "bold" }}>Club</TableCell>
-                <TableCell sx={{ fontWeight: "bold" }}>Board</TableCell>
+                {!isMobile && (
+                  <>
+                    <TableCell sx={{ fontWeight: "bold" }}>User</TableCell>
+                    <TableCell sx={{ fontWeight: "bold" }}>Date Given</TableCell>
+                    <TableCell sx={{ fontWeight: "bold" }}>Club</TableCell>
+                    <TableCell sx={{ fontWeight: "bold" }}>Board</TableCell>
+                  </>
+                )}
                 <TableCell sx={{ fontWeight: "bold" }}>Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -506,25 +519,30 @@ export default function BadgeManagement() {
                       {badge.badge_type_id?.title || "N/A"}{" "}
                       {badge.badge_type_id?.emoji}
                     </TableCell>
-                    <TableCell>
-                      {badge.user_id?.name}
-                      {badge.user_id?.email_id && (
-                        <Typography
-                          variant="caption"
-                          display="block"
-                          color="text.secondary"
-                        >
-                          {badge.user_id.email_id}
-                        </Typography>
-                      )}
-                    </TableCell>
-                    <TableCell>{formatDate(badge.given_on)}</TableCell>
-                    <TableCell>{badge.club_id?.name || "N/A"}</TableCell>
-                    <TableCell>{badge.board_id?.title || "N/A"}</TableCell>
+                    {!isMobile && (
+                      <>
+                        <TableCell>
+                          {badge.user_id?.name}
+                          {badge.user_id?.email_id && (
+                            <Typography
+                              variant="caption"
+                              display="block"
+                              color="text.secondary"
+                            >
+                              {badge.user_id.email_id}
+                            </Typography>
+                          )}
+                        </TableCell>
+                        <TableCell>{formatDate(badge.given_on)}</TableCell>
+                        <TableCell>{badge.club_id?.name || "N/A"}</TableCell>
+                        <TableCell>{badge.board_id?.title || "N/A"}</TableCell>
+                      </>
+                    )}
                     <TableCell>
                       <IconButton
                         onClick={() => handleOpenBadgeDialog(badge)}
                         color="primary"
+                        size={isMobile ? "small" : "medium"}
                         sx={{
                           "&:hover": {
                             backgroundColor: alpha(
@@ -534,11 +552,12 @@ export default function BadgeManagement() {
                           },
                         }}
                       >
-                        <EditIcon />
+                        <EditIcon fontSize={isMobile ? "small" : "medium"} />
                       </IconButton>
                       <IconButton
                         onClick={() => deleteBadge(badge._id)}
                         color="error"
+                        size={isMobile ? "small" : "medium"}
                         sx={{
                           "&:hover": {
                             backgroundColor: alpha(
@@ -548,14 +567,14 @@ export default function BadgeManagement() {
                           },
                         }}
                       >
-                        <DeleteIcon />
+                        <DeleteIcon fontSize={isMobile ? "small" : "medium"} />
                       </IconButton>
                     </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} align="center">
+                  <TableCell colSpan={isMobile ? 2 : 6} align="center">
                     No badges found
                   </TableCell>
                 </TableRow>
@@ -573,6 +592,7 @@ export default function BadgeManagement() {
             color="primary"
             startIcon={<AddIcon />}
             onClick={() => handleOpenBadgeTypeDialog()}
+            size={isMobile ? "small" : "medium"}
             sx={{
               fontWeight: "bold",
               boxShadow:
@@ -588,18 +608,18 @@ export default function BadgeManagement() {
               },
             }}
           >
-            Add New Badge Type
+            {isMobile ? "Add" : "Add New Badge Type"}
           </Button>
         </Box>
 
-        <Grid container spacing={3}>
+        <Grid container spacing={isMobile ? 1 : 3}>
           {badgeTypes.length > 0 ? (
             badgeTypes.map((badgeType) => (
               <Grid item xs={12} sm={6} md={4} key={badgeType._id}>
                 <Paper
                   elevation={4}
                   sx={{
-                    p: 2,
+                    p: isMobile ? 1 : 2,
                     display: "flex",
                     flexDirection: "column",
                     height: "100%",
@@ -621,7 +641,7 @@ export default function BadgeManagement() {
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
-                      mb: 2,
+                      mb: 1,
                       pb: 1,
                       borderBottom: `1px solid ${alpha(
                         theme.palette.divider,
@@ -630,7 +650,7 @@ export default function BadgeManagement() {
                     }}
                   >
                     <Typography
-                      variant="h6"
+                      variant={isMobile ? "subtitle1" : "h6"}
                       component="h2"
                       color="primary"
                       sx={{ fontWeight: "bold" }}
@@ -675,6 +695,7 @@ export default function BadgeManagement() {
                     color="text.secondary"
                     sx={{
                       flexGrow: 1,
+                      fontSize: isMobile ? "0.8125rem" : "0.875rem",
                     }}
                   >
                     {badgeType.description}
@@ -709,10 +730,11 @@ export default function BadgeManagement() {
         onClose={() => setOpenBadgeDialog(false)}
         maxWidth="sm"
         fullWidth
+        fullScreen={isMobile}
         PaperProps={{
           elevation: 24,
           sx: {
-            borderRadius: 2,
+            borderRadius: isMobile ? 0 : 2,
             backgroundColor: theme.palette.background.paper,
             border: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
           },
@@ -923,10 +945,11 @@ export default function BadgeManagement() {
         onClose={() => setOpenBadgeTypeDialog(false)}
         maxWidth="sm"
         fullWidth
+        fullScreen={isMobile}
         PaperProps={{
           elevation: 24,
           sx: {
-            borderRadius: 2,
+            borderRadius: isMobile ? 0 : 2,
             backgroundColor: theme.palette.background.paper,
             border: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
           },
@@ -961,7 +984,7 @@ export default function BadgeManagement() {
             label="Description"
             fullWidth
             multiline
-            rows={4}
+            rows={isMobile ? 2 : 4}
             value={newBadgeType.description}
             onChange={handleBadgeTypeChange("description")}
             color="primary"
@@ -1016,7 +1039,7 @@ export default function BadgeManagement() {
               },
             }}
           >
-            {isEditing ? "Update" : "Create"}
+            {isMobile ? (isEditing ? "Update" : "Create") : isEditing ? "Update Badge Type" : "Create Badge Type"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -1026,7 +1049,7 @@ export default function BadgeManagement() {
         open={alert.open}
         autoHideDuration={6000}
         onClose={handleCloseAlert}
-        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        anchorOrigin={{ vertical: "bottom", horizontal: isMobile ? "center" : "right" }}
       >
         <Alert
           onClose={handleCloseAlert}

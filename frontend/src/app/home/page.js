@@ -30,19 +30,31 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [activeProfiles, setActiveProfiles] = useState([]);
-  
+
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
-  
+
   // Determining dark mode from theme
   const isDarkMode = theme.palette.mode === "dark";
-  
+
   // Campus resources links
   const campusResources = [
-    { name: "IIT Ropar Home Page", icon: <SchoolIcon />, url: "https://www.iitrpr.ac.in" },
-    { name: "LOC YouTube Channel", icon: <YouTubeIcon />, url: "https://youtube.com/loc_iitropar" },
-    { name: "LOC Website", icon: <LanguageIcon />, url: "https://www.locrpr.com" }
+    {
+      name: "IIT Ropar Home Page",
+      icon: <SchoolIcon />,
+      url: "https://www.iitrpr.ac.in",
+    },
+    {
+      name: "LOC YouTube Channel",
+      icon: <YouTubeIcon />,
+      url: "https://youtube.com/loc_iitropar",
+    },
+    {
+      name: "LOC Website",
+      icon: <LanguageIcon />,
+      url: "https://www.locrpr.com",
+    },
   ];
 
   // Generate random letter for avatar
@@ -58,7 +70,7 @@ export default function Home() {
     const initialProfiles = Array.from({ length: initialCount }, (_, i) => {
       const letter = getRandomLetter();
       const colorHue = Math.floor(Math.random() * 360); // Random hue for avatar color
-      
+
       return {
         id: i,
         letter,
@@ -67,62 +79,64 @@ export default function Home() {
         y: Math.random() * 70 + 15, // position between 15% and 85%
       };
     });
-    
+
     setActiveProfiles(initialProfiles);
-    
+
     // Periodically update active profiles to simulate activity
     const interval = setInterval(() => {
-      setActiveProfiles(prev => {
+      setActiveProfiles((prev) => {
         // Maintain count between 20-30
         const targetCount = Math.floor(Math.random() * 11) + 20;
-        
+
         if (prev.length < targetCount) {
           // Add new profiles
-          const newProfiles = Array.from({ length: targetCount - prev.length }, () => {
-            const letter = getRandomLetter();
-            const colorHue = Math.floor(Math.random() * 360);
-            
-            return {
-              id: Date.now() + Math.random(),
-              letter,
-              avatarColor: `hsl(${colorHue}, 70%, 60%)`,
-              x: Math.random() * 70 + 15,
-              y: Math.random() * 70 + 15,
-              isNew: true
-            };
-          });
+          const newProfiles = Array.from(
+            { length: targetCount - prev.length },
+            () => {
+              const letter = getRandomLetter();
+              const colorHue = Math.floor(Math.random() * 360);
+
+              return {
+                id: Date.now() + Math.random(),
+                letter,
+                avatarColor: `hsl(${colorHue}, 70%, 60%)`,
+                x: Math.random() * 70 + 15,
+                y: Math.random() * 70 + 15,
+                isNew: true,
+              };
+            }
+          );
           return [...prev, ...newProfiles];
         } else if (prev.length > targetCount) {
           // Remove random profiles
           const numToRemove = prev.length - targetCount;
-          const indexesToRemove = Array.from({ length: numToRemove }, () => 
+          const indexesToRemove = Array.from({ length: numToRemove }, () =>
             Math.floor(Math.random() * prev.length)
           );
           return prev.filter((_, index) => !indexesToRemove.includes(index));
         } else {
           // Just update positions slightly for movement effect
-          return prev.map(profile => ({
+          return prev.map((profile) => ({
             ...profile,
             isNew: false,
             // Slightly adjust positions for subtle animation
             x: Math.max(15, Math.min(85, profile.x + (Math.random() * 6 - 3))),
-            y: Math.max(15, Math.min(85, profile.y + (Math.random() * 6 - 3)))
+            y: Math.max(15, Math.min(85, profile.y + (Math.random() * 6 - 3))),
           }));
         }
       });
     }, 2000); // Update every 2 seconds
-    
+
     return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
     // Check if we're running on the client side
-    if (typeof window !== 'undefined') {
-      const referrer = document.referrer || '';
-      const currentPath = router.asPath || '';
-      
-      const fromAuthPage = 
-        currentPath.includes('/auth') 
+    if (typeof window !== "undefined") {
+      const referrer = document.referrer || "";
+      const currentPath = router.asPath || "";
+
+      const fromAuthPage = currentPath.includes("/auth");
 
       if (fromAuthPage) {
         setIsLoading(true);
@@ -274,23 +288,27 @@ export default function Home() {
               <Divider
                 sx={{
                   my: 2,
-                  background: "linear-gradient(90deg, rgba(71,118,230,0.5) 0%, rgba(142,84,233,0.5) 100%)",
+                  background:
+                    "linear-gradient(90deg, rgba(71,118,230,0.5) 0%, rgba(142,84,233,0.5) 100%)",
                   height: "2px",
                   border: "none",
                 }}
               />
-              <Typography variant="body1" sx={{ fontWeight: 500, opacity: 0.9, mb: 1 }}>
+              <Typography
+                variant="body1"
+                sx={{ fontWeight: 500, opacity: 0.9, mb: 1 }}
+              >
                 Your premium campus experience
               </Typography>
             </Box>
-            
+
             {/* Featured Image with fade animation */}
             <Fade in={imageLoaded} timeout={1000}>
-              <Box 
-                sx={{ 
-                  position: "relative", 
-                  width: "100%", 
-                  height: 180, 
+              <Box
+                sx={{
+                  position: "relative",
+                  width: "100%",
+                  height: 180,
                   borderRadius: 2,
                   overflow: "hidden",
                   ...gradientBorder,
@@ -305,28 +323,31 @@ export default function Home() {
                 />
               </Box>
             </Fade>
-            
+
             {/* Campus Resources */}
             <Box sx={{ mt: "auto" }}>
-              <Typography variant="overline" sx={{ opacity: 0.7, letterSpacing: 2 }}>
+              <Typography
+                variant="overline"
+                sx={{ opacity: 0.7, letterSpacing: 2 }}
+              >
                 QUICK LINKS
               </Typography>
               <List dense>
                 {campusResources.map((resource, index) => (
-                  <ListItem 
-                    key={index} 
-                    disableGutters 
-                    component={Link} 
+                  <ListItem
+                    key={index}
+                    disableGutters
+                    component={Link}
                     href={resource.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    sx={{ 
-                      color: "inherit", 
+                    sx={{
+                      color: "inherit",
                       textDecoration: "none",
                       "&:hover": {
                         textDecoration: "underline",
-                        color: theme.palette.primary.main
-                      }
+                        color: theme.palette.primary.main,
+                      },
                     }}
                   >
                     <ListItemIcon sx={{ minWidth: 36 }}>
@@ -359,49 +380,66 @@ export default function Home() {
           <Box sx={sidebarStyle}>
             {/* Campus Activity with Letter Avatars */}
             <Box>
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, display: 'flex', alignItems: 'center' }}>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 600,
+                  mb: 2,
+                  display: "flex",
+                  alignItems: "center",
+                }}
+              >
                 <PersonIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
                 Campus Activity
               </Typography>
-              <Box 
-                sx={{ 
-                  position: "relative", 
-                  height: 400, 
-                  p: 2, 
-                  ...gradientBorder, 
+              <Box
+                sx={{
+                  position: "relative",
+                  height: 400,
+                  p: 2,
+                  ...gradientBorder,
                   borderRadius: 2,
-                  overflow: "hidden" 
+                  overflow: "hidden",
                 }}
               >
-                <Box sx={{ 
-                  position: "absolute", 
-                  bottom: 0, 
-                  left: 0, 
-                  width: "100%", 
-                  height: "30%", 
-                  background: `linear-gradient(0deg, ${theme.palette.primary.main}33 0%, transparent 100%)`,
-                  borderRadius: "0 0 8px 8px",
-                }}>
-                  <Typography 
-                    variant="h6" 
-                    sx={{ 
-                      position: "absolute", 
-                      bottom: 10, 
-                      left: 10, 
+                <Box
+                  sx={{
+                    position: "absolute",
+                    bottom: 0,
+                    left: 0,
+                    width: "100%",
+                    height: "30%",
+                    background: `linear-gradient(0deg, ${theme.palette.primary.main}33 0%, transparent 100%)`,
+                    borderRadius: "0 0 8px 8px",
+                  }}
+                >
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      position: "absolute",
+                      bottom: 10,
+                      left: 10,
                       fontWeight: 700,
-                      color: theme.palette.mode === "dark" ? "rgba(255,255,255,0.9)" : "rgba(0,0,0,0.7)" 
+                      color:
+                        theme.palette.mode === "dark"
+                          ? "rgba(255,255,255,0.9)"
+                          : "rgba(0,0,0,0.7)",
                     }}
                   >
                     {activeProfiles.length} Active Now
                   </Typography>
                 </Box>
-                
+
                 {/* Dynamic letter avatars */}
                 {activeProfiles.map((profile) => (
-                  <Fade key={profile.id} in={true} timeout={profile.isNew ? 800 : 400}>
-                    <Avatar 
-                      sx={{ 
-                        width: 36, 
+                  <Fade
+                    key={profile.id}
+                    in={true}
+                    timeout={profile.isNew ? 800 : 400}
+                  >
+                    <Avatar
+                      sx={{
+                        width: 36,
                         height: 36,
                         position: "absolute",
                         top: `${profile.y}%`,
@@ -411,20 +449,22 @@ export default function Home() {
                         boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
                         transition: "all 0.5s ease",
                         border: profile.isNew ? "2px solid white" : "none",
-                        animation: profile.isNew ? "pulse 1.5s infinite" : "none",
+                        animation: profile.isNew
+                          ? "pulse 1.5s infinite"
+                          : "none",
                         "@keyframes pulse": {
                           "0%": {
-                            boxShadow: "0 0 0 0 rgba(255,255,255,0.7)"
+                            boxShadow: "0 0 0 0 rgba(255,255,255,0.7)",
                           },
                           "70%": {
-                            boxShadow: "0 0 0 6px rgba(255,255,255,0)"
+                            boxShadow: "0 0 0 6px rgba(255,255,255,0)",
                           },
                           "100%": {
-                            boxShadow: "0 0 0 0 rgba(255,255,255,0)"
-                          }
+                            boxShadow: "0 0 0 0 rgba(255,255,255,0)",
+                          },
                         },
                         fontSize: 16,
-                        fontWeight: 600
+                        fontWeight: 600,
                       }}
                     >
                       {profile.letter}
@@ -433,19 +473,24 @@ export default function Home() {
                 ))}
               </Box>
             </Box>
-            
+
             {/* Inspirational Quote */}
             <Box sx={{ mt: "auto" }}>
               <Divider
                 sx={{
                   my: 2,
-                  background: "linear-gradient(90deg, rgba(142,84,233,0.5) 0%, rgba(71,118,230,0.5) 100%)",
+                  background:
+                    "linear-gradient(90deg, rgba(142,84,233,0.5) 0%, rgba(71,118,230,0.5) 100%)",
                   height: "2px",
                   border: "none",
                 }}
               />
-              <Typography variant="body2" sx={{ opacity: 0.7, fontStyle: "italic" }}>
-                "Your campus journey is what you make of it. Connect, learn, grow."
+              <Typography
+                variant="body2"
+                sx={{ opacity: 0.7, fontStyle: "italic" }}
+              >
+                "Your campus journey is what you make of it. Connect, learn,
+                grow."
               </Typography>
             </Box>
           </Box>

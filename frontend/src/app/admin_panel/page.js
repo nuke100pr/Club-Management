@@ -19,6 +19,7 @@ import Users from "../../components/admin_panel/Users";
 import POR from "../../components/admin_panel/POR";
 import AdminManagement from "../../components/admin_panel/ManageAdmin";
 import SuperAdminManagement from "../../components/admin_panel/SuperAdminManagement";
+import BadgeManagement from "../../components/admin_panel/Badge";
 
 export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -75,6 +76,8 @@ export default function AdminPanel() {
         return <AdminManagement />;
       case "super_admin_manage":
         return <SuperAdminManagement />;
+      case "badge_manage":
+          return <BadgeManagement />;  
       default:
         return <Dashboard />;
     }

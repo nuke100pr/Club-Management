@@ -68,6 +68,7 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile }) => {
     { name: "por", label: "POR", icon: <PORIcon /> },
     { name: "admin_manage", label: "Admin Management", icon: <AdminIcon /> },
     { name: "super_admin_manage", label: "Super Admin Management", icon: <SuperAdminIcon /> },
+    { name: "badge_manage", label: "Badge Management", icon: <SuperAdminIcon /> },
   ];
 
   // Styled logo component with gradient text

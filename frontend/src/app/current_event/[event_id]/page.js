@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { fetchUserData, hasPermission } from "@/utils/auth";
 import EventForm from "../../../components/events/EventForm";
+import * as XLSX from "xlsx";
 import {
   Box,
   Typography,
@@ -183,6 +184,26 @@ const EventsPage = () => {
     const boardId = currentEvent.board_id?._id || currentEvent.board_id;
 
     return hasPermission("events", currentUser, boardId, clubId);
+  };
+
+  const handleExportToExcel = () => {
+    // Prepare data for Excel
+    const excelData = rsvps.map((rsvp) => ({
+      Name: rsvp.user_id?.name || "Unknown User",
+      Email: rsvp.user_id?.email_id || "Unknown Email",
+      "Registration Date": formatDate(rsvp.timestamp),
+      'Registration Time': formatTime(rsvp.timestamp),
+    }));
+
+    // Create worksheet
+    const ws = XLSX.utils.json_to_sheet(excelData);
+
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Registrations");
+
+    // Generate file and download
+    XLSX.writeFile(wb, `${currentEvent.name}_registrations.xlsx`);
   };
 
   const handleRegisterForEvent = async () => {
@@ -887,6 +908,22 @@ const EventsPage = () => {
                 >
                   Registrations ({rsvps.length})
                 </Typography>
+
+                {rsvps.length > 0 && (
+                  <Button
+                    variant="outlined"
+                    onClick={handleExportToExcel}
+                    sx={{
+                      mb: 2,
+                      float: "right",
+                      textTransform: "none",
+                      borderRadius: "8px",
+                      fontWeight: 500,
+                    }}
+                  >
+                    Export to Excel
+                  </Button>
+                )}
 
                 {rsvps.length > 0 ? (
                   <TableContainer
