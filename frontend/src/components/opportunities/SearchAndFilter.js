@@ -29,6 +29,7 @@ import {
   FilterList as FilterListIcon,
   Tune as TuneIcon
 } from "@mui/icons-material";
+import { getAuthToken } from "@/utils/auth";
 
 const SearchAndFilter = ({ 
   searchTerm, 
@@ -44,6 +45,16 @@ const SearchAndFilter = ({
   const theme = useTheme();
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [isSticky, setIsSticky] = useState(false);
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {

@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect,useMemo } from 'react';
 import { Calendar, Clock, Tag, Edit2, Trash2, Plus, Share } from 'lucide-react';
-import { fetchUserData,hasPermission } from '@/utils/auth';
+import { fetchUserData,hasPermission, getAuthToken } from '@/utils/auth';
 import SearchAndFilter from '../../components/projects/SearchAndFilter';
 import CreateProjectDialog from '../../components/projects/CreateProjectDialog';
 import { useRouter } from 'next/navigation';
@@ -132,7 +132,7 @@ const ProjectCard = ({ project, hasPermission, handleEdit, handleDelete, router,
                 onClick={(e) => { e.stopPropagation(); handleDelete(project._id); }}
                 className={`hover:text-red-600`}
                 style={{ color: isDark ? '#a0aec0' : '#64748b' }}
-              >
+          >
                 <Trash2 size={18} />
               </button>
             </>
@@ -239,8 +239,7 @@ const ProjectsGrid = () => {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [userClubsWithProjectPermission, setUserClubsWithProjectPermission] = useState([]);
   const [userBoardsWithProjectPermission, setUserBoardsWithProjectPermission] = useState([]);
-
-
+  const [authToken, setAuthToken] = useState(null);
   const [arrayPermissions, setArrayPermissions] = useState({});
   const router = useRouter();
 
@@ -252,12 +251,21 @@ const ProjectsGrid = () => {
       contentType: "project"
     });
 
+  // Fetch auth token on mount
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
 
-    
+    fetchAuthToken();
+  }, []);
     
   // Fetch user data on mount
   useEffect(() => {
     async function loadUserData() {
+      if (!authToken) return;
+      
       const result = await fetchUserData();
 
       if (result) {
@@ -282,7 +290,7 @@ const ProjectsGrid = () => {
     }
     loadUserData();
     fetchProjects();
-  }, []);
+  }, [authToken]);
   
   const handleShareClose = () => {
     setShareMenu({
@@ -293,14 +301,16 @@ const ProjectsGrid = () => {
   };
   
 
-
   // Fetch projects from backend
   const fetchProjects = async () => {
+    if (!authToken) return;
+    
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/projects/api/`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
+          'Authorization': `Bearer ${authToken}`,
         },
       });
 
@@ -316,9 +326,16 @@ const ProjectsGrid = () => {
   };
 
   const fetchProjectDetails = async (projectId) => {
+    if (!authToken) return;
+    
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/projects/${projectId}`
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/projects/${projectId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        }
       );
 
       if (!response.ok) {
@@ -342,9 +359,14 @@ const ProjectsGrid = () => {
   };
   
   const createProject = async (formData) => {
+    if (!authToken) return;
+    
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/projects/`, {
         method: "POST",
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        },
         body: formData,
       });
 
@@ -366,11 +388,16 @@ const ProjectsGrid = () => {
   };
 
   const updateProject = async (projectId, formData) => {
+    if (!authToken) return;
+    
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/projects/${projectId}`,
         {
           method: "PUT",
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          },
           body: formData,
         }
       );
@@ -393,9 +420,14 @@ const ProjectsGrid = () => {
   };
 
   const handleDelete = async (id) => {
+    if (!authToken) return;
+    
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/projects/${id}`, {
         method: "DELETE",
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        },
       });
 
       if (!response.ok) {

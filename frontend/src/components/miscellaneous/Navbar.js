@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   AppBar,
   Toolbar,
@@ -16,11 +16,22 @@ import HomeIcon from "@mui/icons-material/Home";
 import LogoutIcon from "@mui/icons-material/Logout";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { getAuthToken } from "@/utils/auth";
 
 const Navbar = ({ userImage = "/api/placeholder/40/40" }) => {
   const router = useRouter();
   const [anchorEl, setAnchorEl] = useState(null);
+  const [authToken, setAuthToken] = useState(null);
   const open = Boolean(anchorEl);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   const handleMenu = (event) => {
     setAnchorEl(event.currentTarget);
@@ -31,6 +42,9 @@ const Navbar = ({ userImage = "/api/placeholder/40/40" }) => {
   };
 
   const handleLogout = () => {
+    if (!authToken) {
+      return;
+    }
     // Add your logout logic here
     console.log("Logging out...");
     // Example: router.push('/login');

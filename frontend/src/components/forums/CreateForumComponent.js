@@ -17,6 +17,7 @@ import {
   FormHelperText,
   CircularProgress
 } from '@mui/material';
+import { getAuthToken } from "@/utils/auth";
 
 export default function CreateForumComponent({ open, onClose, forum = null }) {
   const [formData, setFormData] = useState({
@@ -31,9 +32,19 @@ export default function CreateForumComponent({ open, onClose, forum = null }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [currentTag, setCurrentTag] = useState('');
+  const [authToken, setAuthToken] = useState(null);
 
   // If forum is provided, this is an edit operation
   const isEditMode = Boolean(forum);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   useEffect(() => {
     if(formData)
@@ -104,6 +115,10 @@ export default function CreateForumComponent({ open, onClose, forum = null }) {
     setLoading(true);
     setError(null);
 
+    if (!authToken) {
+      return;
+    }
+
     try {
       const formDataObj = new FormData();
       
@@ -146,12 +161,18 @@ export default function CreateForumComponent({ open, onClose, forum = null }) {
         response = await fetch(`http://localhost:5000/forums2/forums/${forum._id}`, {
           method: 'PUT',
           body: formDataObj,
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
         });
       } else {
         // Create new forum
         response = await fetch('http://localhost:5000/forums2/forums', {
           method: 'POST',
           body: formDataObj,
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
         });
       }
 

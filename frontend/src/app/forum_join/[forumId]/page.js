@@ -17,7 +17,7 @@ import {
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
-import { fetchUserData } from "@/utils/auth";
+import { fetchUserData, getAuthToken } from "@/utils/auth";
 
 // Styled components for the premium UI (reused from ForumList)
 const GradientText = styled(Typography)(({ theme }) => ({
@@ -78,10 +78,24 @@ const ForumJoinPage = () => {
   const [boardName, setBoardName] = useState("");
   const [clubName, setClubName] = useState("");
   const [error, setError] = useState(null);
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   useEffect(() => {
     const loadData = async () => {
       try {
+        if (!authToken) {
+          return;
+        }
+
         // Fetch user data
         const userData = await fetchUserData();
         if (!userData || !userData.userId) {
@@ -93,7 +107,12 @@ const ForumJoinPage = () => {
 
         // Fetch forum data
         const forumResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/forums2/forums/${forumId}`
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/forums2/forums/${forumId}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${authToken}`,
+            }
+          }
         );
 
         if (!forumResponse.ok) {
@@ -105,7 +124,12 @@ const ForumJoinPage = () => {
 
         // Check if user is already a member
         const membershipResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/forums2/forums/${forumId}/membership/${userData.userId}`
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/forums2/forums/${forumId}/membership/${userData.userId}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${authToken}`,
+            }
+          }
         );
 
         // Fixed this part to properly handle the membership check
@@ -127,7 +151,12 @@ const ForumJoinPage = () => {
         // Fetch board name if applicable
         if (forumData.data.board_id) {
           const boardResponse = await fetch(
-            `${process.env.NEXT_PUBLIC_BACKEND_URL}/boards/${forumData.data.board_id}`
+            `${process.env.NEXT_PUBLIC_BACKEND_URL}/boards/${forumData.data.board_id}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${authToken}`,
+              }
+            }
           );
           if (boardResponse.ok) {
             const boardData = await boardResponse.json();
@@ -138,7 +167,12 @@ const ForumJoinPage = () => {
         // Fetch club name if applicable
         if (forumData.data.club_id) {
           const clubResponse = await fetch(
-            `${process.env.NEXT_PUBLIC_BACKEND_URL}/clubs/${forumData.data.club_id}`
+            `${process.env.NEXT_PUBLIC_BACKEND_URL}/clubs/${forumData.data.club_id}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${authToken}`,
+              }
+            }
           );
           if (clubResponse.ok) {
             const clubData = await clubResponse.json();
@@ -154,11 +188,15 @@ const ForumJoinPage = () => {
     };
 
     loadData();
-  }, [forumId, router]);
+  }, [forumId, router, authToken]);
 
   const handleJoinForum = async () => {
     if (!userId) {
       setError("Please login to join forums");
+      return;
+    }
+
+    if (!authToken) {
       return;
     }
 
@@ -172,6 +210,7 @@ const ForumJoinPage = () => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            'Authorization': `Bearer ${authToken}`,
           },
           body: JSON.stringify({
             user_id: userId,

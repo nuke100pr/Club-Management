@@ -40,6 +40,7 @@ import PeopleIcon from "@mui/icons-material/People";
 import PersonRemoveIcon from "@mui/icons-material/PersonRemove";
 import ForumCreateDialog from "../../components/forums/ForumCreateDialog";
 import { fetchUserData } from "@/utils/auth";
+import { getAuthToken } from "@/utils/auth";
 
 const ForumMembersDialog = ({ open, onClose, forumId }) => {
   const [members, setMembers] = useState([]);
@@ -49,6 +50,16 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
   const [addingMember, setAddingMember] = useState(false);
   const [searchNewMember, setSearchNewMember] = useState("");
   const [searchExistingMember, setSearchExistingMember] = useState("");
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   useEffect(() => {
     if (open && forumId) {
@@ -58,10 +69,16 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
   }, [open, forumId]);
 
   const fetchMembers = async () => {
+    if (!authToken) return;
     setLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:5000/forums2/forums/${forumId}/members`
+        `http://localhost:5000/forums2/forums/${forumId}/members`,
+        {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        }
       );
       if (!response.ok) {
         throw new Error("Failed to fetch forum members");
@@ -76,8 +93,13 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
   };
 
   const fetchAllUsers = async () => {
+    if (!authToken) return;
     try {
-      const response = await fetch(`http://localhost:5000/users/users/`);
+      const response = await fetch(`http://localhost:5000/users/users/`, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
+      });
       if (!response.ok) {
         throw new Error("Failed to fetch users");
       }
@@ -89,11 +111,15 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
   };
 
   const handleRemoveMember = async (userId) => {
+    if (!authToken) return;
     try {
       const response = await fetch(
         `http://localhost:5000/forums2/forums/${forumId}/members/${userId}`,
         {
           method: "DELETE",
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
         }
       );
 
@@ -114,7 +140,7 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
   };
 
   const handleAddMember = async () => {
-    if (selectedUsers.length === 0) return;
+    if (!authToken || selectedUsers.length === 0) return;
 
     setAddingMember(true);
     try {
@@ -125,6 +151,7 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            'Authorization': `Bearer ${authToken}`,
           },
           body: JSON.stringify({
             user_id: userId,
@@ -577,10 +604,16 @@ const ForumCard = ({
 
   const handleDelete = async (forumId) => {
     try {
+      const token = await getAuthToken();
+      if (!token) return;
+
       const response = await fetch(
         `http://localhost:5000/forums2/forums/${forumId}`,
         {
           method: "DELETE",
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          }
         }
       );
 
@@ -594,19 +627,18 @@ const ForumCard = ({
     }
   };
 
-  // Modern tag colors
   const tagColors = [
-    "#4776E6", // primary blue
-    "#8E54E9", // secondary purple
-    "#2D9CDB", // light blue
-    "#9B51E0", // lavender
-    "#F2994A", // orange
-    "#6FCF97", // green
-    "#EB5757", // red
-    "#56CCF2", // cyan
-    "#BB6BD9", // pink
-    "#219653", // forest green
-    "#607D8B", // blue-gray
+    "#4776E6",
+    "#8E54E9",
+    "#2D9CDB",
+    "#9B51E0",
+    "#F2994A",
+    "#6FCF97",
+    "#EB5757",
+    "#56CCF2",
+    "#BB6BD9",
+    "#219653",
+    "#607D8B",
   ];
 
   const getTagColor = (index) => {
@@ -760,7 +792,7 @@ const ForumCard = ({
                 label={tag}
                 size="small"
                 sx={{
-                  backgroundColor: `${getTagColor(index)}15`, // 15% opacity
+                  backgroundColor: `${getTagColor(index)}15`,
                   color: getTagColor(index),
                   fontWeight: 500,
                   fontSize: "0.65rem",
@@ -888,6 +920,7 @@ const ForumList = ({
     useState([]);
   const [userBoardsWithForumPermission, setUserBoardsWithForumPermission] =
     useState([]);
+  const [authToken, setAuthToken] = useState(null);
   const router = useRouter();
 
   const sampleBoards = {
@@ -930,6 +963,15 @@ const ForumList = ({
       }
     }
     loadUserData();
+  }, []);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
   }, []);
 
   const hasForumPermission = (forum) => {
@@ -980,9 +1022,15 @@ const ForumList = ({
 
   useEffect(() => {
     const fetchForums = async () => {
+      if (!authToken) return;
       try {
         const response = await fetch(
-          "http://localhost:5000/forums2/api/forums"
+          "http://localhost:5000/forums2/api/forums",
+          {
+            headers: {
+              'Authorization': `Bearer ${authToken}`,
+            }
+          }
         );
         if (!response.ok) {
           throw new Error("Failed to fetch forums");
@@ -995,7 +1043,7 @@ const ForumList = ({
     };
 
     fetchForums();
-  }, []);
+  }, [authToken]);
 
   const handleViewForum = (forumId) => {
     router.push(`/current_forum/${forumId}`);
@@ -1031,11 +1079,13 @@ const ForumList = ({
   };
 
   const handleCreateForum = async (newForum) => {
+    if (!authToken) return;
     try {
       const response = await fetch("http://localhost:5000/forums2/forums", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          'Authorization': `Bearer ${authToken}`,
         },
         body: JSON.stringify(newForum),
       });

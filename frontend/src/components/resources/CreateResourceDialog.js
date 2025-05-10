@@ -4,6 +4,7 @@ import {
   TextField, Box, Button, Chip, FormControl, CircularProgress, Alert
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
+import { getAuthToken } from "@/utils/auth";
 
 const CreateResourceDialog = ({ 
   open, 
@@ -31,6 +32,16 @@ const CreateResourceDialog = ({
   const [newTag, setNewTag] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   useEffect(() => {
     if (existingResource) {
@@ -84,6 +95,10 @@ const CreateResourceDialog = ({
       return;
     }
 
+    if (!authToken) {
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
@@ -100,6 +115,7 @@ const CreateResourceDialog = ({
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`,
           },
           body: JSON.stringify(payload)
         });
@@ -108,6 +124,7 @@ const CreateResourceDialog = ({
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`,
           },
           body: JSON.stringify(payload)
         });

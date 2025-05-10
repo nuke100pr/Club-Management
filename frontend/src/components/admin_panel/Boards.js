@@ -26,6 +26,7 @@ import AddIcon from "@mui/icons-material/Add";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import { getAuthToken } from "@/utils/auth";
 
 const Boards = () => {
   const [boards, setBoards] = useState([]);
@@ -48,14 +49,30 @@ const Boards = () => {
     },
   });
   const [isEditing, setIsEditing] = useState(false);
+  const [authToken, setAuthToken] = useState(null);
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
+
+  useEffect(() => {
     const fetchBoards = async () => {
+      if (!authToken) return;
+      
       try {
-        const response = await fetch("http://localhost:5000/boards/");
+        const response = await fetch("http://localhost:5000/boards/", {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        });
         if (!response.ok) throw new Error("Failed to fetch boards");
         const data = await response.json();
         setBoards(data);
@@ -64,8 +81,10 @@ const Boards = () => {
       }
     };
 
-    fetchBoards();
-  }, []);
+    if (authToken) {
+      fetchBoards();
+    }
+  }, [authToken]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -94,6 +113,8 @@ const Boards = () => {
   };
 
   const handleSubmit = async () => {
+    if (!authToken) return;
+    
     try {
       const formData = new FormData();
       formData.append("name", newBoard.name);
@@ -103,7 +124,6 @@ const Boards = () => {
         formData.append("image", newBoard.image);
       }
 
-      // Append social media fields
       Object.keys(newBoard.social_media).forEach((key) => {
         if (newBoard.social_media[key]) {
           formData.append(`social_media[${key}]`, newBoard.social_media[key]);
@@ -112,6 +132,9 @@ const Boards = () => {
 
       const response = await fetch("http://localhost:5000/boards/", {
         method: "POST",
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        },
         body: formData,
       });
 
@@ -150,6 +173,8 @@ const Boards = () => {
   };
 
   const handleEdit = async () => {
+    if (!authToken) return;
+    
     try {
       const formData = new FormData();
       formData.append("name", newBoard.name);
@@ -160,7 +185,6 @@ const Boards = () => {
         formData.append("image", newBoard.image);
       }
 
-      // Append social media fields
       Object.keys(newBoard.social_media).forEach((key) => {
         formData.append(`social_media[${key}]`, newBoard.social_media[key]);
       });
@@ -169,13 +193,20 @@ const Boards = () => {
         `http://localhost:5000/boards/${selectedBoard._id}`,
         {
           method: "PUT",
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          },
           body: formData,
         }
       );
 
       if (!response.ok) throw new Error("Failed to update board");
 
-      const boardsResponse = await fetch("http://localhost:5000/boards/");
+      const boardsResponse = await fetch("http://localhost:5000/boards/", {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
+      });
       if (!boardsResponse.ok) throw new Error("Failed to fetch updated boards");
       const data = await boardsResponse.json();
       setBoards(data);
@@ -203,11 +234,16 @@ const Boards = () => {
   };
 
   const handleDelete = async () => {
+    if (!authToken) return;
+    
     try {
       const response = await fetch(
         `http://localhost:5000/boards/${selectedBoard._id}`,
         {
           method: "DELETE",
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          },
         }
       );
 
@@ -424,7 +460,6 @@ const Boards = () => {
         ))}
       </Grid>
 
-      {/* Context Menu */}
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
@@ -473,7 +508,6 @@ const Boards = () => {
         </MenuItem>
       </Menu>
 
-      {/* Add/Edit Dialog */}
       <Dialog
         open={openDialog}
         onClose={() => setOpenDialog(false)}
@@ -595,7 +629,6 @@ const Boards = () => {
               }}
             />
 
-            {/* Social Media Links Section */}
             <Typography
               variant="subtitle1"
               color={theme.palette.mode === "dark" ? "#ffffff" : "#2A3B4F"}

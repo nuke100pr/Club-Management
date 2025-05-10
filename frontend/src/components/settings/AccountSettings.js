@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Typography,
   FormGroup,
@@ -19,11 +19,13 @@ import {
   Snackbar,
   Alert,
 } from "@mui/material";
+import { getAuthToken } from "@/utils/auth";
 
 export default function AccountSettings({ userId }) {
   const theme = useTheme();
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [muteNotifications, setMuteNotifications] = useState(false);
+  const [authToken, setAuthToken] = useState(null);
   
   const [dialogs, setDialogs] = useState({
     delete: false,
@@ -40,6 +42,15 @@ export default function AccountSettings({ userId }) {
     message: "",
     severity: "success",
   });
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   const toggleDialog = (key, value) => {
     setDialogs((prev) => ({ ...prev, [key]: value }));
@@ -62,6 +73,10 @@ export default function AccountSettings({ userId }) {
   };
 
   const handleResetPassword = async () => {
+    if (!authToken) {
+      return;
+    }
+
     const { newPassword, confirmPassword } = dialogInputs;
     if (newPassword && newPassword === confirmPassword) {
       try {
@@ -81,6 +96,10 @@ export default function AccountSettings({ userId }) {
   };
 
   const handleDeleteAccount = async () => {
+    if (!authToken) {
+      return;
+    }
+
     try {
       // Here you would typically send a request to your backend
       console.log("Account deletion requested");

@@ -22,9 +22,8 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import AddIcon from "@mui/icons-material/Add";
 import { useRouter } from "next/navigation";
 import BlogCreateForm from "@/components/blogs/BlogCreateForm";
-import { fetchUserData,hasPermission } from "@/utils/auth";
+import { fetchUserData, hasPermission, getAuthToken } from "@/utils/auth";
 
-// Styled components (keep all existing styled components)
 const StyledCard = styled(Card)(({ theme, delay }) => ({
   height: "100%",
   display: "flex",
@@ -62,7 +61,6 @@ const StyledCard = styled(Card)(({ theme, delay }) => ({
   },
 }));
 
-// New styled component for skeleton cards
 const SkeletonCard = styled(Card)(({ theme }) => ({
   height: "100%",
   display: "flex",
@@ -133,7 +131,6 @@ const ViewButton = styled(Button)(({ theme }) => ({
   fontWeight: 500,
 }));
 
-// Skeleton pulse animation
 const PulseSkeleton = styled(Skeleton)(({ theme }) => ({
   animation: "pulse 1.5s ease-in-out 0.5s infinite",
   "@keyframes pulse": {
@@ -174,15 +171,23 @@ export default function BlogCardGrid({
   const router = useRouter();
   const [arrayPermissions, setArrayPermissions] = useState({});
   const [canCreateBlogs, setCanCreateBlogs] = useState(false);
+  const [authToken, setAuthToken] = useState(null);
 
   useEffect(() => {
-    // Check permissions for all resources
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
+
+  useEffect(() => {
     if (userData && filteredBlogs.length > 0) {
       filteredBlogs.forEach(async (element) => {
         const clubId = element.club_id?._id || element.club_id;
         const boardId = element.board_id?._id || element.board_id;
 
-        // If you must use the async version of hasPermission
         const hasAccess = await hasPermission(
           "blogs",
           userData,
@@ -198,29 +203,27 @@ export default function BlogCardGrid({
     }
   }, [userData, filteredBlogs]);
 
-
-useEffect(() => {
-  async function checkBlogCreationPermission() {
-    if (isSuperAdmin) {
-      setCanCreateBlogs(true);
-      return;
-    }
-    if (!userData) {
+  useEffect(() => {
+    async function checkBlogCreationPermission() {
+      if (isSuperAdmin) {
+        setCanCreateBlogs(true);
+        return;
+      }
+      if (!userData) {
+        setCanCreateBlogs(false);
+        return;
+      }
+      if (propBoardId) {
+        const hasBlogPermission = await hasPermission("blogs", userData, propBoardId, null);
+        setCanCreateBlogs(hasBlogPermission);
+        return;
+      }
       setCanCreateBlogs(false);
-      return;
     }
-    if (boardId) {
-      const hasBlogPermission = await hasPermission("blogs", userData, boardId, null);
-      setCanCreateBlogs(hasBlogPermission);
-      return;
-    }
-    setCanCreateBlogs(false);
-  }
 
-  checkBlogCreationPermission();
-}, [isSuperAdmin, userData, propBoardId]);
+    checkBlogCreationPermission();
+  }, [isSuperAdmin, userData, propBoardId]);
 
-  // Fetch user data on mount
   useEffect(() => {
     async function loadUserData() {
       const result = await fetchUserData();
@@ -237,7 +240,6 @@ useEffect(() => {
             (clubId) => result.userData.data.clubs[clubId].blogs === true
           );
           setUserClubsWithBlogPermission(clubsWithPermission);
-          console.log(clubsWithPermission);
 
           if (clubsWithPermission.length > 0 && !propBoardId) {
             setSelectedClubId(clubsWithPermission[0]);
@@ -251,7 +253,6 @@ useEffect(() => {
             (boardId) => result.userData.data.boards[boardId].blogs === true
           );
           setUserBoardsWithBlogPermission(boardsWithPermission);
-          console.log(boardsWithPermission);
 
           if (boardsWithPermission.length > 0 && !propBoardId) {
             setSelectedBoardId(boardsWithPermission[0]);
@@ -264,6 +265,8 @@ useEffect(() => {
 
   useEffect(() => {
     const fetchBlogs = async () => {
+      if (!authToken) return;
+
       let fetchStartTime = Date.now();
       setIsLoading(true);
       setShowSkeleton(true);
@@ -275,7 +278,11 @@ useEffect(() => {
           url += `?board_id=${propBoardId}`;
         }
 
-        const response = await fetch(url);
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        });
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -302,12 +309,10 @@ useEffect(() => {
         setBlogs(transformedBlogs);
         setFilteredBlogs(transformedBlogs);
 
-        // Calculate remaining time to show skeleton
         const fetchTime = Date.now() - fetchStartTime;
-        const minSkeletonTime = 500; // 2 seconds minimum
+        const minSkeletonTime = 500;
         const remainingSkeletonTime = Math.max(0, minSkeletonTime - fetchTime);
 
-        // Keep skeleton visible for at least the minimum time
         setTimeout(() => {
           setIsLoading(false);
           setShowSkeleton(false);
@@ -317,9 +322,8 @@ useEffect(() => {
         console.error("Failed to fetch blogs:", error);
         setError(error.message);
 
-        // Still maintain minimum skeleton time even on error
         const fetchTime = Date.now() - fetchStartTime;
-        const minSkeletonTime = 2000; // 2 seconds minimum
+        const minSkeletonTime = 2000;
         const remainingSkeletonTime = Math.max(0, minSkeletonTime - fetchTime);
 
         setTimeout(() => {
@@ -330,9 +334,8 @@ useEffect(() => {
     };
 
     fetchBlogs();
-  }, [propBoardId]);
+  }, [propBoardId, authToken]);
 
-  // Filter blogs based on searchQuery prop and boardId
   useEffect(() => {
     let filtered = [...blogs];
 
@@ -364,10 +367,15 @@ useEffect(() => {
 
   const handleDelete = async (blogId) => {
     try {
+      if (!authToken) return;
+
       const response = await fetch(
         `http://localhost:5000/blogs/blogs/${blogId}`,
         {
           method: "DELETE",
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
         }
       );
 
@@ -385,8 +393,15 @@ useEffect(() => {
 
   const handleEdit = async (blog) => {
     try {
+      if (!authToken) return;
+
       const response = await fetch(
-        `http://localhost:5000/blogs/blogs/${blog.id}`
+        `http://localhost:5000/blogs/blogs/${blog.id}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        }
       );
 
       if (!response.ok) {
@@ -424,27 +439,30 @@ useEffect(() => {
     setOpenDialog(true);
   };
 
-
   const handleView = async (blogId) => {
-    // Increment view count before navigation
     try {
+      if (!authToken) return;
+
       await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/blogs/blogs/${blogId}/views`,
         {
           method: "PATCH",
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
         }
       );
     } catch (error) {
       console.error("Failed to update view count:", error);
-      // Continue with navigation even if the view count update fails
     }
 
-    // Navigate to the blog page
     router.push(`/current_blog/${blogId}`);
   };
 
   const handleFormSubmit = async (formData) => {
     try {
+      if (!authToken) return;
+
       const url = isEditing
         ? `http://localhost:5000/blogs/blogs/${selectedBlog.id}`
         : "http://localhost:5000/blogs/blogs";
@@ -484,6 +502,9 @@ useEffect(() => {
       const response = await fetch(url, {
         method: method,
         body: multipartFormData,
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
       });
 
       if (!response.ok) {
@@ -521,7 +542,6 @@ useEffect(() => {
     }
   };
 
-  // Skeleton blog card component
   const BlogCardSkeleton = ({ index }) => (
     <Grid item xs={12} sm={6} md={4} key={`skeleton-${index}`}>
       <SkeletonCard>
@@ -579,7 +599,6 @@ useEffect(() => {
     </Grid>
   );
 
-  // Render skeleton loading state
   if (showSkeleton) {
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -619,7 +638,7 @@ useEffect(() => {
                         height: 250,
                         width: "100%",
                         objectFit: "fill",
-                        borderRadius: "8px", // optional
+                        borderRadius: "8px",
                       }}
                     />
                   )}

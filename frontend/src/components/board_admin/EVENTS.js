@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { fetchUserData } from "@/utils/auth";
+import { fetchUserData, getAuthToken } from "@/utils/auth";
 import { useRouter } from "next/navigation";
 import {
   Container,
@@ -118,6 +118,7 @@ export default function EVENTS() {
     registrations: [],
     loading: false,
   });
+  const [authToken, setAuthToken] = useState(null);
 
   // Load user data on component mount
   useEffect(() => {
@@ -137,11 +138,20 @@ export default function EVENTS() {
         }
       }
     }
+
+    async function fetchToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
     loadUserData();
+    fetchToken();
   }, []);
 
   // Fetch events when user_id is available
   useEffect(() => {
+    if (!authToken) return;
+
     const fetchEvents = async () => {
       try {
         setIsLoading(true);
@@ -149,7 +159,11 @@ export default function EVENTS() {
           ? `http://localhost:5000/events?userId=${user_id}`
           : "http://localhost:5000/events";
 
-        const response = await fetch(url);
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        });
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
         const result = await response.json();
@@ -159,7 +173,12 @@ export default function EVENTS() {
         const eventsWithCounts = await Promise.all(
           (result.data || []).map(async (event) => {
             const rsvpResponse = await fetch(
-              `http://localhost:5000/events/${event._id}/rsvp`
+              `http://localhost:5000/events/${event._id}/rsvp`,
+              {
+                headers: {
+                  'Authorization': `Bearer ${authToken}`,
+                }
+              }
             );
             if (!rsvpResponse.ok) return { ...event, registeredCount: 0 };
 
@@ -186,7 +205,7 @@ export default function EVENTS() {
     };
 
     if (user_id) fetchEvents();
-  }, [user_id]);
+  }, [user_id, authToken]);
 
   // Check if user has permission to edit/delete an event
   const hasEventPermission = (event) => {
@@ -204,6 +223,7 @@ export default function EVENTS() {
   };
 
   const handleRegister = async (event) => {
+    if (!authToken) return;
     if (!user_id) {
       setNotification({
         open: true,
@@ -218,7 +238,10 @@ export default function EVENTS() {
         `http://localhost:5000/events/${event._id}/rsvp`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            'Authorization': `Bearer ${authToken}`,
+          },
           body: JSON.stringify({ event_id: event._id, user_id }),
         }
       );
@@ -249,6 +272,7 @@ export default function EVENTS() {
   };
 
   const handleViewRegistrations = async (eventId) => {
+    if (!authToken) return;
     try {
       setRegistrationsDialog({
         open: true,
@@ -257,7 +281,11 @@ export default function EVENTS() {
         registrations: [],
       });
 
-      const response = await fetch(`http://localhost:5000/events/${eventId}/rsvp`);
+      const response = await fetch(`http://localhost:5000/events/${eventId}/rsvp`, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
+      });
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
       const result = await response.json();
@@ -285,9 +313,13 @@ export default function EVENTS() {
   };
 
   const handleDelete = async (eventId) => {
+    if (!authToken) return;
     try {
       const response = await fetch(`http://localhost:5000/events/${eventId}`, {
         method: "DELETE",
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
       });
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
@@ -308,8 +340,13 @@ export default function EVENTS() {
   };
 
   const handleEdit = async (event) => {
+    if (!authToken) return;
     try {
-      const response = await fetch(`http://localhost:5000/events/${event._id}`);
+      const response = await fetch(`http://localhost:5000/events/${event._id}`, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
+      });
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
       const result = await response.json();
@@ -342,6 +379,7 @@ export default function EVENTS() {
   };
 
   const handleFormSubmit = async (formData) => {
+    if (!authToken) return;
     try {
       const url = isEditing
         ? `http://localhost:5000/events/${currentEvent._id}`
@@ -364,7 +402,13 @@ export default function EVENTS() {
         multipartFormData.append("_id", currentEvent._id);
       }
 
-      const response = await fetch(url, { method, body: multipartFormData });
+      const response = await fetch(url, { 
+        method, 
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        },
+        body: multipartFormData 
+      });
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       
       const updatedEvent = await response.json();

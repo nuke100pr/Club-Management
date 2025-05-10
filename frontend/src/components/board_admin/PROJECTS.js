@@ -38,10 +38,9 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import WorkspacesIcon from "@mui/icons-material/Workspaces";
 import { useRouter } from "next/navigation";
-import { fetchUserData } from "@/utils/auth";
+import { fetchUserData, getAuthToken } from "@/utils/auth";
 import CreateProjectDialog from "../../components/projects/CreateProjectDialog";
 
-// Standardized theme colors to match Resources page
 const themeColors = {
   primary: {
     main: "#3f51b5",
@@ -67,7 +66,6 @@ const themeColors = {
   },
 };
 
-// Standardized card styling to match Resources page
 const StyledCard = styled(Card)(({ theme }) => ({
   height: "100%",
   display: "flex",
@@ -323,6 +321,7 @@ const ProjectsPage = ({ boardId }) => {
   const [userData, setUserData] = useState(null);
   const [user_id, setUserId] = useState(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [authToken, setAuthToken] = useState(null);
   const [notification, setNotification] = useState({
     open: false,
     message: "",
@@ -330,9 +329,19 @@ const ProjectsPage = ({ boardId }) => {
   });
 
   useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
+
+  useEffect(() => {
     const fetchUserAndProjects = async () => {
       try {
-        // Fetch user data
+        if (!authToken) return;
+
         let result = await fetchUserData();
         if (result) {
           setUserData(result.userData);
@@ -340,7 +349,6 @@ const ProjectsPage = ({ boardId }) => {
           setIsSuperAdmin(result.isSuperAdmin);
         }
 
-        // Fetch projects
         setIsLoading(true);
         let url = user_id
           ? `http://localhost:5000/projects/api?userId=${user_id}`
@@ -350,7 +358,11 @@ const ProjectsPage = ({ boardId }) => {
           url += (url.includes("?") ? "&" : "?") + `boardId=${boardId}`;
         }
 
-        const response = await fetch(url);
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        });
         if (!response.ok)
           throw new Error(`HTTP error! status: ${response.status}`);
          result = await response.json();
@@ -371,18 +383,16 @@ const ProjectsPage = ({ boardId }) => {
     };
 
     fetchUserAndProjects();
-  }, [user_id, boardId]);
+  }, [user_id, boardId, authToken]);
 
   const hasProjectPermission = (project) => {
     if (isSuperAdmin) return true;
     if (!userData) return false;
 
-    // Check club permissions
     if (project.club_id && userData.clubs?.[project.club_id._id]?.projects) {
       return true;
     }
 
-    // Check board permissions
     if (project.board_id && userData.boards?.[project.board_id._id]?.projects) {
       return true;
     }
@@ -398,10 +408,15 @@ const ProjectsPage = ({ boardId }) => {
 
   const handleDelete = async (projectId) => {
     try {
+      if (!authToken) return;
+
       const response = await fetch(
         `http://localhost:5000/projects/${projectId}`,
         {
           method: "DELETE",
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
         }
       );
       if (!response.ok)
@@ -449,6 +464,8 @@ const ProjectsPage = ({ boardId }) => {
 
   const handleFormSubmit = async (formData) => {
     try {
+      if (!authToken) return;
+
       const url = isEditing
         ? `http://localhost:5000/projects/${currentProject._id}`
         : "http://localhost:5000/projects";
@@ -473,6 +490,9 @@ const ProjectsPage = ({ boardId }) => {
       const response = await fetch(url, {
         method,
         body: formDataToSend,
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
       });
 
       if (!response.ok)

@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { fetchUserData } from "@/utils/auth";
+import { fetchUserData, getAuthToken } from "@/utils/auth";
 
 // Icons
 import { Search, Edit2, Trash2, Plus, Calendar, User } from "lucide-react";
@@ -22,6 +22,7 @@ export default function BLOGS({ boardId: propBoardId = null }) {
   const [userBoardsWithBlogPermission, setUserBoardsWithBlogPermission] = useState([]);
   const [selectedClubId, setSelectedClubId] = useState(null);
   const [selectedBoardId, setSelectedBoardId] = useState(propBoardId);
+  const [authToken, setAuthToken] = useState(null);
 
   const router = useRouter();
 
@@ -66,7 +67,14 @@ export default function BLOGS({ boardId: propBoardId = null }) {
         }
       }
     }
+
+    async function fetchToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
     loadUserData();
+    fetchToken();
   }, [propBoardId]);
 
   // Check if user has permission to edit/delete a blog
@@ -106,6 +114,8 @@ export default function BLOGS({ boardId: propBoardId = null }) {
 
   // Fetch blogs from backend
   useEffect(() => {
+    if (!authToken) return;
+
     const fetchBlogs = async () => {
       try {
         setIsLoading(true);
@@ -116,7 +126,11 @@ export default function BLOGS({ boardId: propBoardId = null }) {
           url += `?board_id=${propBoardId}`;
         }
 
-        const response = await fetch(url);
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        });
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -153,7 +167,7 @@ export default function BLOGS({ boardId: propBoardId = null }) {
     };
 
     fetchBlogs();
-  }, [propBoardId]);
+  }, [propBoardId, authToken]);
 
   // Add filtering effect
   useEffect(() => {
@@ -184,11 +198,16 @@ export default function BLOGS({ boardId: propBoardId = null }) {
 
   const handleDelete = async (blogId, e) => {
     e.stopPropagation();
+    if (!authToken) return;
+
     try {
       const response = await fetch(
         `http://localhost:5000/blogs/blogs/${blogId}`,
         {
           method: "DELETE",
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
         }
       );
 
@@ -206,9 +225,16 @@ export default function BLOGS({ boardId: propBoardId = null }) {
 
   const handleEdit = async (blog, e) => {
     e.stopPropagation();
+    if (!authToken) return;
+
     try {
       const response = await fetch(
-        `http://localhost:5000/blogs/blogs/${blog.id}`
+        `http://localhost:5000/blogs/blogs/${blog.id}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        }
       );
 
       if (!response.ok) {
@@ -247,6 +273,8 @@ export default function BLOGS({ boardId: propBoardId = null }) {
   };
 
   const handleFormSubmit = async (formData) => {
+    if (!authToken) return;
+
     try {
       const url = isEditing
         ? `http://localhost:5000/blogs/blogs/${selectedBlog.id}`
@@ -293,6 +321,9 @@ export default function BLOGS({ boardId: propBoardId = null }) {
 
       const response = await fetch(url, {
         method: method,
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        },
         body: multipartFormData,
       });
 
@@ -558,4 +589,3 @@ export default function BLOGS({ boardId: propBoardId = null }) {
     </div>
   );
 }
-

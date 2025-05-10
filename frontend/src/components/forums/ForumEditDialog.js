@@ -22,6 +22,7 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import { getAuthToken } from "@/utils/auth";
 
 const ForumEditDialog = ({ open, onClose, onEditForum, forumId, userId }) => {
   const [imageFile, setImageFile] = useState(null);
@@ -31,6 +32,7 @@ const ForumEditDialog = ({ open, onClose, onEditForum, forumId, userId }) => {
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState("success");
   const [loading, setLoading] = useState(true);
+  const [authToken, setAuthToken] = useState(null);
   const [forumData, setForumData] = useState({
     title: "",
     description: "",
@@ -42,6 +44,15 @@ const ForumEditDialog = ({ open, onClose, onEditForum, forumId, userId }) => {
   });
 
   useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
+
+  useEffect(() => {
     // Fetch forum data when dialog opens and forumId is available
     if (open && forumId) {
       fetchForumData();
@@ -49,10 +60,19 @@ const ForumEditDialog = ({ open, onClose, onEditForum, forumId, userId }) => {
   }, [open, forumId]);
 
   const fetchForumData = async () => {
+    if (!authToken) {
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:5000/forums2/forums/${forumId}`
+        `http://localhost:5000/forums2/forums/${forumId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        }
       );
       if (!response.ok) {
         throw new Error("Failed to fetch forum data");
@@ -138,6 +158,10 @@ const ForumEditDialog = ({ open, onClose, onEditForum, forumId, userId }) => {
   };
 
   const handleSubmit = async () => {
+    if (!authToken) {
+      return;
+    }
+
     // Validate required fields
     if (!forumData.title || !forumData.description) {
       setSnackbarMessage("Please fill in all required fields");
@@ -178,6 +202,9 @@ const ForumEditDialog = ({ open, onClose, onEditForum, forumId, userId }) => {
         `http://localhost:5000/forums2/forums/${forumId}`,
         {
           method: "PUT",
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          },
           body: formData,
         }
       );

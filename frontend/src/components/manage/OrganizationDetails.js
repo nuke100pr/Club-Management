@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -27,6 +27,7 @@ import {
   CalendarToday as CalendarIcon,
   Description as DescriptionIcon,
 } from "@mui/icons-material";
+import { getAuthToken } from "@/utils/auth";
 
 const OrganizationDetails = ({ organization, organizationType, onUpdate }) => {
   const [openDialog, setOpenDialog] = useState(false);
@@ -45,6 +46,16 @@ const OrganizationDetails = ({ organization, organizationType, onUpdate }) => {
     },
   });
   const [imagePreview, setImagePreview] = useState(null);
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   const handleOpenDialog = () => {
     setNewOrgData({
@@ -101,8 +112,16 @@ const OrganizationDetails = ({ organization, organizationType, onUpdate }) => {
   };
 
   const handleSubmit = async () => {
+    if (!authToken) {
+      return;
+    }
+    
     try {
-      await onUpdate(newOrgData);
+      await onUpdate(newOrgData, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
+      });
       setOpenDialog(false);
     } catch (error) {
       console.error("Error updating organization:", error);

@@ -36,6 +36,7 @@ import {
   Event as CalendarIcon,
 } from "@mui/icons-material";
 import { motion } from "framer-motion";
+import { getAuthToken } from "@/utils/auth";
 
 const ClubManagement = () => {
   const [clubs, setClubs] = useState([]);
@@ -45,6 +46,7 @@ const ClubManagement = () => {
   const [selectedClub, setSelectedClub] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [authToken, setAuthToken] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -68,6 +70,17 @@ const ClubManagement = () => {
   const darkMode = theme.palette.mode === "dark";
 
   useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
+
+  useEffect(() => {
+    if (!authToken) return;
+
     fetchBoards()
       .then(() => fetchClubs())
       .catch((err) => {
@@ -75,11 +88,16 @@ const ClubManagement = () => {
         console.error(err);
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [authToken]);
 
   const fetchBoards = async () => {
+    if (!authToken) return;
     try {
-      const response = await fetch("http://localhost:5000/boards/");
+      const response = await fetch("http://localhost:5000/boards/", {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
+      });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -94,8 +112,13 @@ const ClubManagement = () => {
   };
 
   const fetchClubs = async () => {
+    if (!authToken) return;
     try {
-      const response = await fetch("http://localhost:5000/clubs/clubs/");
+      const response = await fetch("http://localhost:5000/clubs/clubs/", {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
+      });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -198,6 +221,7 @@ const ClubManagement = () => {
   };
 
   const createClub = async (clubData) => {
+    if (!authToken) return;
     try {
       const formDataObj = new FormData();
       formDataObj.append("name", clubData.name);
@@ -205,7 +229,6 @@ const ClubManagement = () => {
       formDataObj.append("board_id", clubData.board);
       formDataObj.append("established_year", clubData.established_year);
 
-      // Append social media links
       formDataObj.append(
         "social_media[instagram]",
         clubData.social_media.instagram
@@ -238,6 +261,9 @@ const ClubManagement = () => {
       const response = await fetch("http://localhost:5000/clubs/clubs/", {
         method: "POST",
         body: formDataObj,
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
       });
 
       if (!response.ok) {
@@ -255,6 +281,7 @@ const ClubManagement = () => {
   };
 
   const updateClub = async (clubId, clubData) => {
+    if (!authToken) return;
     try {
       const formDataObj = new FormData();
       formDataObj.append("name", clubData.name);
@@ -262,7 +289,6 @@ const ClubManagement = () => {
       formDataObj.append("board_id", clubData.board);
       formDataObj.append("established_year", clubData.established_year);
 
-      // Append social media links
       formDataObj.append(
         "social_media[instagram]",
         clubData.social_media.instagram
@@ -297,6 +323,9 @@ const ClubManagement = () => {
         {
           method: "PUT",
           body: formDataObj,
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
         }
       );
 
@@ -317,11 +346,15 @@ const ClubManagement = () => {
   };
 
   const deleteClub = async (clubId) => {
+    if (!authToken) return;
     try {
       const response = await fetch(
         `http://localhost:5000/clubs/clubs/${clubId}`,
         {
           method: "DELETE",
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
         }
       );
 
@@ -696,7 +729,6 @@ const ClubManagement = () => {
         </Grid>
       )}
 
-      {/* Context Menu */}
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
@@ -728,7 +760,6 @@ const ClubManagement = () => {
         </MenuItem>
       </Menu>
 
-      {/* Add/Edit Dialog */}
       <Dialog
         open={openDialog}
         onClose={() => setOpenDialog(false)}
@@ -875,7 +906,6 @@ const ClubManagement = () => {
               </Box>
             )}
 
-            {/* Social Media Links */}
             <Box sx={{ mt: 2 }}>
               <Typography variant="subtitle2" fontWeight={500} sx={{ mb: 1 }}>
                 Social Media Links

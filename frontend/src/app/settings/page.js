@@ -10,16 +10,16 @@ import PositionsAndBadges from "../../components/settings/PositionsAndBadges";
 import AccountSettings from "../../components/settings/AccountSettings";
 
 export default function SettingsPage() {
- 
   const [authToken, setAuthToken] = useState(null);
   useEffect(() => {
-     const ff = async () => {
-        const nn = await getAuthToken();
-        setAuthToken(nn);
-     };
-     ff();
-  }, [])
-  
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+      console.log(token);
+    }
+    fetchAuthToken();
+  }, []);
+
   const theme = useTheme();
   const [userProfile, setUserProfile] = useState({
     name: "Loading...",
@@ -78,6 +78,9 @@ export default function SettingsPage() {
   }, []);
 
   const fetchUserDetails = async (userId) => {
+    // if (!authToken) {
+    //   return;
+    // }
     try {
       console.log("Fetching detailed user information for:", userId);
       const response = await fetch(
@@ -86,7 +89,7 @@ export default function SettingsPage() {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            // Include any auth headers if needed
+            'Authorization': `Bearer ${authToken}`,
           },
         }
       );
@@ -113,6 +116,9 @@ export default function SettingsPage() {
   };
 
   const fetchUserPors = async (userId) => {
+    if (!authToken) {
+      return;
+    }
     try {
       console.log("Fetching PORs for user:", userId);
       const response = await fetch(
@@ -121,7 +127,7 @@ export default function SettingsPage() {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            // Include any auth headers if needed
+            'Authorization': `Bearer ${authToken}`,
           },
         }
       );
@@ -139,6 +145,9 @@ export default function SettingsPage() {
   };
 
   const fetchUserBadges = async (userId) => {
+    if (!authToken) {
+      return;
+    }
     try {
       console.log("Fetching badges for user:", userId);
       const response = await fetch(
@@ -147,8 +156,7 @@ export default function SettingsPage() {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            // Include any auth headers that Postman is using
-            // 'Authorization': 'Bearer your-token-here',
+            'Authorization': `Bearer ${authToken}`,
           },
         }
       );

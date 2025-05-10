@@ -27,13 +27,22 @@ import {
   Menu as MenuIcon,
   ChevronRight as ChevronRightIcon
 } from "@mui/icons-material";
+import { getAuthToken } from "@/utils/auth";
 
 const Sidebar = ({ activeTab, setActiveTab, isMobile }) => {
   const theme = useTheme();
-  // Initial state - open on desktop, closed on mobile
   const [open, setOpen] = useState(!isMobile);
+  const [authToken, setAuthToken] = useState(null);
 
-  // Use theme colors instead of hardcoded values
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
+
   const primary = {
     main: theme.palette.primary.main,
     light: theme.palette.primary.light,
@@ -42,7 +51,6 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile }) => {
   
   const secondary = theme.palette.secondary.main;
   
-  // Use theme background and text colors for proper dark mode support
   const bgSidebar = theme.palette.mode === 'dark' 
     ? alpha(theme.palette.background.paper, 0.9)
     : "rgba(245, 247, 250, 0.7)";
@@ -50,12 +58,10 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile }) => {
   const textPrimary = theme.palette.text.primary;
   const textSecondary = theme.palette.text.secondary;
 
-  // Update sidebar state when screen size changes
   useEffect(() => {
     setOpen(!isMobile);
   }, [isMobile]);
 
-  // Toggle drawer for both mobile and desktop
   const handleDrawerToggle = () => {
     setOpen(!open);
   };
@@ -68,10 +74,8 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile }) => {
     { name: "por", label: "POR", icon: <PORIcon /> },
     { name: "admin_manage", label: "Admin Management", icon: <AdminIcon /> },
     { name: "super_admin_manage", label: "Super Admin Management", icon: <SuperAdminIcon /> },
-    { name: "badge_manage", label: "Badge Management", icon: <SuperAdminIcon /> },
   ];
 
-  // Styled logo component with gradient text
   const Logo = () => (
     <Box sx={{ display: "flex", alignItems: "center" }}>
       <Box
@@ -144,6 +148,7 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile }) => {
           <ListItem key={item.name} disablePadding sx={{ display: "block", mb: 1 }}>
             <ListItemButton
               onClick={() => {
+                if (!authToken) return;
                 setActiveTab(item.name);
                 if (isMobile) setOpen(false);
               }}
@@ -207,14 +212,13 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile }) => {
     </>
   );
 
-  // Uncollapse button that shows when sidebar is collapsed on desktop only (not mobile)
   const uncollapseButton = !open && !isMobile && (
     <Tooltip title="Expand Sidebar" placement="right">
       <IconButton
         onClick={handleDrawerToggle}
         sx={{
           position: 'fixed',
-          left: '64px', // Positioned just to the right of collapsed sidebar
+          left: '64px',
           top: '50%',
           transform: 'translateY(-50%)',
           backgroundColor: theme.palette.mode === 'dark'
@@ -232,7 +236,7 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile }) => {
           boxShadow: theme.palette.mode === 'dark'
             ? `2px 0 8px ${alpha(primary.main, 0.2)}`
             : '2px 0 8px rgba(95, 150, 230, 0.15)',
-          zIndex: 1199, // Just below the drawer zIndex
+          zIndex: 1199,
         }}
       >
         <ChevronRightIcon />
@@ -253,7 +257,6 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile }) => {
           }),
         }}
       >
-        {/* Mobile: temporary drawer that can be closed/opened */}
         {isMobile ? (
           <Drawer
             variant="temporary"
@@ -262,21 +265,20 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile }) => {
             ModalProps={{ keepMounted: true }}
             sx={{
               '& .MuiDrawer-paper': {
-                width: 280, // Full width on mobile when open
+                width: 280,
                 boxSizing: 'border-box',
                 boxShadow: theme.palette.mode === 'dark'
                   ? `0 12px 20px ${alpha(theme.palette.background.paper, 0.3)}`
                   : "0 12px 20px rgba(95, 150, 230, 0.2)",
                 borderRight: `1px solid ${alpha(primary.main, 0.2)}`,
                 backgroundColor: bgSidebar,
-                zIndex: 1300, // Higher than tab bar
+                zIndex: 1300,
               },
             }}
           >
             {drawer}
           </Drawer>
         ) : (
-          // Desktop: permanent drawer that can be collapsed/expanded
           <Drawer
             variant="permanent"
             open={true}
@@ -302,10 +304,8 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile }) => {
         )}
       </Box>
       
-      {/* Show uncollapse button only on desktop when sidebar is collapsed */}
       {uncollapseButton}
       
-      {/* Mobile hamburger menu button - fixed to top left corner */}
       {isMobile && !open && (
         <IconButton
           onClick={handleDrawerToggle}

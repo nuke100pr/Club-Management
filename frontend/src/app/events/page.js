@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useContext, useEffect, useMemo } from "react";
-import { fetchUserData, hasPermission } from "@/utils/auth";
+import { fetchUserData, hasPermission, getAuthToken } from "@/utils/auth";
 import { useRouter } from "next/navigation";
 import {
   Box,
@@ -208,6 +208,7 @@ export default function EventsPage() {
     title: "",
     contentType: "event",
   });
+  const [authToken, setAuthToken] = useState(null);
   const router = useRouter();
 
   const [notification, setNotification] = useState({
@@ -221,6 +222,15 @@ export default function EventsPage() {
     registrations: [],
     loading: false,
   });
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   useEffect(() => {
     async function loadUserData() {
@@ -245,12 +255,18 @@ export default function EventsPage() {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
+        if (!authToken) return;
+        
         setIsLoading(true);
         const url = user_id
           ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/events?userId=${user_id}`
           : `${process.env.NEXT_PUBLIC_BACKEND_URL}/events`;
 
-        const response = await fetch(url);
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        });
         if (!response.ok)
           throw new Error(`HTTP error! status: ${response.status}`);
 
@@ -261,7 +277,12 @@ export default function EventsPage() {
         const eventsWithCounts = await Promise.all(
           (result.data || []).map(async (event) => {
             const rsvpResponse = await fetch(
-              `${process.env.NEXT_PUBLIC_BACKEND_URL}/events/${event._id}/rsvp`
+              `${process.env.NEXT_PUBLIC_BACKEND_URL}/events/${event._id}/rsvp`,
+              {
+                headers: {
+                  'Authorization': `Bearer ${authToken}`,
+                }
+              }
             );
             if (!rsvpResponse.ok) return { ...event, registeredCount: 0 };
 
@@ -288,7 +309,7 @@ export default function EventsPage() {
     };
 
     fetchEvents();
-  }, [user_id]);
+  }, [user_id, authToken]);
 
   const hasEventPermission = (event) => {
     if (isSuperAdmin) return true;
@@ -310,6 +331,8 @@ export default function EventsPage() {
       return;
     }
 
+    if (!authToken) return;
+
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/events/${event._id}/rsvp`,
@@ -317,6 +340,7 @@ export default function EventsPage() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            'Authorization': `Bearer ${authToken}`,
           },
           body: JSON.stringify({
             event_id: event._id,
@@ -357,6 +381,8 @@ export default function EventsPage() {
 
   const handleViewRegistrations = async (eventId) => {
     try {
+      if (!authToken) return;
+      
       setRegistrationsDialog((prev) => ({
         ...prev,
         open: true,
@@ -366,7 +392,12 @@ export default function EventsPage() {
       }));
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/events/${eventId}/rsvp`
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/events/${eventId}/rsvp`,
+        {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        }
       );
       if (!response.ok)
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -416,10 +447,15 @@ export default function EventsPage() {
 
   const handleDelete = async (eventId) => {
     try {
+      if (!authToken) return;
+      
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/events/${eventId}`,
         {
           method: "DELETE",
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
         }
       );
       if (!response.ok)
@@ -443,8 +479,15 @@ export default function EventsPage() {
 
   const handleEdit = async (event) => {
     try {
+      if (!authToken) return;
+      
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/events/${event._id}`
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/events/${event._id}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        }
       );
       if (!response.ok)
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -487,6 +530,8 @@ export default function EventsPage() {
 
   const handleFormSubmit = async (formData) => {
     try {
+      if (!authToken) return;
+      
       const url = isEditing
         ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/events/${currentEvent._id}`
         : "${process.env.NEXT_PUBLIC_BACKEND_URL}/events";
@@ -521,6 +566,9 @@ export default function EventsPage() {
       const response = await fetch(url, {
         method: method,
         body: multipartFormData,
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
       });
 
       if (!response.ok)

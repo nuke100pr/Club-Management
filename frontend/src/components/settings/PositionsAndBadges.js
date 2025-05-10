@@ -11,9 +11,25 @@ import {
   Divider,
   Avatar,
 } from "@mui/material";
+import { useState, useEffect } from "react";
+import { getAuthToken } from "@/utils/auth";
 
 export default function PositionsAndBadges({ userPors, userBadges, isLoading }) {
   const theme = useTheme();
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
+
+  if (!authToken) {
+    return;
+  }
 
   // Format date string to readable format
   const formatDate = (dateString) => {

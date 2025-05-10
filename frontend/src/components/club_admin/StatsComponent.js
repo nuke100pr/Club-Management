@@ -10,6 +10,7 @@ import {
   Box
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import { getAuthToken } from "@/utils/auth";
 
 const DashboardCard = styled(Card)(({ theme, color }) => ({
   height: '100%',
@@ -46,12 +47,30 @@ const BoardDashboard = ({ clubId }) => {
   const [counts, setCounts] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   useEffect(() => {
     const fetchBoardCounts = async () => {
       try {
+        if (!authToken) {
+          return;
+        }
+
         setLoading(true);
-        const response = await fetch(`http://localhost:5000/misc/misc/club/${clubId}/counts`);
+        const response = await fetch(`http://localhost:5000/misc/misc/club/${clubId}/counts`, {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        });
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -71,7 +90,7 @@ const BoardDashboard = ({ clubId }) => {
     };
 
     fetchBoardCounts();
-  }, [clubId]);
+  }, [clubId, authToken]);
 
   if (loading) {
     return (

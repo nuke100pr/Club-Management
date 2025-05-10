@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -39,6 +39,7 @@ import {
   Search as SearchIcon,
   Groups as GroupsIcon,
 } from "@mui/icons-material";
+import { getAuthToken } from "@/utils/auth";
 
 const PositionManagement = ({
   positions,
@@ -57,6 +58,7 @@ const PositionManagement = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredPositions, setFilteredPositions] = useState(positions);
   const [isEdit, setIsEdit] = useState(false);
+  const [authToken, setAuthToken] = useState(null);
   const [newPosition, setNewPosition] = useState({
     user_id: "",
     privilegeTypeId: "",
@@ -65,6 +67,15 @@ const PositionManagement = ({
     ...(organizationType === "board" && { club_id: "" }), // Add club_id for board admins
   });
 
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
+
   const formatDate = (dateString) => {
     if (!dateString) return "Present";
     const date = new Date(dateString);
@@ -72,6 +83,8 @@ const PositionManagement = ({
   };
 
   const handleSearch = () => {
+    if (!authToken) return;
+    
     if (!searchTerm.trim()) {
       setFilteredPositions(positions);
       return;
@@ -98,6 +111,7 @@ const PositionManagement = ({
   };
 
   const handleMenuClick = (event, position) => {
+    if (!authToken) return;
     setAnchorEl(event.currentTarget);
     setSelectedPosition(position);
   };
@@ -107,6 +121,7 @@ const PositionManagement = ({
   };
 
   const handleEdit = () => {
+    if (!authToken) return;
     setIsEdit(true);
     setNewPosition({
       user_id: selectedPosition.user_id?._id || "",
@@ -126,11 +141,17 @@ const PositionManagement = ({
   };
 
   const handleDelete = () => {
-    onDeletePosition(selectedPosition);
+    if (!authToken) return;
+    onDeletePosition(selectedPosition, {
+      headers: {
+        'Authorization': `Bearer ${authToken}`,
+      }
+    });
     handleMenuClose();
   };
 
   const handleOpenDialog = () => {
+    if (!authToken) return;
     setIsEdit(false);
     setNewPosition({
       user_id: "",
@@ -148,10 +169,18 @@ const PositionManagement = ({
   };
 
   const handleSubmit = () => {
+    if (!authToken) return;
+    
+    const requestOptions = {
+      headers: {
+        'Authorization': `Bearer ${authToken}`,
+      }
+    };
+
     if (isEdit) {
-      onEditPosition(selectedPosition._id, newPosition);
+      onEditPosition(selectedPosition._id, newPosition, requestOptions);
     } else {
-      onAddPosition(newPosition);
+      onAddPosition(newPosition, requestOptions);
     }
     handleCloseDialog();
   };

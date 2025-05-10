@@ -18,7 +18,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
-import { fetchUserData, hasPermission } from "@/utils/auth";
+import { fetchUserData, hasPermission, getAuthToken } from "@/utils/auth";
 
 const getTagColor = (index) => {
   const colors = [
@@ -59,6 +59,7 @@ const OPPORTUNITIES = () => {
   const [currentClubId, setCurrentClubId] = useState(null);
   const [expandedTagsMap, setExpandedTagsMap] = useState({});
   const [arrayPermissions, setArrayPermissions] = useState({});
+  const [authToken, setAuthToken] = useState(null);
 
   const toggleExpandedTags = (opportunityId) => {
     setExpandedTagsMap((prev) => ({
@@ -108,13 +109,24 @@ const OPPORTUNITIES = () => {
     loadUserData();
   }, []);
 
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
 
+    fetchAuthToken();
+  }, []);
 
   const allKeywords = Array.from(
     new Set(opportunities.flatMap((opportunity) => opportunity.tags || []))
   );
 
   const fetchOpportunities = async () => {
+    if (!authToken) {
+      return;
+    }
+    
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/opportunities`,
@@ -122,6 +134,7 @@ const OPPORTUNITIES = () => {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
+            'Authorization': `Bearer ${authToken}`,
           },
         }
       );
@@ -142,9 +155,13 @@ const OPPORTUNITIES = () => {
 
   useEffect(() => {
     fetchOpportunities();
-  }, []);
+  }, [authToken]);
 
   const fetchOpportunityDetails = async (id) => {
+    if (!authToken) {
+      return;
+    }
+    
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/opportunities/${id}`,
@@ -152,6 +169,7 @@ const OPPORTUNITIES = () => {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
+            'Authorization': `Bearer ${authToken}`,
           },
         }
       );
@@ -169,6 +187,10 @@ const OPPORTUNITIES = () => {
   };
 
   const updateOpportunity = async (updatedOpportunity) => {
+    if (!authToken) {
+      return;
+    }
+    
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/opportunities/${updatedOpportunity._id}`,
@@ -176,6 +198,7 @@ const OPPORTUNITIES = () => {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
+            'Authorization': `Bearer ${authToken}`,
           },
           body: JSON.stringify(updatedOpportunity),
         }
@@ -199,6 +222,10 @@ const OPPORTUNITIES = () => {
   };
 
   const deleteOpportunity = async (id) => {
+    if (!authToken) {
+      return;
+    }
+    
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/opportunities/${id}`,
@@ -206,6 +233,7 @@ const OPPORTUNITIES = () => {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
+            'Authorization': `Bearer ${authToken}`,
           },
         }
       );
@@ -239,6 +267,10 @@ const OPPORTUNITIES = () => {
   };
 
   const handleSubmitDialog = async (newOpportunity) => {
+    if (!authToken) {
+      return;
+    }
+    
     if (editingOpportunity) {
       await updateOpportunity(newOpportunity);
     } else {
@@ -249,6 +281,7 @@ const OPPORTUNITIES = () => {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
+              'Authorization': `Bearer ${authToken}`,
             },
             body: JSON.stringify({
               ...newOpportunity,

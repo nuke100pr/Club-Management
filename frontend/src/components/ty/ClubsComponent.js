@@ -12,6 +12,7 @@ import {
   Stack,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
+import { getAuthToken } from "@/utils/auth";
 
 const ClubsList = ({ boardId, userId, searchQuery = "" }) => {
   console.log({ boardId, userId, searchQuery });
@@ -21,6 +22,16 @@ const ClubsList = ({ boardId, userId, searchQuery = "" }) => {
   const [clubs, setClubs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   const handleClick = (value) => {
     router.push(value);
@@ -28,6 +39,8 @@ const ClubsList = ({ boardId, userId, searchQuery = "" }) => {
 
   useEffect(() => {
     const fetchClubs = async () => {
+      if (!authToken) return;
+
       try {
         setLoading(true);
 
@@ -35,7 +48,11 @@ const ClubsList = ({ boardId, userId, searchQuery = "" }) => {
           ? `http://localhost:5000/clubs/clubs/board/${boardId}?user_id=${userId}`
           : `http://localhost:5000/clubs/clubs/board/${boardId}`;
 
-        const clubsResponse = await fetch(clubsUrl);
+        const clubsResponse = await fetch(clubsUrl, {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        });
         if (!clubsResponse.ok) throw new Error("Failed to fetch clubs");
         const clubsData = await clubsResponse.json();
         setClubs(clubsData);
@@ -52,16 +69,23 @@ const ClubsList = ({ boardId, userId, searchQuery = "" }) => {
     if (boardId) {
       fetchClubs();
     }
-  }, [boardId, userId]);
+  }, [boardId, userId, authToken]);
 
   const handleFollowClub = async (clubId, e) => {
-    e.stopPropagation(); // Prevent event bubbling to the card click
+    e.stopPropagation();
+    if (!authToken) return;
+
     try {
       if (!userId) return;
 
       const response = await fetch(
         `http://localhost:5000/clubs/users/${userId}/follow/club/${clubId}`,
-        { method: "POST" }
+        { 
+          method: "POST",
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        }
       );
 
       if (!response.ok) throw new Error("Failed to follow club");
@@ -78,13 +102,20 @@ const ClubsList = ({ boardId, userId, searchQuery = "" }) => {
   };
 
   const handleUnfollowClub = async (clubId, e) => {
-    e.stopPropagation(); // Prevent event bubbling to the card click
+    e.stopPropagation();
+    if (!authToken) return;
+
     try {
       if (!userId) return;
 
       const response = await fetch(
         `http://localhost:5000/clubs/users/${userId}/unfollow/club/${clubId}`,
-        { method: "DELETE" }
+        { 
+          method: "DELETE",
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        }
       );
 
       if (!response.ok) throw new Error("Failed to unfollow club");
@@ -100,7 +131,6 @@ const ClubsList = ({ boardId, userId, searchQuery = "" }) => {
     }
   };
 
-  // Filter clubs based on searchQuery
   const filteredClubs = clubs.filter((club) => {
     if (!searchQuery) return true;
 

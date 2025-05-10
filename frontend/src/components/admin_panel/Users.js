@@ -47,6 +47,7 @@ import {
   Groups as GroupsIcon,
 } from "@mui/icons-material";
 import { motion } from "framer-motion";
+import { getAuthToken } from "@/utils/auth";
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -59,6 +60,7 @@ const Users = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [authToken, setAuthToken] = useState(null);
   
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -74,56 +76,72 @@ const Users = () => {
   });
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch("http://localhost:5000/users/users/");
-        if (!response.ok) throw new Error("Failed to fetch users");
-        const data = await response.json();
-        setUsers(data);
-        setFilteredUsers(data);
-      } catch (error) {
-        console.error("Error fetching users:", error);
-        setError("Failed to load users. Please try again.");
-        // Fallback mock data
-        const mockUsers = [
-          {
-            _id: "1",
-            name: "Rahul Sharma",
-            email_id: "rahul@college.edu",
-            department: "Computer Science",
-            status: "active",
-            userRole: "member",
-            registered_at: "2020-08-15",
-          },
-          {
-            _id: "2",
-            name: "Priya Patel",
-            email_id: "priya@college.edu",
-            department: "Electrical Engineering",
-            status: "active",
-            userRole: "club_admin",
-            registered_at: "2021-01-10",
-          },
-          {
-            _id: "3",
-            name: "Vikram Singh",
-            email_id: "vikram@college.edu",
-            department: "Mechanical Engineering",
-            status: "banned",
-            userRole: "member",
-            registered_at: "2020-11-22",
-          },
-        ];
-        setUsers(mockUsers);
-        setFilteredUsers(mockUsers);
-      } finally {
-        setLoading(false);
-      }
-    };
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
 
-    fetchUsers();
+    fetchAuthToken();
   }, []);
+
+  useEffect(() => {
+    if (authToken) {
+      fetchUsers();
+    }
+  }, [authToken]);
+
+  const fetchUsers = async () => {
+    if (!authToken) return;
+
+    try {
+      setLoading(true);
+      const response = await fetch("http://localhost:5000/users/users/", {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
+      });
+      if (!response.ok) throw new Error("Failed to fetch users");
+      const data = await response.json();
+      setUsers(data);
+      setFilteredUsers(data);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      setError("Failed to load users. Please try again.");
+      const mockUsers = [
+        {
+          _id: "1",
+          name: "Rahul Sharma",
+          email_id: "rahul@college.edu",
+          department: "Computer Science",
+          status: "active",
+          userRole: "member",
+          registered_at: "2020-08-15",
+        },
+        {
+          _id: "2",
+          name: "Priya Patel",
+          email_id: "priya@college.edu",
+          department: "Electrical Engineering",
+          status: "active",
+          userRole: "club_admin",
+          registered_at: "2021-01-10",
+        },
+        {
+          _id: "3",
+          name: "Vikram Singh",
+          email_id: "vikram@college.edu",
+          department: "Mechanical Engineering",
+          status: "banned",
+          userRole: "member",
+          registered_at: "2020-11-22",
+        },
+      ];
+      setUsers(mockUsers);
+      setFilteredUsers(mockUsers);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSearch = () => {
     if (!searchTerm.trim()) {
@@ -161,12 +179,15 @@ const Users = () => {
   };
 
   const handleSubmit = async () => {
+    if (!authToken) return;
+
     try {
       setLoading(true);
       const response = await fetch("http://localhost:5000/users/users/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          'Authorization': `Bearer ${authToken}`,
         },
         body: JSON.stringify(newUser),
       });
@@ -214,6 +235,8 @@ const Users = () => {
   };
 
   const handleEditSubmit = async () => {
+    if (!authToken) return;
+
     try {
       setLoading(true);
       const response = await fetch(
@@ -222,6 +245,7 @@ const Users = () => {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
+            'Authorization': `Bearer ${authToken}`,
           },
           body: JSON.stringify(editUser),
         }
@@ -244,12 +268,17 @@ const Users = () => {
   };
 
   const handleDelete = async () => {
+    if (!authToken) return;
+
     try {
       setLoading(true);
       const response = await fetch(
         `http://localhost:5000/users/users/${selectedUser._id}`,
         {
           method: "DELETE",
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          },
         }
       );
 
@@ -270,6 +299,8 @@ const Users = () => {
   };
 
   const handleBan = async () => {
+    if (!authToken) return;
+
     try {
       setLoading(true);
       const updatedUserData = { ...selectedUser, status: "banned" };
@@ -279,6 +310,7 @@ const Users = () => {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
+            'Authorization': `Bearer ${authToken}`,
           },
           body: JSON.stringify(updatedUserData),
         }
@@ -301,6 +333,8 @@ const Users = () => {
   };
 
   const handleUnban = async () => {
+    if (!authToken) return;
+
     try {
       setLoading(true);
       const updatedUserData = { ...selectedUser, status: "active" };
@@ -310,6 +344,7 @@ const Users = () => {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
+            'Authorization': `Bearer ${authToken}`,
           },
           body: JSON.stringify(updatedUserData),
         }
@@ -526,7 +561,7 @@ const Users = () => {
       }}>
         <TableContainer sx={{ 
   maxHeight: isMobile ? '70vh' : 'none',
-  overflowX: 'auto' // Add this to enable horizontal scrolling
+  overflowX: 'auto'
 }}>
           <Table stickyHeader aria-label="users table" size={isMobile ? 'small' : 'medium'}>
             <TableHead>

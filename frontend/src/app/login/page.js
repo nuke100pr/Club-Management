@@ -22,41 +22,42 @@ export default function LoginPage() {
   // State for the image carousel
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const backgroundImages = [img1, img2, img3];
-  
+
   const router = useRouter();
 
   // Image rotation effect
   useEffect(() => {
     const intervalId = setInterval(() => {
-      setCurrentImageIndex((prevIndex) => 
+      setCurrentImageIndex((prevIndex) =>
         prevIndex === backgroundImages.length - 1 ? 0 : prevIndex + 1
       );
     }, 5000); // Change image every 5 seconds
-    
+
     return () => clearInterval(intervalId);
   }, []);
 
   // Check for authentication tokens on page load (for OAuth redirects)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const token = params.get('token');
-    const userParam = params.get('user');
-    
+    const token = params.get("token");
+    const userParam = params.get("user");
+
     if (token && userParam) {
       try {
         const user = JSON.parse(decodeURIComponent(userParam));
         localStorage.setItem("user", JSON.stringify(user));
-        
+
         Cookies.set("auth_token", token, {
           secure: process.env.NODE_ENV === "production",
-          sameSite: "strict",
-          expires: 30
+          same_site: "strict",
+          expires: 30,
         });
-        
-        setMessage({ type: "success", text: "Google login successful! Redirecting..." });
-        setTimeout(() => {
-          router.push("/home");
-        }, 1000);
+
+        setMessage({
+          type: "success",
+          text: "Google login successful! Redirecting...",
+        });
+        router.replace("/");
       } catch (error) {
         setMessage({ type: "error", text: "Failed to process authentication" });
       }
@@ -66,7 +67,7 @@ export default function LoginPage() {
   const validateEmail = (email) => {
     return true; // For testing purposes
   };
-  
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -83,7 +84,7 @@ export default function LoginPage() {
       setMessage({ type: "error", text: "Email and password are required" });
       return;
     }
-    
+
     if (!validateEmail(formData.email)) {
       setMessage({
         type: "error",
@@ -96,16 +97,19 @@ export default function LoginPage() {
     setMessage({ type: "", text: "" });
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email_address: formData.email,
-          password: formData.password,
-        }),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/users/auth/login`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email_address: formData.email,
+            password: formData.password,
+          }),
+        }
+      );
 
       const data = await response.json();
 
@@ -116,8 +120,8 @@ export default function LoginPage() {
       if (data.token) {
         const cookieOptions = {
           secure: process.env.NODE_ENV === "production",
-          sameSite: "strict",
-          expires: 30
+          same_site: "strict",
+          expires: 30,
         };
 
         Cookies.set("auth_token", data.token, cookieOptions);
@@ -129,9 +133,7 @@ export default function LoginPage() {
 
       setMessage({ type: "success", text: "Login successful! Redirecting..." });
 
-      setTimeout(() => {
-        router.push("/home");
-      }, 1000);
+      router.replace("/");
     } catch (error) {
       setMessage({
         type: "error",
@@ -147,12 +149,10 @@ export default function LoginPage() {
     return (
       <div className="flex space-x-2">
         {backgroundImages.map((_, index) => (
-          <div 
+          <div
             key={index}
             className={`h-1 rounded-full transition-all duration-300 ${
-              index === currentImageIndex 
-                ? "w-12 bg-white" 
-                : "w-6 bg-white/40"
+              index === currentImageIndex ? "w-12 bg-white" : "w-6 bg-white/40"
             }`}
             onClick={() => setCurrentImageIndex(index)}
           ></div>
@@ -168,8 +168,8 @@ export default function LoginPage() {
         <div className="relative w-full h-full">
           {/* Image Carousel */}
           {backgroundImages.map((img, index) => (
-            <div 
-              key={index} 
+            <div
+              key={index}
               className={`absolute inset-0 z-10 transition-opacity duration-1000 ${
                 index === currentImageIndex ? "opacity-100" : "opacity-0"
               }`}
@@ -183,10 +183,10 @@ export default function LoginPage() {
               />
             </div>
           ))}
-          
+
           {/* Primary Gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-br from-[#4776E6] to-[#8E54E9] opacity-50 z-20"></div>
-          
+
           {/* Bottom text and slide indicators */}
           <div className="absolute bottom-16 left-16 text-white z-30">
             <h2 className="text-4xl font-semibold mb-2">Welcome Back</h2>
@@ -203,10 +203,15 @@ export default function LoginPage() {
         <div className="max-w-md mx-auto w-full">
           {/* Form Header */}
           <div className="mb-8">
-            <h1 className="text-4xl font-semibold bg-gradient-to-r from-[#4776E6] to-[#8E54E9] bg-clip-text text-transparent">Log in</h1>
+            <h1 className="text-4xl font-semibold bg-gradient-to-r from-[#4776E6] to-[#8E54E9] bg-clip-text text-transparent">
+              Log in
+            </h1>
             <p className="mt-2 text-[#607080]">
               Don't have an account?{" "}
-              <Link href="/register" className="text-[#4776E6] hover:text-[#3a5fc0] font-medium transition duration-300">
+              <Link
+                href="/register"
+                className="text-[#4776E6] hover:text-[#3a5fc0] font-medium transition duration-300"
+              >
                 Sign up
               </Link>
             </p>
@@ -229,8 +234,19 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="relative">
               <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#607080]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 text-[#607080]"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  />
                 </svg>
               </div>
               <input
@@ -246,8 +262,19 @@ export default function LoginPage() {
 
             <div className="relative">
               <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#607080]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 text-[#607080]"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                  />
                 </svg>
               </div>
               <input
@@ -315,9 +342,10 @@ export default function LoginPage() {
             <button
               type="submit"
               className={`w-full font-medium py-3 px-4 rounded-lg transition duration-300 flex justify-center items-center transform hover:-translate-y-1 
-                ${loading 
-                  ? "bg-opacity-70 cursor-not-allowed bg-gradient-to-r from-[#4776E6] to-[#8E54E9]"
-                  : "bg-gradient-to-r from-[#4776E6] to-[#8E54E9] hover:from-[#3a5fc0] hover:to-[#7b46d7] text-white shadow-[0_4px_10px_rgba(71,118,230,0.3)] hover:shadow-[0_6px_15px_rgba(71,118,230,0.4)]"
+                ${
+                  loading
+                    ? "bg-opacity-70 cursor-not-allowed bg-gradient-to-r from-[#4776E6] to-[#8E54E9]"
+                    : "bg-gradient-to-r from-[#4776E6] to-[#8E54E9] hover:from-[#3a5fc0] hover:to-[#7b46d7] text-white shadow-[0_4px_10px_rgba(71,118,230,0.3)] hover:shadow-[0_6px_15px_rgba(71,118,230,0.4)]"
                 }`}
               disabled={loading}
             >
@@ -349,14 +377,14 @@ export default function LoginPage() {
                 "Log in"
               )}
             </button>
-            
+
             {/* Divider */}
             <div className="flex items-center my-6">
               <div className="flex-grow border-t border-gray-200"></div>
               <span className="px-4 text-sm text-[#607080]">or</span>
               <div className="flex-grow border-t border-gray-200"></div>
             </div>
-            
+
             {/* Google Login Button */}
             <button
               type="button"
@@ -364,19 +392,44 @@ export default function LoginPage() {
               className="w-full bg-white border border-gray-200 text-[#2A3B4F] font-medium py-3 px-4 rounded-lg transition duration-300 hover:bg-gray-50 flex justify-center items-center shadow-[0_2px_8px_rgba(95,150,230,0.1)] hover:shadow-[0_4px_15px_rgba(95,150,230,0.15)] transform hover:-translate-y-1"
               disabled={loading}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="w-5 h-5 mr-3">
-                <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z" />
-                <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z" />
-                <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z" />
-                <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 48 48"
+                className="w-5 h-5 mr-3"
+              >
+                <path
+                  fill="#FFC107"
+                  d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"
+                />
+                <path
+                  fill="#FF3D00"
+                  d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"
+                />
+                <path
+                  fill="#4CAF50"
+                  d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"
+                />
+                <path
+                  fill="#1976D2"
+                  d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"
+                />
               </svg>
               Sign in with Google
             </button>
           </form>
-          
+
           {/* Additional info section */}
           <div className="mt-8 text-center text-xs text-[#607080]">
-            <p>By logging in, you agree to our <a href="#" className="text-[#4776E6] hover:underline">Terms of Service</a> and <a href="#" className="text-[#4776E6] hover:underline">Privacy Policy</a></p>
+            <p>
+              By logging in, you agree to our{" "}
+              <a href="#" className="text-[#4776E6] hover:underline">
+                Terms of Service
+              </a>{" "}
+              and{" "}
+              <a href="#" className="text-[#4776E6] hover:underline">
+                Privacy Policy
+              </a>
+            </p>
           </div>
         </div>
       </div>

@@ -22,6 +22,7 @@ import {
 import SearchIcon from "@mui/icons-material/Search";
 import TuneIcon from "@mui/icons-material/Tune";
 import CloseIcon from "@mui/icons-material/Close";
+import { getAuthToken } from "@/utils/auth";
 
 const SearchAndFilter = ({
   onSearchChange,
@@ -36,6 +37,16 @@ const SearchAndFilter = ({
   const [selectedClub, setSelectedClub] = useState("");
   const [privacyFilter, setPrivacyFilter] = useState("");
   const [isSticky, setIsSticky] = useState(false);
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -63,6 +74,7 @@ const SearchAndFilter = ({
   };
 
   const handleApplyFilters = () => {
+    if (!authToken) return;
     onFilterChange({
       board: selectedBoard,
       club: selectedClub,
@@ -72,6 +84,7 @@ const SearchAndFilter = ({
   };
 
   const handleDeleteFilter = (filterType) => {
+    if (!authToken) return;
     if (filterType === "board") {
       setSelectedBoard("");
       onFilterChange({ board: "", club: selectedClub, privacy: privacyFilter });

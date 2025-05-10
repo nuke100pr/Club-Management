@@ -47,6 +47,7 @@ import {
   VpnKey as VpnKeyIcon,
   Badge as BadgeIcon,
 } from "@mui/icons-material";
+import { getAuthToken } from "@/utils/auth";
 
 const handleEmailClick = (email) => {
   window.location.href = `mailto:${email}`;
@@ -64,6 +65,7 @@ const fetchData = async (url, options = {}) => {
       ...options,
       headers: {
         "Content-Type": "application/json",
+        'Authorization': `Bearer ${options.authToken}`,
         ...options.headers,
       },
     });
@@ -194,12 +196,26 @@ const POR = ({ colorMode }) => {
   const [privilegeAnchorEl, setPrivilegeAnchorEl] = useState(null);
   const [selectedPrivilegeType, setSelectedPrivilegeType] = useState(null);
   const [isEditPrivilege, setIsEditPrivilege] = useState(false);
+  const [authToken, setAuthToken] = useState(null);
 
   useEffect(() => {
-    fetchAllData();
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
   }, []);
 
+  useEffect(() => {
+    if (authToken) {
+      fetchAllData();
+    }
+  }, [authToken]);
+
   const fetchAllData = async () => {
+    if (!authToken) return;
+
     setLoading(true);
     try {
       const [
@@ -209,11 +225,11 @@ const POR = ({ colorMode }) => {
         privilegeTypesData,
         positionsData,
       ] = await Promise.all([
-        fetchData("http://localhost:5000/users/users"),
-        fetchData("http://localhost:5000/clubs/clubs"),
-        fetchData("http://localhost:5000/boards"),
-        fetchData("http://localhost:5000/por2/privilege-types"),
-        fetchData("http://localhost:5000/por2/por"),
+        fetchData("http://localhost:5000/users/users", { authToken }),
+        fetchData("http://localhost:5000/clubs/clubs", { authToken }),
+        fetchData("http://localhost:5000/boards", { authToken }),
+        fetchData("http://localhost:5000/por2/privilege-types", { authToken }),
+        fetchData("http://localhost:5000/por2/por", { authToken }),
       ]);
 
       const formattedUsers = usersData.map((user) => ({
@@ -364,6 +380,8 @@ const POR = ({ colorMode }) => {
   };
 
   const handleSubmit = async () => {
+    if (!authToken) return;
+
     try {
       const porData = {
         ...newPosition,
@@ -382,6 +400,7 @@ const POR = ({ colorMode }) => {
         method,
         headers: {
           "Content-Type": "application/json",
+          'Authorization': `Bearer ${authToken}`,
         },
         body: JSON.stringify(porData),
       });
@@ -394,6 +413,8 @@ const POR = ({ colorMode }) => {
   };
 
   const handlePrivilegeSubmit = async () => {
+    if (!authToken) return;
+
     try {
       const url = isEditPrivilege
         ? `http://localhost:5000/por2/privilege-types/${selectedPrivilegeType._id}`
@@ -405,6 +426,7 @@ const POR = ({ colorMode }) => {
         method,
         headers: {
           "Content-Type": "application/json",
+          'Authorization': `Bearer ${authToken}`,
         },
         body: JSON.stringify(newPrivilegeType),
       });
@@ -444,9 +466,14 @@ const POR = ({ colorMode }) => {
   };
 
   const handleDelete = async () => {
+    if (!authToken) return;
+
     try {
       await fetch(`http://localhost:5000/por2/por/${selectedPosition._id}`, {
         method: "DELETE",
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        },
       });
       fetchAllData();
       handleMenuClose();
@@ -482,11 +509,16 @@ const POR = ({ colorMode }) => {
   };
 
   const handleDeletePrivilege = async () => {
+    if (!authToken) return;
+
     try {
       await fetch(
         `http://localhost:5000/por2/privilege-types/${selectedPrivilegeType._id}`,
         {
           method: "DELETE",
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          },
         }
       );
       fetchAllData();

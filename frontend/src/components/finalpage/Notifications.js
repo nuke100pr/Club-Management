@@ -13,6 +13,7 @@ import {
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
+import {getAuthToken } from "@/utils/auth";
 
 const notificationData = [
   {
@@ -53,13 +54,29 @@ export default function Notifications() {
   const theme = useTheme();
   const [notifications, setNotifications] = useState(notificationData);
   const [unreadCount, setUnreadCount] = useState(0);
-  
+  const [authToken, setAuthToken] = useState(null);
+
   useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
+
+  useEffect(() => {
+    if(!authToken) {
+      return;
+    }
     // Count unread notifications
     setUnreadCount(notifications.filter(notification => !notification.read).length);
-  }, [notifications]);
+  }, [notifications, authToken]);
   
   const markAllAsRead = () => {
+    if(!authToken) {
+      return;
+    }
     setNotifications(notifications.map(notification => ({
       ...notification,
       read: true
@@ -67,6 +84,9 @@ export default function Notifications() {
   };
   
   const handleNotificationClick = (id) => {
+    if(!authToken) {
+      return;
+    }
     setNotifications(notifications.map(notification => 
       notification.id === id ? { ...notification, read: true } : notification
     ));

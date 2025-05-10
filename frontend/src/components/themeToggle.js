@@ -1,11 +1,12 @@
 // components/ThemeToggle.js
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { IconButton, Tooltip } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import { motion } from 'framer-motion';
 import { useThemeContext } from '../context/ThemeContext';
+import { getAuthToken } from "@/utils/auth";
 
 const MotionIconButton = motion(IconButton);
 
@@ -28,7 +29,21 @@ const StyledToggleButton = styled(MotionIconButton)(({ theme }) => ({
 
 const ThemeToggle = () => {
   const { mode, toggleColorMode } = useThemeContext();
-  
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
+
+  if (!authToken) {
+    return null;
+  }
+
   return (
     <Tooltip title={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}>
       <StyledToggleButton

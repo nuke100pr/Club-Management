@@ -1,4 +1,3 @@
-
 "use client";
 import React, { useState, useEffect } from "react";
 import {
@@ -43,6 +42,7 @@ import CodeBlock from "@tiptap/extension-code-block";
 import Blockquote from "@tiptap/extension-blockquote";
 import Color from "@tiptap/extension-color";
 import TextStyle from "@tiptap/extension-text-style";
+import { getAuthToken } from "@/utils/auth";
 
 const MenuBar = ({ editor }) => {
   const theme = useTheme();
@@ -142,6 +142,16 @@ const BlogCreateForm = ({
   const [newTag, setNewTag] = useState("");
   const [blogImage, setBlogImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   const introductionEditor = useEditor({
     extensions: [
@@ -264,6 +274,7 @@ const BlogCreateForm = ({
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!authToken) return;
     onSubmit({
       title,
       publisher,

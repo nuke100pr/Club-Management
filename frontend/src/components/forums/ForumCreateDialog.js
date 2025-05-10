@@ -16,6 +16,7 @@ import {
   Input,
   CircularProgress,
 } from "@mui/material";
+import { getAuthToken } from "@/utils/auth";
 
 const ForumCreateDialog = ({
   open,
@@ -28,6 +29,16 @@ const ForumCreateDialog = ({
   forum,
 }) => {
   const isEditMode = !!forum;
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   // Initialize form data either from provided forum or with defaults
   const [formData, setFormData] = useState({
@@ -127,6 +138,10 @@ const ForumCreateDialog = ({
     e.preventDefault();
     setLoading(true);
 
+    if (!authToken) {
+      return;
+    }
+
     try {
       const formDataObj = new FormData();
 
@@ -142,15 +157,13 @@ const ForumCreateDialog = ({
         }
       });
 
-      if(boardId)
-      {
-        formDataObj.append("board_id",boardId);
+      if (boardId) {
+        formDataObj.append("board_id", boardId);
       }
 
-      if(clubId)
-        {
-          formDataObj.append("clubId",clubId);
-        }
+      if (clubId) {
+        formDataObj.append("clubId", clubId);
+      }
 
       // Append image if a new one is selected
       if (image) {
@@ -161,7 +174,6 @@ const ForumCreateDialog = ({
 
       if (isEditMode) {
         // Update existing forum
-
         formDataObj.forEach((value, key) => {
           console.log(`${key}:`, value);
         });
@@ -170,6 +182,9 @@ const ForumCreateDialog = ({
           {
             method: "PUT",
             body: formDataObj,
+            headers: {
+              'Authorization': `Bearer ${authToken}`,
+            }
           }
         );
       } else {
@@ -177,6 +192,9 @@ const ForumCreateDialog = ({
         response = await fetch("http://localhost:5000/forums2/forums", {
           method: "POST",
           body: formDataObj,
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
         });
       }
 

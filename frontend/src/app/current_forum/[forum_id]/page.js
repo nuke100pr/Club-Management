@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
-import { fetchUserData, hasPermission } from "@/utils/auth";
+import { fetchUserData, hasPermission, getAuthToken } from "@/utils/auth";
 import {
   Container,
   TextField,
@@ -175,6 +175,7 @@ export default function ChatApp() {
   const [memberDialogOpen, setMemberDialogOpen] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
+  const [authToken, setAuthToken] = useState(null);
 
   const [userData, setUserData] = useState(null);
   const [user_id, setUserId] = useState(null);
@@ -189,6 +190,11 @@ export default function ChatApp() {
 
   useEffect(() => {
     async function loadUserData() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+      
+      if (!token) return;
+      
       const result = await fetchUserData();
 
       if (result) {
@@ -199,6 +205,7 @@ export default function ChatApp() {
     }
     loadUserData();
   }, []);
+
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const recordingIntervalRef = useRef(null);
@@ -210,8 +217,15 @@ export default function ChatApp() {
   useEffect(() => {
     const fetchForumName = async () => {
       try {
+        if (!authToken) return;
+        
         const response = await fetch(
-          `http://localhost:5000/forums2/forums/${forum_id}`
+          `http://localhost:5000/forums2/forums/${forum_id}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${authToken}`,
+            }
+          }
         );
         if (!response.ok) throw new Error("Failed to fetch forum name");
         const data = await response.json();
@@ -223,12 +237,14 @@ export default function ChatApp() {
       }
     };
 
-    if (forum_id) {
+    if (forum_id && authToken) {
       fetchForumName();
     }
-  }, [forum_id]);
+  }, [forum_id, authToken]);
 
   useEffect(() => {
+    if (!authToken) return;
+    
     socketRef.current = initSocket();
     const socket = socketRef.current;
 
@@ -292,7 +308,7 @@ export default function ChatApp() {
       disconnectSocket();
       stopRecordingCleanup();
     };
-  }, []);
+  }, [authToken]);
 
   const stopRecordingCleanup = () => {
     if (mediaRecorderRef.current) {
@@ -313,8 +329,15 @@ export default function ChatApp() {
 
   const fetchMessages = async (forumId, page = 1, limit = 1000) => {
     try {
+      if (!authToken) return;
+      
       const response = await fetch(
-        `http://localhost:5000/api/messages/${forumId}?page=${page}&limit=${limit}`
+        `http://localhost:5000/api/messages/${forumId}?page=${page}&limit=${limit}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        }
       );
       if (!response.ok) throw new Error("Failed to fetch messages");
       const data = await response.json();
@@ -326,6 +349,8 @@ export default function ChatApp() {
 
   const sendMessage = async () => {
     if (!input.trim() && !file && !audio) return;
+    if (!authToken) return;
+    
     setIsSending(true);
 
     const formData = new FormData();
@@ -344,6 +369,9 @@ export default function ChatApp() {
       const response = await fetch(endpoint, {
         method: "POST",
         body: formData,
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
       });
 
       if (!response.ok) throw new Error("Failed to send message");
@@ -421,12 +449,15 @@ export default function ChatApp() {
 
   const handleVote = async (messageId, optionIndex, isReply = false) => {
     try {
+      if (!authToken) return;
+      
       const response = await fetch(
         `http://localhost:5000/api/messages/${messageId}/poll`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
+            'Authorization': `Bearer ${authToken}`,
           },
           body: JSON.stringify({
             userId: user_id,
@@ -443,12 +474,15 @@ export default function ChatApp() {
 
   const deleteMessage = async (messageId) => {
     try {
+      if (!authToken) return;
+      
       const response = await fetch(
         `http://localhost:5000/api/messages/${messageId}`,
         {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
+            'Authorization': `Bearer ${authToken}`,
           },
           body: JSON.stringify({
             userId: user_id,
@@ -798,7 +832,13 @@ export default function ChatApp() {
 
   const downloadFile = async (fileUrl, filename) => {
     try {
-      const response = await fetch(fileUrl);
+      if (!authToken) return;
+      
+      const response = await fetch(fileUrl, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
+      });
       if (!response.ok) throw new Error("Failed to fetch file");
 
       const blob = await response.blob();
@@ -881,6 +921,8 @@ export default function ChatApp() {
       pollOptions.filter((opt) => opt.trim()).length < 2
     )
       return;
+    if (!authToken) return;
+      
     setIsSending(true);
 
     const pollData = {
@@ -901,6 +943,7 @@ export default function ChatApp() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          'Authorization': `Bearer ${authToken}`,
         },
         body: JSON.stringify(pollData),
       });

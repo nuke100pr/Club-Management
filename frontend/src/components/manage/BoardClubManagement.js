@@ -33,6 +33,7 @@ import {
   Event as CalendarIcon,
 } from "@mui/icons-material";
 import { motion } from "framer-motion";
+import { getAuthToken } from "@/utils/auth";
 
 const BoardClubManagement = ({ boardId }) => {
   const [clubs, setClubs] = useState([]);
@@ -61,16 +62,34 @@ const BoardClubManagement = ({ boardId }) => {
   });
   const [imagePreview, setImagePreview] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   useEffect(() => {
     fetchClubs();
   }, [boardId]);
 
   const fetchClubs = async () => {
+    if (!authToken) {
+      return;
+    }
     try {
       setLoading(true);
       const response = await fetch(
-        `http://localhost:5000/boards/${boardId}/clubs`
+        `http://localhost:5000/boards/${boardId}/clubs`,
+        {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        }
       );
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -176,6 +195,9 @@ const BoardClubManagement = ({ boardId }) => {
   };
 
   const createClub = async (clubData) => {
+    if (!authToken) {
+      return;
+    }
     try {
       const formDataObj = new FormData();
       formDataObj.append("name", clubData.name);
@@ -194,6 +216,9 @@ const BoardClubManagement = ({ boardId }) => {
 
       const response = await fetch("http://localhost:5000/clubs/clubs/", {
         method: "POST",
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        },
         body: formDataObj,
       });
 
@@ -221,6 +246,9 @@ const BoardClubManagement = ({ boardId }) => {
   };
 
   const updateClub = async (clubId, clubData) => {
+    if (!authToken) {
+      return;
+    }
     try {
       const formDataObj = new FormData();
       formDataObj.append("name", clubData.name);
@@ -240,6 +268,9 @@ const BoardClubManagement = ({ boardId }) => {
         `http://localhost:5000/clubs/clubs/${clubId}`,
         {
           method: "PUT",
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          },
           body: formDataObj,
         }
       );
@@ -270,11 +301,17 @@ const BoardClubManagement = ({ boardId }) => {
   };
 
   const deleteClub = async (clubId) => {
+    if (!authToken) {
+      return;
+    }
     try {
       const response = await fetch(
         `http://localhost:5000/clubs/clubs/${clubId}`,
         {
           method: "DELETE",
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          },
         }
       );
 

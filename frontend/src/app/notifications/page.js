@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Head from "next/head";
 import NotificationServiceWorker from "../../utils/notificationServiceWorker";
+import { getAuthToken } from "@/utils/auth";
 
 export default function UserNotifications() {
   const [userId, setUserId] = useState("");
@@ -10,6 +11,16 @@ export default function UserNotifications() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [serviceWorker, setServiceWorker] = useState(null);
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   useEffect(() => {
     // Initialize service worker
@@ -57,13 +68,18 @@ export default function UserNotifications() {
   };
 
   const fetchUserNotifications = async () => {
-    if (!userId) return;
+    if (!userId || !authToken) return;
 
     setLoading(true);
 
     try {
       const response = await fetch(
-        `http://localhost:5000/api/user-notifications/user/${userId}`
+        `http://localhost:5000/api/user-notifications/user/${userId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        }
       );
       const data = await response.json();
 
@@ -80,11 +96,16 @@ export default function UserNotifications() {
   };
 
   const markAsRead = async (id) => {
+    if (!authToken) return;
+
     try {
       const response = await fetch(
         `http://localhost:5000/api/user-notifications/${id}/read`,
         {
           method: "PATCH",
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
         }
       );
 
@@ -108,11 +129,16 @@ export default function UserNotifications() {
   };
 
   const deleteNotification = async (id) => {
+    if (!authToken) return;
+
     try {
       const response = await fetch(
         `http://localhost:5000/api/user-notifications/${id}`,
         {
           method: "DELETE",
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
         }
       );
 
@@ -171,11 +197,11 @@ export default function UserNotifications() {
       <div className="mb-4">
         <h2 className="text-2xl font-bold mb-2">Notifications</h2>
         <button
-          onClick={fetchUserNotifications}
-          className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-1 px-3 rounded text-sm"
-        >
-          Refresh
-        </button>
+            onClick={fetchUserNotifications}
+            className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-1 px-3 rounded text-sm"
+          >
+            Refresh
+          </button>
       </div>
 
       {loading ? (

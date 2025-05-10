@@ -5,19 +5,38 @@ import {
 } from '@mui/material';
 import { WorkOutline as WorkOutlineIcon } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
+import { getAuthToken } from "@/utils/auth";
 
 const OpportunitiesSidebar = () => {
   const [opportunities, setOpportunities] = useState([]);
   const [opportunitiesLoading, setOpportunitiesLoading] = useState(true);
   const [opportunitiesError, setOpportunitiesError] = useState(null);
+  const [authToken, setAuthToken] = useState(null);
   const theme = useTheme();
   const router = useRouter();
 
   useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
+
+  useEffect(() => {
     const fetchOpportunities = async () => {
       try {
+        if (!authToken) {
+          return;
+        }
+        
         setOpportunitiesLoading(true);
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/opportunities`);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/opportunities`, {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        });
         if (!response.ok) throw new Error('Failed to fetch opportunities');
 
         const result = await response.json();
@@ -35,7 +54,7 @@ const OpportunitiesSidebar = () => {
     };
 
     fetchOpportunities();
-  }, []);
+  }, [authToken]);
 
   return (
     <Box

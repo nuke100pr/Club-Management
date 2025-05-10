@@ -2,11 +2,22 @@
 
 import { useEffect, useState } from "react";
 import NotificationServiceWorker from "@/utils/notificationServiceWorker";
+import { getAuthToken } from "@/utils/auth";
 
 export default function NotificationInitializer() {
   const [notificationStatus, setNotificationStatus] = useState("pending");
   const [showBanner, setShowBanner] = useState(false);
   const [notificationWorker, setNotificationWorker] = useState(null);
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   // Check if notifications are supported
   useEffect(function () {
@@ -35,9 +46,17 @@ export default function NotificationInitializer() {
 
   // Initialize notification service worker
   async function initializeNotifications() {
+    if (!authToken) {
+      return;
+    }
+    
     try {
       const worker = new NotificationServiceWorker();
-      await worker.register();
+      await worker.register({
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
+      });
       setNotificationWorker(worker);
 
       // Update status after registration
@@ -52,12 +71,24 @@ export default function NotificationInitializer() {
 
   // Request notification permission
   async function requestPermission() {
+    if (!authToken) {
+      return;
+    }
+    
     try {
       const worker = new NotificationServiceWorker();
-      const granted = await worker.requestNotificationPermission();
+      const granted = await worker.requestNotificationPermission({
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
+      });
 
       if (granted) {
-        await worker.register();
+        await worker.register({
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        });
         setNotificationWorker(worker);
         setNotificationStatus("granted");
       } else {

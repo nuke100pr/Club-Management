@@ -125,23 +125,24 @@ app.use("/notify", notificationRoutes); // app.use("/notify",authMiddleware,noti
 app.use("/api", postRoutes);
 app.use("/api/messages", messageRoutes);
 
-app.use("/forums2", forumRoutes2);
-app.use("/events", eventAndRsvpRoutes);
-app.use("/projects", projectRoutes);
-app.use("/resources", resourceRoutes);
-app.use("/opportunities", opportunityRoutes);
-app.use("/blogs", blogRoutes);
-app.use("/clubs", clubRoutes);
-app.use("/boards", boardRoutes);
+app.use("/forums2", authMiddleware, forumRoutes2);
+app.use("/events", authMiddleware, eventAndRsvpRoutes);
+app.use("/projects", authMiddleware, projectRoutes);
+app.use("/resources", authMiddleware, resourceRoutes);
+app.use("/opportunities", authMiddleware, opportunityRoutes);
+app.use("/blogs", authMiddleware, blogRoutes);
+app.use("/clubs", authMiddleware, clubRoutes);
+app.use("/boards", authMiddleware, boardRoutes);
 app.use("/users", userRoutes);
-app.use("/stats", statRoutes);
-app.use("/por2", porRoutes);
+app.use("/stats", authMiddleware, statRoutes);
+app.use("/por2", authMiddleware, porRoutes);
 app.use("/misc", miscRoutes);
 app.use("/otp", otpRoutes);
-app.use("/baat", baatRoutes);
-app.use("/badges", badgeRoutes);
-app.use("/euser", eUserRoutes);
-app.use("/notifications", nautiNotificationRoutes);
+app.use("/baat", authMiddleware, baatRoutes);
+app.use("/badges", authMiddleware, badgeRoutes);
+app.use("/euser",  eUserRoutes);
+app.use("/notifications", authMiddleware, nautiNotificationRoutes);
+
 
 app.use("/api/notification-queue", notificationQueueRoutes);
 app.use("/api/user-notifications", userNotificationRoutes);

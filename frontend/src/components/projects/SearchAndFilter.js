@@ -24,10 +24,12 @@ import {
   Close as CloseIcon,
   Tune as TuneIcon,
 } from "@mui/icons-material";
+import { getAuthToken } from "@/utils/auth";
 
 const SearchAndFilter = ({ onSearchChange, onFilterChange }) => {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
+  const [authToken, setAuthToken] = useState(null);
   
   const [search, setSearch] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
@@ -54,6 +56,15 @@ const SearchAndFilter = ({ onSearchChange, onFilterChange }) => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
+
   const handleFilterToggle = () => {
     setFilterOpen(!filterOpen);
   };
@@ -70,6 +81,7 @@ const SearchAndFilter = ({ onSearchChange, onFilterChange }) => {
   };
 
   const applyFilters = () => {
+    if (!authToken) return;
     onFilterChange({ status });
     handleFilterToggle();
   };

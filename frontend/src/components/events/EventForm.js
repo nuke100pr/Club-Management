@@ -13,6 +13,7 @@ import {
   useTheme,
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import { getAuthToken } from "@/utils/auth";
 
 const EventForm = ({
   event,
@@ -36,11 +37,20 @@ const EventForm = ({
     club_id: "",
     board_id: boardId || "",
   });
-
+  const [authToken, setAuthToken] = useState(null);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   useEffect(() => {
     if (event) {
@@ -98,6 +108,10 @@ const EventForm = ({
   };
 
   const handleSubmit = () => {
+    if (!authToken) {
+      return;
+    }
+    
     setIsSubmitting(true);
     try {
       const eventData = {
@@ -110,7 +124,11 @@ const EventForm = ({
         image: imageFile,
       };
 
-      onSubmit(eventData);
+      onSubmit(eventData, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
+      });
       setIsSubmitting(false);
     } catch (error) {
       setError("Error submitting form: " + error.message);

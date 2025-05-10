@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   TextField,
   InputAdornment,
@@ -10,8 +10,20 @@ import {
   Button,
 } from "@mui/material";
 import { Search as SearchIcon, Clear as ClearIcon } from "@mui/icons-material";
+import { getAuthToken } from "@/utils/auth";
 
 const SearchBar = ({ searchTerm, setSearchTerm }) => {
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
+
   return (
     <Paper
       sx={{

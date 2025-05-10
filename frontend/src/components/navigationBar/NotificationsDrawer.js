@@ -22,6 +22,7 @@ import {
   Delete as DeleteIcon,
 } from "@mui/icons-material";
 import { fetchUserData } from "../../utils/auth";
+import { getAuthToken } from "@/utils/auth";
 
 // Notification Item component
 const NotificationItem = styled(ListItem)(({ theme, isRead }) => ({
@@ -41,12 +42,24 @@ const NotificationsDrawer = ({ open, onClose }) => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   // Fetch notifications when drawer opens
   useEffect(() => {
     const fetchNotifications = async () => {
       if (open) {
         try {
+          if (!authToken) return;
+          
           setLoading(true);
           
           // Fetch user data first
@@ -54,7 +67,11 @@ const NotificationsDrawer = ({ open, onClose }) => {
           const userId = userData.userId;
           
           // Fetch notifications for the user
-          const response = await fetch(`http://localhost:5000/notifications/user/${userId}`);
+          const response = await fetch(`http://localhost:5000/notifications/user/${userId}`, {
+            headers: {
+              'Authorization': `Bearer ${authToken}`,
+            }
+          });
           
           if (!response.ok) {
             throw new Error('Failed to fetch notifications');
@@ -73,15 +90,18 @@ const NotificationsDrawer = ({ open, onClose }) => {
     };
 
     fetchNotifications();
-  }, [open]);
+  }, [open, authToken]);
 
   // Mark notification as read
   const handleMarkAsRead = async (notificationId) => {
     try {
+      if (!authToken) return;
+      
       const response = await fetch(`http://localhost:5000/notifications/${notificationId}/read`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
         },
       });
 
@@ -103,8 +123,13 @@ const NotificationsDrawer = ({ open, onClose }) => {
   // Delete notification
   const handleDeleteNotification = async (notificationId) => {
     try {
+      if (!authToken) return;
+      
       const response = await fetch(`http://localhost:5000/notifications/${notificationId}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
       });
 
       if (!response.ok) {
@@ -123,12 +148,17 @@ const NotificationsDrawer = ({ open, onClose }) => {
   // Clear all notifications
   const handleClearAll = async () => {
     try {
+      if (!authToken) return;
+      
       setLoading(true);
       
       // Delete each notification one by one
       const deletePromises = notifications.map(notification => 
         fetch(`http://localhost:5000/notifications/${notification._id}`, {
           method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
         })
       );
       

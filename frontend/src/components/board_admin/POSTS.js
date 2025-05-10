@@ -41,6 +41,7 @@ import "react-responsive-carousel/lib/styles/carousel.min.css";
 import { useRouter } from "next/navigation";
 import { fetchUserData } from "@/utils/auth";
 import PostEditor from "../../components/posts/PostEditor";
+import { getAuthToken } from "@/utils/auth";
 
 const API_URL = "http://localhost:5000/api";
 const API_URL2 = "http://localhost:5000/uploads";
@@ -73,8 +74,18 @@ const Posts = ({ boardId, clubId }) => {
   const [userBoardsWithPostPermission, setUserBoardsWithPostPermission] =
     useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [authToken, setAuthToken] = useState(null);
 
   const router = useRouter();
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   useEffect(() => {
     async function loadUserData() {
@@ -84,7 +95,6 @@ const Posts = ({ boardId, clubId }) => {
         setUserId(result.userId);
         setIsSuperAdmin(result.isSuperAdmin);
 
-        // Extract clubs with posts permission
         if (result.userData?.data?.clubs) {
           const clubsWithPermission = Object.keys(
             result.userData.data.clubs
@@ -94,7 +104,6 @@ const Posts = ({ boardId, clubId }) => {
           setUserClubsWithPostPermission(clubsWithPermission);
         }
 
-        // Extract boards with posts permission
         if (result.userData?.data?.boards) {
           const boardsWithPermission = Object.keys(
             result.userData.data.boards
@@ -120,11 +129,9 @@ const Posts = ({ boardId, clubId }) => {
     }
   }, [posts, boardId]);
 
-  // Apply search filter
   useEffect(() => {
     const term = searchTerm.toLowerCase();
     if (!term) {
-      // If search is empty, reset to original filtered by board
       if (boardId) {
         setFilteredPosts(posts.filter((post) => post?.board_id === boardId));
       } else {
@@ -141,7 +148,6 @@ const Posts = ({ boardId, clubId }) => {
       return contentMatches || titleMatches || userNameMatches;
     });
 
-    // Apply board filter on top of search filter if needed
     if (boardId) {
       setFilteredPosts(
         searchFiltered.filter((post) => post?.board_id === boardId)
@@ -151,15 +157,10 @@ const Posts = ({ boardId, clubId }) => {
     }
   }, [searchTerm, posts, boardId]);
 
-  // Check if user has permission to edit/delete a post
   const hasPostPermission = (post) => {
-    // Superadmins have all permissions
     if (isSuperAdmin) return true;
-
-    // Check if post belongs to the current user
     if (post.user_id === userId) return true;
 
-    // Check if post belongs to a club where user has permission
     if (post.club_id) {
       const clubId = post.club_id._id || post.club_id;
       if (userClubsWithPostPermission.includes(clubId)) {
@@ -167,7 +168,6 @@ const Posts = ({ boardId, clubId }) => {
       }
     }
 
-    // Check if post belongs to a board where user has permission
     if (post?.board_id) {
       const boardId = post?.board_id?._id || post?.board_id;
       if (userBoardsWithPostPermission.includes(boardId)) {
@@ -178,7 +178,6 @@ const Posts = ({ boardId, clubId }) => {
     return false;
   };
 
-  // Check if user can create posts
   const canCreatePosts = () => {
     if (boardId) {
       if (userBoardsWithPostPermission.includes(boardId)) {
@@ -190,12 +189,17 @@ const Posts = ({ boardId, clubId }) => {
   };
 
   const fetchPosts = async () => {
+    if (!authToken) return;
     try {
       setLoading(true);
       const url = boardId
         ? `${API_URL}/posts?board_id=${boardId}`
         : `${API_URL}/posts`;
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
+      });
 
       if (!response.ok)
         throw new Error(`HTTP error! Status: ${response.status}`);
@@ -258,12 +262,10 @@ const Posts = ({ boardId, clubId }) => {
 
   const handlePostCreated = (newPost) => {
     if (postToEdit) {
-      // Update existing post
       setPosts((prev) =>
         prev.map((post) => (post?._id === newPost?._id ? newPost : post))
       );
     } else {
-      // Add new post
       setPosts((prev) => [newPost, ...prev]);
     }
     handleCloseEditor();
@@ -275,28 +277,33 @@ const Posts = ({ boardId, clubId }) => {
   };
 
   const handleReactionToggle = async (emoji, postId) => {
+    if (!authToken) return;
     const hasReaction = userReactions[postId]?.[emoji];
 
     try {
       if (hasReaction) {
-        // Remove reaction
         const response = await fetch(
           `${API_URL}/api/posts/${postId}/reactions`,
           {
             method: "DELETE",
-            headers: { "Content-Type": "application/json" },
+            headers: { 
+              "Content-Type": "application/json",
+              'Authorization': `Bearer ${authToken}`,
+            },
             body: JSON.stringify({ user_id: userId, emoji }),
           }
         );
 
         if (!response.ok) throw new Error("Failed to remove reaction");
       } else {
-        // Add reaction
         const response = await fetch(
           `${API_URL}/api/posts/${postId}/reactions`,
           {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { 
+              "Content-Type": "application/json",
+              'Authorization': `Bearer ${authToken}`,
+            },
             body: JSON.stringify({ user_id: userId, emoji }),
           }
         );
@@ -304,7 +311,6 @@ const Posts = ({ boardId, clubId }) => {
         if (!response.ok) throw new Error("Failed to add reaction");
       }
 
-      // Optimistically update UI
       setReactions((prev) => ({
         ...prev,
         [postId]: {
@@ -330,17 +336,20 @@ const Posts = ({ boardId, clubId }) => {
     } catch (err) {
       console.error("Error toggling reaction:", err);
       showNotification("Failed to update reaction", "error");
-      // Revert optimistic update if error
       fetchPosts();
     }
     handleCloseReactionMenu();
   };
 
   const handleVote = async (postId, voteValue) => {
+    if (!authToken) return;
     try {
       const response = await fetch(`${API_URL}/posts/${postId}/votes`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${authToken}`,
+        },
         body: JSON.stringify({ user_id: userId, vote: voteValue }),
       });
 
@@ -348,7 +357,6 @@ const Posts = ({ boardId, clubId }) => {
 
       const updatedPost = await response.json();
 
-      // Update votes count
       setVotes((prev) => ({
         ...prev,
         [postId]: updatedPost.votes.reduce(
@@ -368,10 +376,14 @@ const Posts = ({ boardId, clubId }) => {
   };
 
   const handleDelete = async (postId) => {
+    if (!authToken) return;
     try {
       const response = await fetch(`${API_URL}/posts/${postId}`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${authToken}`,
+        },
       });
 
       if (!response.ok) throw new Error("Delete failed");
@@ -412,9 +424,9 @@ const Posts = ({ boardId, clubId }) => {
           right: 0,
           zIndex: 9999,
           height: "4px",
-          backgroundColor: "#E8ECF2", // Light Grey from design spec
+          backgroundColor: "#E8ECF2",
           "& .MuiLinearProgress-bar": {
-            backgroundColor: "#0F52BA", // Primary Blue from design spec
+            backgroundColor: "#0F52BA",
           },
         }}
       />
@@ -433,7 +445,7 @@ const Posts = ({ boardId, clubId }) => {
           size={48}
           thickness={4}
           sx={{
-            color: "#0F52BA", // Primary Blue from design spec
+            color: "#0F52BA",
           }}
         />
       </Box>
@@ -445,20 +457,20 @@ const Posts = ({ boardId, clubId }) => {
           textAlign: "center",
           my: 4,
           p: 4,
-          bgcolor: "#FFFFFF", // White from design spec
+          bgcolor: "#FFFFFF",
           borderRadius: "12px",
-          boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.05)", // Standard Card shadow
+          boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.05)",
         }}
       >
         <Typography
           variant="h4"
-          sx={{ color: "#FF3B30", mb: 2 }} // Error color from design spec
+          sx={{ color: "#FF3B30", mb: 2 }}
         >
           Something went wrong
         </Typography>
         <Typography
           variant="body"
-          sx={{ color: "#495366", mb: 3 }} // Dark Grey from design spec
+          sx={{ color: "#495366", mb: 3 }}
         >
           {error}
         </Typography>
@@ -466,7 +478,7 @@ const Posts = ({ boardId, clubId }) => {
           variant="contained"
           sx={{
             mt: 2,
-            bgcolor: "#0F52BA", // Primary Blue
+            bgcolor: "#0F52BA",
             color: "#FFFFFF",
             fontSize: "16px",
             fontWeight: 600,
@@ -475,7 +487,7 @@ const Posts = ({ boardId, clubId }) => {
             textTransform: "none",
             boxShadow: "0px 4px 8px rgba(15, 82, 186, 0.2)",
             "&:hover": {
-              bgcolor: "#0A3D8F", // 10% darker Primary Blue
+              bgcolor: "#0A3D8F",
               boxShadow: "0px 6px 12px rgba(15, 82, 186, 0.3)",
             },
           }}
@@ -492,7 +504,7 @@ const Posts = ({ boardId, clubId }) => {
         textAlign: "center",
         my: 6,
         p: 6,
-        bgcolor: "#FFFFFF", // White from design spec
+        bgcolor: "#FFFFFF",
         borderRadius: "12px",
         boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.05)",
         transition: "all 0.3s ease",
@@ -504,7 +516,7 @@ const Posts = ({ boardId, clubId }) => {
       <Typography
         variant="h3"
         sx={{
-          color: "#1A2A56", // Deep Navy from design spec
+          color: "#1A2A56",
           mb: 2,
           fontWeight: 600,
         }}
@@ -518,7 +530,7 @@ const Posts = ({ boardId, clubId }) => {
       <Typography
         variant="body"
         sx={{
-          color: "#495366", // Dark Grey from design spec
+          color: "#495366",
           mb: 4,
           maxWidth: "400px",
           mx: "auto",
@@ -533,7 +545,7 @@ const Posts = ({ boardId, clubId }) => {
           variant="contained"
           sx={{
             mt: 2,
-            bgcolor: "#0F52BA", // Primary Blue
+            bgcolor: "#0F52BA",
             color: "#FFFFFF",
             fontSize: "16px",
             fontWeight: 600,
@@ -542,7 +554,7 @@ const Posts = ({ boardId, clubId }) => {
             textTransform: "none",
             boxShadow: "0px 4px 8px rgba(15, 82, 186, 0.2)",
             "&:hover": {
-              bgcolor: "#0A3D8F", // 10% darker Primary Blue
+              bgcolor: "#0A3D8F",
               boxShadow: "0px 6px 12px rgba(15, 82, 186, 0.3)",
               transform: "translateY(-2px)",
             },
@@ -574,14 +586,14 @@ const Posts = ({ boardId, clubId }) => {
               "&:hover": {
                 boxShadow: "0px 8px 24px rgba(0, 0, 0, 0.08)",
               },
-              backgroundColor: "#FFFFFF", // White from design spec
+              backgroundColor: "#FFFFFF",
             }}
           >
             <Typography
               variant="h4"
               sx={{
                 mb: 3,
-                color: "#1A2A56", // Deep Navy from design spec
+                color: "#1A2A56",
                 fontWeight: 600,
               }}
             >
@@ -613,15 +625,15 @@ const Posts = ({ boardId, clubId }) => {
                 sx: {
                   height: "48px",
                   borderRadius: "8px",
-                  backgroundColor: "#F7F9FC", // Soft Grey from design spec
+                  backgroundColor: "#F7F9FC",
                   "&:hover": {
                     backgroundColor: "#F7F9FC",
                   },
                   "& .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#E8ECF2", // Light Grey from design spec
+                    borderColor: "#E8ECF2",
                   },
                   "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#0F52BA", // Primary Blue from design spec
+                    borderColor: "#0F52BA",
                     borderWidth: "2px",
                   },
                 },
@@ -629,7 +641,7 @@ const Posts = ({ boardId, clubId }) => {
               sx={{
                 mb: 2,
                 "& .MuiInputLabel-root": {
-                  color: "#A7B3CA", // Medium Grey from design spec
+                  color: "#A7B3CA",
                 },
               }}
             />
@@ -640,10 +652,10 @@ const Posts = ({ boardId, clubId }) => {
                   size="small"
                   onClick={() => setSearchTerm("")}
                   sx={{
-                    color: "#0F52BA", // Primary Blue from design spec
+                    color: "#0F52BA",
                     fontWeight: 500,
                     "&:hover": {
-                      backgroundColor: "#E6F0FF", // Light blue background
+                      backgroundColor: "#E6F0FF",
                     },
                     textTransform: "none",
                   }}
@@ -674,7 +686,7 @@ const Posts = ({ boardId, clubId }) => {
                       transform: "translateY(-2px)",
                     },
                     border: "none",
-                    backgroundColor: "#FFFFFF", // White from design spec
+                    backgroundColor: "#FFFFFF",
                   }}
                   onClick={(e) => {
                     if (e.target.closest('button, a, [role="button"]')) return;
@@ -684,7 +696,7 @@ const Posts = ({ boardId, clubId }) => {
                   <Box
                     sx={{
                       p: 3,
-                      borderBottom: `1px solid #E8ECF2`, // Light Grey from design spec
+                      borderBottom: `1px solid #E8ECF2`,
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
@@ -696,7 +708,7 @@ const Posts = ({ boardId, clubId }) => {
                         sx={{
                           width: 48,
                           height: 48,
-                          bgcolor: post.user?.avatar ? "transparent" : "#0F52BA", // Primary Blue from design spec
+                          bgcolor: post.user?.avatar ? "transparent" : "#0F52BA",
                           color: "#FFFFFF",
                           fontWeight: 600,
                           fontSize: "18px",
@@ -710,7 +722,7 @@ const Posts = ({ boardId, clubId }) => {
                           variant="h6"
                           sx={{
                             fontWeight: 600,
-                            color: "#1A2A56", // Deep Navy from design spec
+                            color: "#1A2A56",
                           }}
                         >
                           {post.user?.name || "Anonymous"}
@@ -718,7 +730,7 @@ const Posts = ({ boardId, clubId }) => {
                         <Typography
                           variant="body2"
                           sx={{
-                            color: "#A7B3CA", // Medium Grey from design spec
+                            color: "#A7B3CA",
                             fontSize: "14px",
                           }}
                         >
@@ -740,9 +752,9 @@ const Posts = ({ boardId, clubId }) => {
                             handleEditPost(post);
                           }}
                           sx={{
-                            color: "#2A324B", // Charcoal from design spec
+                            color: "#2A324B",
                             "&:hover": {
-                              backgroundColor: "#F7F9FC", // Soft Grey from design spec
+                              backgroundColor: "#F7F9FC",
                             },
                             mx: 1,
                           }}
@@ -755,9 +767,9 @@ const Posts = ({ boardId, clubId }) => {
                             handleDelete(post._id);
                           }}
                           sx={{
-                            color: "#FF3B30", // Error color from design spec
+                            color: "#FF3B30",
                             "&:hover": {
-                              backgroundColor: "#FFF1F0", // Light error color
+                              backgroundColor: "#FFF1F0",
                             },
                           }}
                         >
@@ -772,7 +784,7 @@ const Posts = ({ boardId, clubId }) => {
                       variant="h4"
                       sx={{
                         mb: 2,
-                        color: "#1A2A56", // Deep Navy from design spec
+                        color: "#1A2A56",
                         fontWeight: 600,
                         lineHeight: 1.3,
                       }}
@@ -783,7 +795,7 @@ const Posts = ({ boardId, clubId }) => {
                       component="div"
                       dangerouslySetInnerHTML={{ __html: post.content }}
                       sx={{
-                        color: "#495366", // Dark Grey from design spec
+                        color: "#495366",
                         fontSize: "16px",
                         lineHeight: 1.5,
                       }}
@@ -875,7 +887,7 @@ const Posts = ({ boardId, clubId }) => {
                                 sx={{
                                   height: 400,
                                   objectFit: "contain",
-                                  backgroundColor: "#F7F9FC", // Soft Grey from design spec
+                                  backgroundColor: "#F7F9FC",
                                 }}
                               />
                             ) : (
@@ -911,7 +923,7 @@ const Posts = ({ boardId, clubId }) => {
 
                   <CardActions
                     sx={{
-                      borderTop: `1px solid #E8ECF2`, // Light Grey from design spec
+                      borderTop: `1px solid #E8ECF2`,
                       justifyContent: "space-between",
                       p: 2,
                     }}
@@ -924,13 +936,13 @@ const Posts = ({ boardId, clubId }) => {
                         }}
                         sx={{
                           textTransform: "none",
-                          color: "#0F52BA", // Primary Blue from design spec
+                          color: "#0F52BA",
                           fontWeight: 500,
                           borderRadius: "8px",
                           py: 1,
                           px: 2,
                           "&:hover": {
-                            backgroundColor: "#E6F0FF", // Light blue background
+                            backgroundColor: "#E6F0FF",
                           },
                         }}
                         startIcon={<span style={{ fontSize: "18px" }}>👍</span>}
@@ -948,13 +960,13 @@ const Posts = ({ boardId, clubId }) => {
                         }}
                         sx={{
                           textTransform: "none",
-                          color: "#495366", // Dark Grey from design spec
+                          color: "#495366",
                           fontWeight: 500,
                           borderRadius: "8px",
                           py: 1,
                           px: 2,
                           "&:hover": {
-                            backgroundColor: "#F7F9FC", // Soft Grey from design spec
+                            backgroundColor: "#F7F9FC",
                           },
                         }}
                         startIcon={<CommentIcon fontSize="small" />}
@@ -971,9 +983,9 @@ const Posts = ({ boardId, clubId }) => {
                             handleVote(post._id, 1);
                           }}
                           sx={{
-                            color: votes[post._id] > 0 ? "#0F52BA" : "#A7B3CA", // Primary Blue or Medium Grey
+                            color: votes[post._id] > 0 ? "#0F52BA" : "#A7B3CA",
                             "&:hover": {
-                              backgroundColor: "#E6F0FF", // Light blue background
+                              backgroundColor: "#E6F0FF",
                             },
                           }}
                         >
@@ -983,7 +995,7 @@ const Posts = ({ boardId, clubId }) => {
                       <Typography
                         variant="body2"
                         sx={{
-                          color: "#495366", // Dark Grey from design spec
+                          color: "#495366",
                           fontWeight: 500,
                           minWidth: "24px",
                           textAlign: "center",
@@ -998,9 +1010,9 @@ const Posts = ({ boardId, clubId }) => {
                             handleVote(post._id, -1);
                           }}
                           sx={{
-                            color: votes[post._id] < 0 ? "#FF3B30" : "#A7B3CA", // Error or Medium Grey
+                            color: votes[post._id] < 0 ? "#FF3B30" : "#A7B3CA",
                             "&:hover": {
-                              backgroundColor: "#FFF1F0", // Light error background
+                              backgroundColor: "#FFF1F0",
                             },
                           }}
                         >
@@ -1014,7 +1026,6 @@ const Posts = ({ boardId, clubId }) => {
         </Grid>
       </Grid>
 
-      {/* Reaction Menu */}
       <Menu
         anchorEl={reactionMenuAnchorEl}
         open={Boolean(reactionMenuAnchorEl)}
@@ -1038,10 +1049,10 @@ const Posts = ({ boardId, clubId }) => {
                   height: "48px",
                   borderRadius: "24px",
                   backgroundColor: userReactions[currentPostId]?.[emoji]
-                    ? "#E6F0FF" // Light blue background for selected
+                    ? "#E6F0FF"
                     : "transparent",
                   "&:hover": {
-                    backgroundColor: "#F7F9FC", // Soft Grey on hover
+                    backgroundColor: "#F7F9FC",
                   },
                 }}
               >
@@ -1052,7 +1063,6 @@ const Posts = ({ boardId, clubId }) => {
         </Box>
       </Menu>
 
-      {/* Create Post FAB */}
       {canCreatePosts() && (
         <Fab
           color="primary"
@@ -1061,10 +1071,10 @@ const Posts = ({ boardId, clubId }) => {
             position: "fixed",
             bottom: 32,
             right: 32,
-            bgcolor: "#0F52BA", // Primary Blue from design spec
+            bgcolor: "#0F52BA",
             color: "#FFFFFF",
             "&:hover": {
-              bgcolor: "#0A3D8F", // 10% darker Primary Blue
+              bgcolor: "#0A3D8F",
               transform: "scale(1.05)",
             },
             transition: "all 0.2s ease",
@@ -1075,7 +1085,6 @@ const Posts = ({ boardId, clubId }) => {
         </Fab>
       )}
 
-      {/* Post Editor Dialog */}
       <Dialog
         open={openEditor}
         onClose={handleCloseEditor}
@@ -1099,7 +1108,6 @@ const Posts = ({ boardId, clubId }) => {
         />
       </Dialog>
 
-      {/* Notification Snackbar */}
       <Snackbar
         open={notification.open}
         autoHideDuration={6000}

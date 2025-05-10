@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { fetchUserData } from "@/utils/auth";
+import { fetchUserData, getAuthToken } from "@/utils/auth";
 import {
   Box,
   Typography,
@@ -66,16 +66,31 @@ export default function AdminManagement() {
     severity: "success",
   });
   const [userSearchTerm, setUserSearchTerm] = useState("");
+  const [authToken, setAuthToken] = useState(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+    fetchAuthToken();
+  }, []);
+
+  useEffect(() => {
     const loadData = async () => {
+      if (!authToken) return;
+      
       try {
         const userData = await fetchUserData();
         setCurrentUser(userData);
 
-        const usersPromise = fetch("http://localhost:5000/users/users")
+        const usersPromise = fetch("http://localhost:5000/users/users", {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        })
           .then((res) => res.json())
           .then((data) => {
             setUsers(data);
@@ -83,7 +98,11 @@ export default function AdminManagement() {
             return data;
           });
 
-        const clubsPromise = fetch("http://localhost:5000/clubs/clubs")
+        const clubsPromise = fetch("http://localhost:5000/clubs/clubs", {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        })
           .then((res) => res.json())
           .then((data) => {
             setClubs(data);
@@ -91,7 +110,11 @@ export default function AdminManagement() {
             return data;
           });
 
-        const boardsPromise = fetch("http://localhost:5000/boards")
+        const boardsPromise = fetch("http://localhost:5000/boards", {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        })
           .then((res) => res.json())
           .then((data) => {
             setBoards(data);
@@ -121,8 +144,10 @@ export default function AdminManagement() {
       }
     };
 
-    loadData();
-  }, []);
+    if (authToken) {
+      loadData();
+    }
+  }, [authToken]);
 
   const handleOpenDialog = () => {
     setFormData({
@@ -162,6 +187,8 @@ export default function AdminManagement() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!authToken) return;
+    
     try {
       const endpoint =
         formData.role === "club_admin"
@@ -179,6 +206,7 @@ export default function AdminManagement() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          'Authorization': `Bearer ${authToken}`,
         },
         body: JSON.stringify(requestBody),
       });
@@ -216,11 +244,16 @@ export default function AdminManagement() {
   };
 
   const handleDeleteAdmin = async () => {
+    if (!authToken) return;
+    
     try {
       const response = await fetch(
         `http://localhost:5000/users/remove-admin/${selectedUser._id}`,
         {
           method: "PATCH",
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
         }
       );
 
@@ -269,7 +302,6 @@ export default function AdminManagement() {
 
   const isLoading = loading.users || loading.clubs || loading.boards;
 
-  // Function to get initials from name
   const getInitials = (name) => {
     if (!name) return "??";
     return name
@@ -279,7 +311,6 @@ export default function AdminManagement() {
       .toUpperCase();
   };
 
-  // Function to get role color
   const getRoleColor = (role) => {
     return role === "club_admin" ? "#1976d2" : "#7b1fa2";
   };
@@ -410,156 +441,156 @@ export default function AdminManagement() {
             </Box>
           ) : (
             <TableContainer
-  component={Paper}
-  elevation={0}
-  sx={{
-    borderRadius: "8px",
-    boxShadow: "none",
-    border: "1px solid rgba(95, 150, 230, 0.1)",
-    overflow: "auto", // Changed from "hidden" to "auto" to enable scrolling
-    maxWidth: "100%", // Ensures container doesn't exceed parent width
-  }}
->
-  <Table sx={{ minWidth: 650 }}> {/* Added minWidth to ensure table maintains minimum width */}
-    <TableHead>
-      <TableRow>
-        <TableCell sx={{ fontWeight: 600, py: 2 }}>Admin</TableCell>
-        <TableCell sx={{ fontWeight: 600, py: 2 }}>Email</TableCell>
-        <TableCell sx={{ fontWeight: 600, py: 2 }}>Role</TableCell>
-        <TableCell sx={{ fontWeight: 600, py: 2 }}>
-          Department
-        </TableCell>
-        <TableCell sx={{ fontWeight: 600, py: 2 }}>
-          Assigned To
-        </TableCell>
-        {currentUser?.isSuperAdmin && (
-          <TableCell sx={{ fontWeight: 600, py: 2 }}>
-            Actions
-          </TableCell>
-        )}
-      </TableRow>
-    </TableHead>
-    <TableBody>
-      {filteredUsers.length > 0 ? (
-        filteredUsers.map((user) => (
-          <TableRow
-            key={user._id}
-            sx={{
-              "&:hover": {
-                backgroundColor: "rgba(95, 150, 230, 0.05)",
-              },
-              transition: "background-color 0.3s ease",
-            }}
-          >
-            <TableCell>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 2,
-                }}
-              >
-                <Avatar
-                  sx={{
-                    bgcolor: alpha(
-                      getRoleColor(user.userRole),
-                      0.8
-                    ),
-                    width: 36,
-                    height: 36,
-                  }}
-                >
-                  {getInitials(user.name)}
-                </Avatar>
-                <Typography
-                  sx={{ color: "#2A3B4F", fontWeight: 500 }}
-                >
-                  {user.name}
-                </Typography>
-              </Box>
-            </TableCell>
-            <TableCell sx={{ color: "#607080" }}>
-              {user.email_id}
-            </TableCell>
-            <TableCell>
-              <Chip
-                label={
-                  user.userRole === "club_admin"
-                    ? "Club Admin"
-                    : "Board Admin"
-                }
-                size="small"
-                icon={
-                  user.userRole === "club_admin" ? (
-                    <EventIcon />
+              component={Paper}
+              elevation={0}
+              sx={{
+                borderRadius: "8px",
+                boxShadow: "none",
+                border: "1px solid rgba(95, 150, 230, 0.1)",
+                overflow: "auto",
+                maxWidth: "100%",
+              }}
+            >
+              <Table sx={{ minWidth: 650 }}>
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 600, py: 2 }}>Admin</TableCell>
+                    <TableCell sx={{ fontWeight: 600, py: 2 }}>Email</TableCell>
+                    <TableCell sx={{ fontWeight: 600, py: 2 }}>Role</TableCell>
+                    <TableCell sx={{ fontWeight: 600, py: 2 }}>
+                      Department
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 600, py: 2 }}>
+                      Assigned To
+                    </TableCell>
+                    {currentUser?.isSuperAdmin && (
+                      <TableCell sx={{ fontWeight: 600, py: 2 }}>
+                        Actions
+                      </TableCell>
+                    )}
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredUsers.length > 0 ? (
+                    filteredUsers.map((user) => (
+                      <TableRow
+                        key={user._id}
+                        sx={{
+                          "&:hover": {
+                            backgroundColor: "rgba(95, 150, 230, 0.05)",
+                          },
+                          transition: "background-color 0.3s ease",
+                        }}
+                      >
+                        <TableCell>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 2,
+                            }}
+                          >
+                            <Avatar
+                              sx={{
+                                bgcolor: alpha(
+                                  getRoleColor(user.userRole),
+                                  0.8
+                                ),
+                                width: 36,
+                                height: 36,
+                              }}
+                            >
+                              {getInitials(user.name)}
+                            </Avatar>
+                            <Typography
+                              sx={{ color: "#2A3B4F", fontWeight: 500 }}
+                            >
+                              {user.name}
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                        <TableCell sx={{ color: "#607080" }}>
+                          {user.email_id}
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={
+                              user.userRole === "club_admin"
+                                ? "Club Admin"
+                                : "Board Admin"
+                            }
+                            size="small"
+                            icon={
+                              user.userRole === "club_admin" ? (
+                                <EventIcon />
+                              ) : (
+                                <DashboardIcon />
+                              )
+                            }
+                            sx={{
+                              backgroundColor: alpha(
+                                getRoleColor(user.userRole),
+                                0.1
+                              ),
+                              color: getRoleColor(user.userRole),
+                              fontWeight: 500,
+                              fontSize: "0.75rem",
+                              height: "26px",
+                              "& .MuiChip-icon": {
+                                color: getRoleColor(user.userRole),
+                                fontSize: "0.85rem",
+                              },
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell sx={{ color: "#607080" }}>
+                          {user.department || "N/A"}
+                        </TableCell>
+                        <TableCell sx={{ color: "#607080" }}>
+                          <Typography noWrap>
+                            {user.userRole === "club_admin"
+                              ? clubs.find((c) => c._id === user.club_id)
+                                  ?.name || "N/A"
+                              : boards.find((b) => b._id === user.board_id)
+                                  ?.name || "N/A"}
+                          </Typography>
+                        </TableCell>
+                        {currentUser?.isSuperAdmin && (
+                          <TableCell>
+                            <IconButton
+                              color="error"
+                              onClick={() => handleOpenDeleteDialog(user)}
+                              disabled={user._id === currentUser.userId}
+                              sx={{
+                                color: "#d32f2f",
+                                "&:hover": {
+                                  backgroundColor: alpha("#d32f2f", 0.1),
+                                },
+                                "&.Mui-disabled": {
+                                  color: alpha("#d32f2f", 0.3),
+                                },
+                              }}
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    ))
                   ) : (
-                    <DashboardIcon />
-                  )
-                }
-                sx={{
-                  backgroundColor: alpha(
-                    getRoleColor(user.userRole),
-                    0.1
-                  ),
-                  color: getRoleColor(user.userRole),
-                  fontWeight: 500,
-                  fontSize: "0.75rem",
-                  height: "26px",
-                  "& .MuiChip-icon": {
-                    color: getRoleColor(user.userRole),
-                    fontSize: "0.85rem",
-                  },
-                }}
-              />
-            </TableCell>
-            <TableCell sx={{ color: "#607080" }}>
-              {user.department || "N/A"}
-            </TableCell>
-            <TableCell sx={{ color: "#607080" }}>
-              <Typography noWrap>
-                {user.userRole === "club_admin"
-                  ? clubs.find((c) => c._id === user.club_id)
-                      ?.name || "N/A"
-                  : boards.find((b) => b._id === user.board_id)
-                      ?.name || "N/A"}
-              </Typography>
-            </TableCell>
-            {currentUser?.isSuperAdmin && (
-              <TableCell>
-                <IconButton
-                  color="error"
-                  onClick={() => handleOpenDeleteDialog(user)}
-                  disabled={user._id === currentUser.userId}
-                  sx={{
-                    color: "#d32f2f",
-                    "&:hover": {
-                      backgroundColor: alpha("#d32f2f", 0.1),
-                    },
-                    "&.Mui-disabled": {
-                      color: alpha("#d32f2f", 0.3),
-                    },
-                  }}
-                >
-                  <DeleteIcon />
-                </IconButton>
-              </TableCell>
-            )}
-          </TableRow>
-        ))
-      ) : (
-        <TableRow>
-          <TableCell
-            colSpan={currentUser?.isSuperAdmin ? 6 : 5}
-            align="center"
-            sx={{ py: 4 }}
-          >
-            No admin users found
-          </TableCell>
-        </TableRow>
-      )}
-    </TableBody>
-  </Table>
-</TableContainer>
+                    <TableRow>
+                      <TableCell
+                        colSpan={currentUser?.isSuperAdmin ? 6 : 5}
+                        align="center"
+                        sx={{ py: 4 }}
+                      >
+                        No admin users found
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
           )}
         </Paper>
 

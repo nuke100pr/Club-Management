@@ -25,6 +25,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import PersonRemoveIcon from "@mui/icons-material/PersonRemove";
 import SearchIcon from "@mui/icons-material/Search";
+import { getAuthToken } from "@/utils/auth";
 
 export default function ForumMemberComponent({ open, onClose, forum }) {
   const [members, setMembers] = useState([]);
@@ -35,23 +36,42 @@ export default function ForumMemberComponent({ open, onClose, forum }) {
   const [searchNewMember, setSearchNewMember] = useState("");
   const [searchExistingMember, setSearchExistingMember] = useState("");
   const [error, setError] = useState(null);
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   // Fetch all users and forum members when dialog opens
   useEffect(() => {
     const fetchData = async () => {
-      if (!open || !forum) return;
+      if (!open || !forum || !authToken) return;
 
       setLoading(true);
       try {
         // Fetch all users
-        const usersResponse = await fetch("http://localhost:5000/users/users");
+        const usersResponse = await fetch("http://localhost:5000/users/users", {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        });
         if (!usersResponse.ok) throw new Error("Failed to fetch users");
         const usersData = await usersResponse.json();
         setAllUsers(usersData.users || usersData);
 
         // Fetch forum members
         const membersResponse = await fetch(
-          `http://localhost:5000/forums2/forums/${forum._id}/members`
+          `http://localhost:5000/forums2/forums/${forum._id}/members`,
+          {
+            headers: {
+              'Authorization': `Bearer ${authToken}`,
+            }
+          }
         );
         if (!membersResponse.ok) throw new Error("Failed to fetch members");
         const membersData = await membersResponse.json();
@@ -64,10 +84,10 @@ export default function ForumMemberComponent({ open, onClose, forum }) {
     };
 
     fetchData();
-  }, [open, forum]);
+  }, [open, forum, authToken]);
 
   const handleAddMember = async () => {
-    if (selectedUsers.length === 0) return;
+    if (selectedUsers.length === 0 || !authToken) return;
 
     setAddingMember(true);
     setError(null);
@@ -79,6 +99,7 @@ export default function ForumMemberComponent({ open, onClose, forum }) {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            'Authorization': `Bearer ${authToken}`,
           },
           body: JSON.stringify({
             user_id: userId,
@@ -97,7 +118,12 @@ export default function ForumMemberComponent({ open, onClose, forum }) {
 
       // Refresh members list
       const updatedResponse = await fetch(
-        `http://localhost:5000/forums2/forums/${forum._id}/members`
+        `http://localhost:5000/forums2/forums/${forum._id}/members`,
+        {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        }
       );
       if (!updatedResponse.ok) throw new Error("Failed to fetch updated members");
       const updatedData = await updatedResponse.json();
@@ -112,6 +138,8 @@ export default function ForumMemberComponent({ open, onClose, forum }) {
   };
 
   const handleRemoveMember = async (userId) => {
+    if (!authToken) return;
+    
     setLoading(true);
     setError(null);
 
@@ -120,6 +148,9 @@ export default function ForumMemberComponent({ open, onClose, forum }) {
         `http://localhost:5000/forums2/forums/${forum._id}/members/${userId}`,
         {
           method: "DELETE",
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
         }
       );
 

@@ -22,6 +22,7 @@ import { useRouter, usePathname } from "next/navigation";
 import Cookies from "js-cookie";
 import LeftDrawer from "./navigationBar/LeftDrawer";
 import NotificationsDrawer from "./navigationBar/NotificationsDrawer";
+import { getAuthToken } from "@/utils/auth";
 
 // Custom hardware-accelerated animated AppBar
 const AnimatedAppBar = styled(AppBar, {
@@ -104,7 +105,17 @@ const CollapsibleNavBar = () => {
   const [notificationsDrawerOpen, setNotificationsDrawerOpen] = useState(false);
   const [shouldRender, setShouldRender] = useState(false); // Start with false
   const [isAnimating, setIsAnimating] = useState(false);
+  const [authToken, setAuthToken] = useState(null);
   const animationRef = useRef(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   // Count unread notifications
   const unreadCount = sampleNotifications.filter(
@@ -142,20 +153,32 @@ const CollapsibleNavBar = () => {
   }, [isAnimating]);
 
   const toggleDrawer = useCallback(() => {
+    if (!authToken) {
+      return;
+    }
     setDrawerOpen((prev) => !prev);
-  }, []);
+  }, [authToken]);
 
   const toggleNotificationsDrawer = useCallback(() => {
+    if (!authToken) {
+      return;
+    }
     setNotificationsDrawerOpen((prev) => !prev);
-  }, []);
+  }, [authToken]);
 
   const navigateToHome = useCallback(() => {
-    router.push("/home");
-  }, [router]);
+    if (!authToken) {
+      return;
+    }
+    router.push("/");
+  }, [router, authToken]);
 
   const navigateToSettings = useCallback(() => {
+    if (!authToken) {
+      return;
+    }
     router.push("/settings");
-  }, [router]);
+  }, [router, authToken]);
 
   // Instead of early return, render conditionally
   if (!shouldRender) {
@@ -214,7 +237,9 @@ const CollapsibleNavBar = () => {
             aria-label="notifications"
             onClick={toggleNotificationsDrawer}
           >
-            <NotificationsIcon />
+            <Badge badgeContent={unreadCount} color="error">
+              <NotificationsIcon />
+            </Badge>
           </PremiumIconButton>
           <PremiumIconButton
             color="primary"

@@ -25,10 +25,9 @@ import ShareIcon from '@mui/icons-material/Share';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { fetchUserData } from '@/utils/auth';
+import { fetchUserData, getAuthToken } from '@/utils/auth';
 import CreateResourceDialog from '../../components/resources/CreateResourceDialog';
 
-// Create a custom theme with soothing blue colors
 const theme = createTheme({
   palette: {
     primary: {
@@ -87,7 +86,6 @@ const getTagColor = (index) => {
   return colors[index % colors.length];
 };
 
-// Resource Card Component
 const ResourceCard = ({ 
   resource, 
   hasPermission,
@@ -97,7 +95,6 @@ const ResourceCard = ({
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   
-  // Truncate description if it's too long
   const truncateDescription = (text, maxLength = 120) => {
     if (text.length <= maxLength) return text;
     return text.slice(0, maxLength) + '...';
@@ -293,6 +290,16 @@ export default function ResourcesPage({ boardId = null }) {
   const [userBoardsWithResourcePermission, setUserBoardsWithResourcePermission] = useState([]);
   const [selectedBoard, setSelectedBoard] = useState(boardId);
   const [selectedClub, setSelectedClub] = useState(null);
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   useEffect(() => {
     async function loadUserData() {
@@ -380,12 +387,20 @@ export default function ResourcesPage({ boardId = null }) {
   useEffect(() => {
     const fetchResources = async () => {
       try {
+        if(!authToken) {
+          return;
+        }
+
         let url = "http://localhost:5000/resources/api/resource";
         if (boardId) {
           url += `?board_id=${boardId}`;
         }
 
-        const response = await fetch(url);
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        });
         const result = await response.json();
 
         if (result.success && result.data) {
@@ -410,7 +425,7 @@ export default function ResourcesPage({ boardId = null }) {
     };
 
     fetchResources();
-  }, [boardId]);
+  }, [boardId, authToken]);
 
   useEffect(() => {
     let result = allResources;
@@ -460,8 +475,17 @@ export default function ResourcesPage({ boardId = null }) {
 
   const handleEdit = async (resourceId) => {
     try {
+      if(!authToken) {
+        return;
+      }
+
       const response = await fetch(
-        `http://localhost:5000/resources/api/resource/${resourceId}`
+        `http://localhost:5000/resources/api/resource/${resourceId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        }
       );
       const result = await response.json();
 
@@ -487,10 +511,17 @@ export default function ResourcesPage({ boardId = null }) {
 
   const handleDelete = async (resourceId) => {
     try {
+      if(!authToken) {
+        return;
+      }
+
       const response = await fetch(
         `http://localhost:5000/resources/api/resource/${resourceId}`,
         {
           method: "DELETE",
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
         }
       );
       const result = await response.json();
@@ -540,7 +571,6 @@ export default function ResourcesPage({ boardId = null }) {
       </Head>
 
       <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-        {/* Left sidebar with sticky search (25% width) */}
         <Box
           sx={{
             width: '25%',
@@ -611,7 +641,6 @@ export default function ResourcesPage({ boardId = null }) {
             </Typography>
           </Box>
 
-          {/* Keywords/Tags Filter */}
           {allKeywords.length > 0 && (
             <Box sx={{ mt: 2 }}>
               <Typography variant="subtitle2" gutterBottom>
@@ -673,7 +702,6 @@ export default function ResourcesPage({ boardId = null }) {
           )}
         </Box>
 
-        {/* Right content with resource cards (70% width) */}
         <Box
           sx={{
             width: '70%',

@@ -59,6 +59,7 @@ import {
   FormatColorText,
   Close,
 } from '@mui/icons-material';
+import {getAuthToken } from "@/utils/auth";
 
 export default function PostEditor({ boardId, clubId, onPostCreated, onClose, postToEdit }) {
   const [title, setTitle] = useState(postToEdit?.title || '');
@@ -68,6 +69,16 @@ export default function PostEditor({ boardId, clubId, onPostCreated, onClose, po
   const [alert, setAlert] = useState({ open: false, message: '', severity: 'success' });
   const [preview, setPreview] = useState([]);
   const [textColor, setTextColor] = useState('#000000');
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   const editor = useEditor({
     extensions: [
@@ -231,6 +242,10 @@ export default function PostEditor({ boardId, clubId, onPostCreated, onClose, po
   };
 
   const handleSubmit = async () => {
+    if (!authToken) {
+      return;
+    }
+
     if (!title.trim()) {
       showAlert('Please enter a title', 'error');
       return;
@@ -275,6 +290,9 @@ export default function PostEditor({ boardId, clubId, onPostCreated, onClose, po
       const response = await fetch(endpoint, {
         method,
         body: formData,
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
       });
      
       if (response.ok) {

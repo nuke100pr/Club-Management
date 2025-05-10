@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { fetchUserData,getAuthToken } from "@/utils/auth";
+import { fetchUserData, getAuthToken } from "@/utils/auth";
 import {
   Box,
   Container,
@@ -39,6 +39,16 @@ const PORManagement = () => {
     message: "",
     severity: "success",
   });
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   // Helper function to format date
   const formatDate = (dateString) => {
@@ -52,6 +62,8 @@ const PORManagement = () => {
     const loadUserData = async () => {
       setLoadingOrganization(true);
       try {
+        if (!authToken) return;
+        
         const userData = await fetchUserData();
         setCurrentUser(userData.userData);
         console.log("User data loaded:", userData);
@@ -66,7 +78,12 @@ const PORManagement = () => {
           }
           
           const clubRes = await fetch(
-            `http://localhost:5000/clubs/clubs/${userData.club_id}`
+            `http://localhost:5000/clubs/clubs/${userData.club_id}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${authToken}`,
+              }
+            }
           );
           
           if (!clubRes.ok) {
@@ -82,7 +99,12 @@ const PORManagement = () => {
           console.log("Loading board data for ID:", userData?.board_id);
           
           const boardRes = await fetch(
-            `http://localhost:5000/boards/${userData?.board_id}`
+            `http://localhost:5000/boards/${userData?.board_id}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${authToken}`,
+              }
+            }
           );
           
           if (!boardRes.ok) {
@@ -109,7 +131,7 @@ const PORManagement = () => {
     };
 
     loadUserData();
-  }, [router]);
+  }, [router, authToken]);
 
   // Debug when positions change
   useEffect(() => {
@@ -124,8 +146,8 @@ const PORManagement = () => {
 
   // Fetch all necessary data
   useEffect(() => {
-    if (!organizationType || !managedOrganization) {
-      console.log("Not fetching data: missing organization type or managed organization");
+    if (!organizationType || !managedOrganization || !authToken) {
+      console.log("Not fetching data: missing organization type or managed organization or auth token");
       return;
     }
 
@@ -135,13 +157,29 @@ const PORManagement = () => {
         console.log("Fetching all data for", organizationType, managedOrganization._id);
         
         // Prepare API requests
-        const usersPromise = fetch("http://localhost:5000/users/users");
-        const privilegeTypesPromise = fetch("http://localhost:5000/por2/privilege-types");
-        const positionsPromise = fetch("http://localhost:5000/por2/por");
+        const usersPromise = fetch("http://localhost:5000/users/users", {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        });
+        const privilegeTypesPromise = fetch("http://localhost:5000/por2/privilege-types", {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        });
+        const positionsPromise = fetch("http://localhost:5000/por2/por", {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        });
         
         // Only fetch clubs if this is a board
         const clubsPromise = organizationType === "board" 
-          ? fetch(`http://localhost:5000/boards/${managedOrganization._id}/clubs`)
+          ? fetch(`http://localhost:5000/boards/${managedOrganization._id}/clubs`, {
+              headers: {
+                'Authorization': `Bearer ${authToken}`,
+              }
+            })
           : Promise.resolve(null);
 
         const [usersRes, privilegeTypesRes, positionsRes, clubsRes] = await Promise.all([
@@ -225,7 +263,7 @@ const PORManagement = () => {
     };
 
     fetchAllData();
-  }, [organizationType, managedOrganization]);
+  }, [organizationType, managedOrganization, authToken]);
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
@@ -233,6 +271,8 @@ const PORManagement = () => {
 
   const handleUpdateOrganization = async (newOrgData) => {
     try {
+      if (!authToken) return;
+      
       const formData = new FormData();
       formData.append("name", newOrgData.name);
       formData.append("description", newOrgData.description);
@@ -256,6 +296,9 @@ const PORManagement = () => {
       const response = await fetch(endpoint, {
         method: "PUT",
         body: formData,
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
       });
 
       if (!response.ok) {
@@ -285,6 +328,8 @@ const PORManagement = () => {
 
   const handleAddPosition = async (positionData) => {
     try {
+      if (!authToken) return;
+      
       // Prepare data based on organization type
       const porData = {
         ...positionData,
@@ -302,6 +347,7 @@ const PORManagement = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          'Authorization': `Bearer ${authToken}`,
         },
         body: JSON.stringify(porData),
       });
@@ -351,6 +397,8 @@ const PORManagement = () => {
 
   const handleEditPosition = async (positionId, positionData) => {
     try {
+      if (!authToken) return;
+      
       // Prepare data based on organization type
       const porData = {
         ...positionData,
@@ -368,6 +416,7 @@ const PORManagement = () => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          'Authorization': `Bearer ${authToken}`,
         },
         body: JSON.stringify(porData),
       });
@@ -423,9 +472,14 @@ const PORManagement = () => {
 
   const handleDeletePosition = async (position) => {
     try {
+      if (!authToken) return;
+      
       console.log("Deleting position:", position._id);
       const response = await fetch(`http://localhost:5000/por2/por/${position._id}`, {
         method: "DELETE",
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
       });
 
       if (!response.ok) {
@@ -455,11 +509,14 @@ const PORManagement = () => {
 
   const handleAddPrivilegeType = async (privilegeData) => {
     try {
+      if (!authToken) return;
+      
       console.log("Adding privilege type:", privilegeData);
       const response = await fetch("http://localhost:5000/por2/privilege-types", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          'Authorization': `Bearer ${authToken}`,
         },
         body: JSON.stringify(privilegeData),
       });

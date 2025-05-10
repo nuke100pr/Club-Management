@@ -27,7 +27,7 @@ import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import LaunchIcon from "@mui/icons-material/Launch";
 import CreateResourceDialog from "../../components/opportunities/CreateResourceDialog";
-import { fetchUserData,hasPermission } from "@/utils/auth";
+import { fetchUserData, hasPermission, getAuthToken } from "@/utils/auth";
 
 const getTagColor = (index, theme) => {
   const colors =
@@ -518,6 +518,7 @@ export default function OpportunitiesPage({
     userBoardsWithOpportunityPermission,
     setUserBoardsWithOpportunityPermission,
   ] = useState([]);
+  const [authToken, setAuthToken] = useState(null);
 
   const [selectedClub, setSelectedClub] = useState(clubId);
   const [loading, setLoading] = useState(false); // Changed to false since we use showSkeleton state instead
@@ -529,6 +530,15 @@ export default function OpportunitiesPage({
   const [arrayPermissions, setArrayPermissions] = useState({});
 
   const [canCreateOpportunities, setCanCreateOpportunities] = useState(false);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   useEffect(() => {
     async function checkOpportunityCreationPermission() {
@@ -659,6 +669,8 @@ export default function OpportunitiesPage({
   useEffect(() => {
     const fetchOpportunities = async () => {
       try {
+        if (!authToken) return;
+        
         setIsLoadingData(true);
         setShowSkeleton(true);
 
@@ -670,7 +682,11 @@ export default function OpportunitiesPage({
           url += `?board_id=${clubId}`;
         }
 
-        const response = await fetch(url);
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        });
         if (!response.ok) {
           throw new Error("Failed to fetch opportunities");
         }
@@ -701,7 +717,7 @@ export default function OpportunitiesPage({
     };
 
     fetchOpportunities();
-  }, [clubId]);
+  }, [clubId, authToken]);
 
   useEffect(() => {
     let result = allOpportunities;
@@ -732,12 +748,15 @@ export default function OpportunitiesPage({
 
   const fetchOpportunityDetails = async (id) => {
     try {
+      if (!authToken) return;
+      
       const response = await fetch(
         `http://localhost:5000/opportunities/${id}`,
         {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
+            'Authorization': `Bearer ${authToken}`,
           },
         }
       );
@@ -761,12 +780,15 @@ export default function OpportunitiesPage({
   const handleDelete = async (opportunityId) => {
     if (window.confirm("Are you sure you want to delete this opportunity?")) {
       try {
+        if (!authToken) return;
+        
         const response = await fetch(
           `http://localhost:5000/opportunities/${opportunityId}`,
           {
             method: "DELETE",
             headers: {
               "Content-Type": "application/json",
+              'Authorization': `Bearer ${authToken}`,
             },
           }
         );

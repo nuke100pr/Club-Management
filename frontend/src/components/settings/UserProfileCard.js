@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Typography,
   Button,
@@ -21,6 +21,7 @@ import {
 } from "@mui/material";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import DeleteIcon from "@mui/icons-material/Delete";
+import { getAuthToken } from "@/utils/auth";
 
 export default function UserProfileCard({ 
   userProfile, 
@@ -41,6 +42,16 @@ export default function UserProfileCard({
     message: "",
     severity: "success",
   });
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   const toggleDialog = (key, value) => {
     setDialogs((prev) => ({ ...prev, [key]: value }));
@@ -61,7 +72,7 @@ export default function UserProfileCard({
   };
 
   const uploadProfilePhoto = async (file) => {
-    if (!userId || !file) return;
+    if (!userId || !file || !authToken) return;
 
     const formData = new FormData();
     formData.append('profilePhoto', file);
@@ -76,7 +87,9 @@ export default function UserProfileCard({
       const response = await fetch(url, {
         method: method,
         body: formData,
-        // Add any necessary headers for authentication
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
       });
 
       if (!response.ok) {
@@ -102,7 +115,7 @@ export default function UserProfileCard({
   };
 
   const handleRemovePhoto = async () => {
-    if (!userId) return;
+    if (!userId || !authToken) return;
 
     try {
       setIsLoading(true);
@@ -110,7 +123,7 @@ export default function UserProfileCard({
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
-          // Add any necessary headers for authentication
+          'Authorization': `Bearer ${authToken}`,
         },
       });
 
@@ -135,7 +148,7 @@ export default function UserProfileCard({
   };
 
   const handleUpdateStatus = async () => {
-    if (!userId || !statusInputValue) return;
+    if (!userId || !statusInputValue || !authToken) return;
 
     try {
       setIsLoading(true);
@@ -143,7 +156,7 @@ export default function UserProfileCard({
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          // Add any necessary headers for authentication
+          'Authorization': `Bearer ${authToken}`,
         },
         body: JSON.stringify({ status: statusInputValue }),
       });

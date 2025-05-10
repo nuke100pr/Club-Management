@@ -2,11 +2,26 @@
 "use client";
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { getAuthToken } from "@/utils/auth";
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [authToken, setAuthToken] = useState(null);
   
   useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
+
+  useEffect(() => {
+    if (!authToken) {
+      return;
+    }
+
     const handleScroll = () => {
       if (window.scrollY > 0) {
         setIsScrolled(true);
@@ -21,7 +36,7 @@ export default function Navbar() {
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
-  }, []);
+  }, [authToken]);
   
   return (
     <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${

@@ -29,7 +29,7 @@ import {
 } from "@mui/icons-material";
 import { Carousel } from "react-responsive-carousel";
 import "react-responsive-carousel/lib/styles/carousel.min.css";
-import { fetchUserData } from "@/utils/auth";
+import { fetchUserData, getAuthToken } from "@/utils/auth";
 
 const API_URL = "http://localhost:5000/api";
 const API_URL2 = "http://localhost:5000/uploads";
@@ -54,6 +54,7 @@ const Posts = ({ searchQuery = "" }) => {
   const [currentPostId, setCurrentPostId] = useState(null);
   const [userId, setUserId] = useState(null);
   const [skeletonLoading, setSkeletonLoading] = useState(true);
+  const [authToken, setAuthToken] = useState(null);
 
   // Define theme-specific colors
   const cardBgColor =
@@ -83,7 +84,14 @@ const Posts = ({ searchQuery = "" }) => {
         setUserId(result.userId);
       }
     }
+    
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
     loadUserData();
+    fetchAuthToken();
     fetchPosts();
 
     // Add global style to hide scrollbars
@@ -123,6 +131,8 @@ const Posts = ({ searchQuery = "" }) => {
 
   const fetchPosts = async () => {
     try {
+      // if (!authToken) return;
+      
       setLoading(true);
       setSkeletonLoading(true);
 
@@ -130,7 +140,11 @@ const Posts = ({ searchQuery = "" }) => {
       const minLoadTime = new Promise((resolve) => setTimeout(resolve, 500));
 
       const url = `${API_URL}/posts`;
-      const fetchPromise = fetch(url)
+      const fetchPromise = fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
+      })
         .then((response) => {
           if (!response.ok)
             throw new Error(`HTTP error! Status: ${response.status}`);
@@ -186,6 +200,8 @@ const Posts = ({ searchQuery = "" }) => {
   };
 
   const handleReactionToggle = async (emoji, postId) => {
+    if (!authToken) return;
+    
     const hasReaction = userReactions[postId]?.[emoji];
 
     try {
@@ -193,7 +209,10 @@ const Posts = ({ searchQuery = "" }) => {
       const method = hasReaction ? "DELETE" : "POST";
       const response = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${authToken}`,
+        },
         body: JSON.stringify({ user_id: userId, emoji }),
       });
 
@@ -228,10 +247,15 @@ const Posts = ({ searchQuery = "" }) => {
   };
 
   const handleVote = async (postId, voteValue) => {
+    if (!authToken) return;
+    
     try {
       const response = await fetch(`${API_URL}/api/posts/${postId}/votes`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${authToken}`,
+        },
         body: JSON.stringify({ user_id: userId, vote: voteValue }),
       });
 

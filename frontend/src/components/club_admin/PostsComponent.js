@@ -32,7 +32,7 @@ import {
 } from "@mui/icons-material";
 import { Carousel } from "react-responsive-carousel";
 import "react-responsive-carousel/lib/styles/carousel.min.css";
-import { fetchUserData } from "@/utils/auth";
+import { fetchUserData, getAuthToken } from "@/utils/auth";
 import PostEditor from "../posts/PostEditor";
 
 const API_URL = "http://localhost:5000/api";
@@ -65,6 +65,16 @@ const Posts = ({ clubId, searchQuery = "" }) => {
     useState([]);
   const [expandedPost, setExpandedPost] = useState(null);
   const [skeletonLoading, setSkeletonLoading] = useState(true);
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   useEffect(() => {
     async function loadUserData() {
@@ -142,6 +152,8 @@ const Posts = ({ clubId, searchQuery = "" }) => {
   };
 
   const fetchPosts = async () => {
+    if (!authToken) return;
+
     try {
       setLoading(true);
       setSkeletonLoading(true);
@@ -152,7 +164,11 @@ const Posts = ({ clubId, searchQuery = "" }) => {
       const url = clubId
         ? `${API_URL}/posts?club_id=${clubId}`
         : `${API_URL}/posts`;
-      const fetchPromise = fetch(url)
+      const fetchPromise = fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
+      })
         .then((response) => {
           if (!response.ok)
             throw new Error(`HTTP error! Status: ${response.status}`);
@@ -229,9 +245,15 @@ const Posts = ({ clubId, searchQuery = "" }) => {
   };
 
   const handleEditPost = async (post) => {
+    if (!authToken) return;
+
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/posts/${post._id}`);
+      const response = await fetch(`${API_URL}/posts/${post._id}`, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
+      });
 
       if (!response.ok) {
         throw new Error(`Failed to fetch post details: ${response.status}`);
@@ -249,6 +271,8 @@ const Posts = ({ clubId, searchQuery = "" }) => {
   };
 
   const handleReactionToggle = async (emoji, postId) => {
+    if (!authToken) return;
+
     const hasReaction = userReactions[postId]?.[emoji];
 
     try {
@@ -256,7 +280,10 @@ const Posts = ({ clubId, searchQuery = "" }) => {
       const method = hasReaction ? "DELETE" : "POST";
       const response = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${authToken}`,
+        },
         body: JSON.stringify({ user_id: userId, emoji }),
       });
 
@@ -291,10 +318,15 @@ const Posts = ({ clubId, searchQuery = "" }) => {
   };
 
   const handleVote = async (postId, voteValue) => {
+    if (!authToken) return;
+
     try {
       const response = await fetch(`${API_URL}/api/posts/${postId}/votes`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${authToken}`,
+        },
         body: JSON.stringify({ user_id: userId, vote: voteValue }),
       });
 
@@ -314,10 +346,15 @@ const Posts = ({ clubId, searchQuery = "" }) => {
   };
 
   const handleDelete = async (postId) => {
+    if (!authToken) return;
+
     try {
       const response = await fetch(`${API_URL}/posts/${postId}`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${authToken}`,
+        },
       });
 
       if (!response.ok) throw new Error("Delete failed");

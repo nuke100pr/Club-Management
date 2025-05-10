@@ -20,7 +20,7 @@ import {
 import SearchAndFilterBar from "../../components/resources/SearchAndFilterBar";
 import CreateResourceDialog from "../../components/resources/CreateResourceDialog";
 import UniversalShareMenu from "../../components/shared/UniversalShareMenu";
-import { fetchUserData, hasPermission } from "@/utils/auth";
+import { fetchUserData, hasPermission, getAuthToken } from "@/utils/auth";
 
 const getTagColor = (index, theme) => {
   const colors = [
@@ -49,6 +49,7 @@ const ResourceCards = () => {
   const [userData, setUserData] = useState(null);
   const [userId, setUserId] = useState(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [authToken, setAuthToken] = useState(null);
 
   const [arrayPermissions, setArrayPermissions] = useState({});
 
@@ -62,6 +63,15 @@ const ResourceCards = () => {
   const [selectedClub, setSelectedClub] = useState(null);
   const [shareMenuAnchor, setShareMenuAnchor] = useState(null);
   const [currentSharedResource, setCurrentSharedResource] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   useEffect(() => {
     // Check permissions for all resources
@@ -117,9 +127,15 @@ const ResourceCards = () => {
   }, []);
 
   const fetchUserNameById = async (userId) => {
+    if (!authToken) return "Unknown User";
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/users/${userId}/details`
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/users/${userId}/details`,
+        {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        }
       );
       const result = await response.json();
 
@@ -167,9 +183,15 @@ const ResourceCards = () => {
 
   useEffect(() => {
     const fetchResources = async () => {
+      if (!authToken) return;
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/resources/api/resource`
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/resources/api/resource`,
+          {
+            headers: {
+              'Authorization': `Bearer ${authToken}`,
+            }
+          }
         );
         const result = await response.json();
         if (result.success && result.data) {
@@ -193,7 +215,7 @@ const ResourceCards = () => {
       }
     };
     fetchResources();
-  }, []);
+  }, [authToken]);
 
   useEffect(() => {
     let result = allResources;
@@ -251,9 +273,15 @@ const ResourceCards = () => {
   };
 
   const handleEdit = async (resourceId) => {
+    if (!authToken) return;
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/resources/bpi/${resourceId}`
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/resources/bpi/${resourceId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        }
       );
       const result = await response.json();
       if (result.success) {
@@ -276,11 +304,15 @@ const ResourceCards = () => {
   };
 
   const handleDelete = async (resourceId) => {
+    if (!authToken) return;
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/resources/bpi/${resourceId}`,
         {
           method: "DELETE",
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
         }
       );
       const result = await response.json();

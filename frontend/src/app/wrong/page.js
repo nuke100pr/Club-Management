@@ -2,9 +2,25 @@
 
 import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
+import { useState, useEffect } from "react";
+import { getAuthToken } from "@/utils/auth";
 
 const XYZPage = () => {
   const router = useRouter();
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
+
+  if (!authToken) {
+    return;
+  }
 
   return (
     <div className="flex h-screen w-screen items-center justify-center bg-gray-100 p-4">

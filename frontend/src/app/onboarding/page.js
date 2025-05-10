@@ -17,7 +17,7 @@ import {
   useMediaQuery
 } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { fetchUserData } from "@/utils/auth";
+import { fetchUserData, getAuthToken } from "@/utils/auth";
 
 const OnboardingPage = () => {
   const [clubs, setClubs] = useState([]);
@@ -26,6 +26,7 @@ const OnboardingPage = () => {
   const [followedItems, setFollowedItems] = useState({ clubs: [], boards: [] });
   const [loading, setLoading] = useState(true);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "info" });
+  const [authToken, setAuthToken] = useState(null);
   const router = useRouter();
   const theme = useTheme();
   
@@ -35,6 +36,15 @@ const OnboardingPage = () => {
   const isMd = useMediaQuery(theme.breakpoints.only('md'));
 
   const REQUIRED_FOLLOWS = 5;
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   useEffect(() => {
     async function loadUserData() {
@@ -48,20 +58,28 @@ const OnboardingPage = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!userId) return;
+      if (!userId || !authToken) return;
       
       try {
         setLoading(true);
         
         // Fetch clubs with follow status
         const clubsUrl = `http://localhost:5000/clubs/clubs?user_id=${userId}`;
-        const clubsResponse = await fetch(clubsUrl);
+        const clubsResponse = await fetch(clubsUrl, {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        });
         if (!clubsResponse.ok) throw new Error('Failed to fetch clubs');
         const clubsData = await clubsResponse.json();
         
         // Fetch boards with follow status
         const boardsUrl = `http://localhost:5000/boards?user_id=${userId}`;
-        const boardsResponse = await fetch(boardsUrl);
+        const boardsResponse = await fetch(boardsUrl, {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        });
         if (!boardsResponse.ok) throw new Error('Failed to fetch boards');
         const boardsData = await boardsResponse.json();
         
@@ -92,17 +110,22 @@ const OnboardingPage = () => {
     };
 
     fetchData();
-  }, [userId]);
+  }, [userId, authToken]);
 
   const handleFollowClub = async (clubId) => {
     try {
-      if (!userId) return;
+      if (!userId || !authToken) return;
       
       const isFollowed = followedItems.clubs.includes(clubId);
       const url = `http://localhost:5000/clubs/users/${userId}/${isFollowed ? 'unfollow' : 'follow'}/club/${clubId}`;
       const method = isFollowed ? "DELETE" : "POST";
       
-      const response = await fetch(url, { method });
+      const response = await fetch(url, { 
+        method,
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
+      });
       
       if (!response.ok) throw new Error(`Failed to ${isFollowed ? 'unfollow' : 'follow'} club`);
       
@@ -135,13 +158,18 @@ const OnboardingPage = () => {
 
   const handleFollowBoard = async (boardId) => {
     try {
-      if (!userId) return;
+      if (!userId || !authToken) return;
       
       const isFollowed = followedItems.boards.includes(boardId);
       const url = `http://localhost:5000/clubs/users/${userId}/${isFollowed ? 'unfollow' : 'follow'}/board/${boardId}`;
       const method = isFollowed ? "DELETE" : "POST";
       
-      const response = await fetch(url, { method });
+      const response = await fetch(url, { 
+        method,
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
+      });
       
       if (!response.ok) throw new Error(`Failed to ${isFollowed ? 'unfollow' : 'follow'} board`);
       
@@ -178,7 +206,7 @@ const OnboardingPage = () => {
 
   const handleProceedClick = () => {
     if (canProceed) {
-      router.push('/home');
+      router.push('/');
     } else {
       setSnackbar({
         open: true,

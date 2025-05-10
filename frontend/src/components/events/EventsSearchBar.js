@@ -18,6 +18,7 @@ import {
 import SearchIcon from "@mui/icons-material/Search";
 import TuneIcon from "@mui/icons-material/Tune";
 import CloseIcon from "@mui/icons-material/Close";
+import { getAuthToken } from "@/utils/auth";
 
 const EventsSearchBar = ({
   searchQuery,
@@ -30,6 +31,16 @@ const EventsSearchBar = ({
   const theme = useTheme();
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [isSticky, setIsSticky] = useState(false);
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -47,6 +58,10 @@ const EventsSearchBar = ({
   };
 
   const activeFiltersCount = Object.values(selectedFilters).filter(Boolean).length;
+
+  if (!authToken) {
+    return null;
+  }
 
   return (
     <>

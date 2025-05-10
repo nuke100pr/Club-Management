@@ -27,7 +27,8 @@ import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import LaunchIcon from "@mui/icons-material/Launch";
 import CreateResourceDialog from "../../components/opportunities/CreateResourceDialog";
-import { fetchUserData,hasPermission } from "@/utils/auth";
+import { fetchUserData, hasPermission } from "@/utils/auth";
+import { getAuthToken } from "@/utils/auth";
 
 const getTagColor = (index, theme) => {
   const colors =
@@ -92,7 +93,6 @@ const StatusChip = ({ status }) => {
   );
 };
 
-// Skeleton Card Component for Loading State
 const SkeletonCard = () => {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
@@ -101,7 +101,7 @@ const SkeletonCard = () => {
     <Card
       sx={{
         width: "100%",
-        height: 400, // Increased height to accommodate image
+        height: 400,
         borderRadius: 3,
         overflow: "hidden",
         position: "relative",
@@ -127,19 +127,20 @@ const SkeletonCard = () => {
         }}
       />
 
-      {/* Skeleton for the image */}
       <Skeleton variant="rectangular" width="100%" height={120} />
 
       <CardContent
         sx={{
-          p: 3,
-          height: "calc(100% - 120px)",
+          p: 2.5,
+          flexGrow: 1,
           display: "flex",
           flexDirection: "column",
+          height: 295,
+          overflow: "hidden",
         }}
       >
         <Box
-          mb={1.5}
+          mb={1}
           sx={{
             display: "flex",
             justifyContent: "space-between",
@@ -175,7 +176,6 @@ const SkeletonCard = () => {
   );
 };
 
-// Opportunity Card Component
 const OpportunityCard = ({
   opportunity,
   hasPermission,
@@ -197,8 +197,6 @@ const OpportunityCard = ({
     });
   };
 
-  console.log(opportunity);
-
   const gradientColors = isDark
     ? "linear-gradient(90deg, #5f82e6 0%, #9f65ea 100%)"
     : "linear-gradient(90deg, #4776E6 0%, #8E54E9 100%)";
@@ -206,10 +204,6 @@ const OpportunityCard = ({
   const hoverGradientColors = isDark
     ? "linear-gradient(90deg, #6b8de8 0%, #a670eb 100%)"
     : "linear-gradient(90deg, #5a83e6 0%, #9864e9 100%)";
-
-  // Default placeholder image if opportunity.image_url is not provided
-  const imageUrl = `http:localhost:5000/uploads/${opportunity.image.filename}`;
-  console.log(imageUrl);
 
   return (
     <motion.div
@@ -220,8 +214,8 @@ const OpportunityCard = ({
     >
       <Card
         sx={{
-          width: 340, // Fixed width instead of 100%
-          height: 480, // Fixed height, slightly reduced from 500
+          width: 340,
+          height: 480,
           borderRadius: 3,
           overflow: "hidden",
           position: "relative",
@@ -262,18 +256,18 @@ const OpportunityCard = ({
 
         <CardMedia
           component="img"
-          height="180" // Fixed height in pixels instead of percentage
+          height="180"
           image={`http://localhost:5000/uploads/${opportunity.image.filename}`}
           alt={opportunity.title}
           sx={{
-            objectFit: "cover", // Changed from "fill" to "cover"
+            objectFit: "cover",
             width: "100%",
             transition: "all 0.3s ease",
             opacity: isHovered ? 0.9 : 0.85,
           }}
         />
 
-        {arrayPermissions[opportunity._id] && (   
+        {hasPermission && (
           <Box
             sx={{
               position: "absolute",
@@ -319,12 +313,12 @@ const OpportunityCard = ({
 
         <CardContent
           sx={{
-            p: 2.5, // Slightly reduced padding to fit content
+            p: 2.5,
             flexGrow: 1,
             display: "flex",
             flexDirection: "column",
-            height: 295, // Fixed content height (480 - 180 - 5)
-            overflow: "hidden", // Prevent content overflow
+            height: 295,
+            overflow: "hidden",
           }}
         >
           <Box
@@ -345,7 +339,7 @@ const OpportunityCard = ({
                   : theme.palette.text.primary,
                 flex: 1,
                 mr: 1,
-                fontSize: "1rem", // Slightly smaller font size
+                fontSize: "1rem",
                 lineHeight: 1.2,
                 maxHeight: "2.4rem",
                 overflow: "hidden",
@@ -364,7 +358,7 @@ const OpportunityCard = ({
             variant="body2"
             sx={{
               color: theme.palette.text.secondary,
-              height: "2.5rem", // Fixed height for description
+              height: "2.5rem",
               overflow: "hidden",
               mb: 1.5,
               display: "-webkit-box",
@@ -377,7 +371,7 @@ const OpportunityCard = ({
 
           <Box
             sx={{
-              mb: 0.75, // Reduced margin
+              mb: 0.75,
               display: "flex",
               alignItems: "center",
               color: theme.palette.text.secondary,
@@ -414,7 +408,7 @@ const OpportunityCard = ({
                 display: "flex",
                 flexWrap: "wrap",
                 gap: 0.8,
-                height: "2rem", // Fixed height for tags section
+                height: "2rem",
                 overflow: "hidden",
               }}
             >
@@ -459,7 +453,7 @@ const OpportunityCard = ({
             sx={{
               display: "flex",
               justifyContent: "space-between",
-              mt: "auto", // Pushes the button to the bottom
+              mt: "auto",
             }}
           >
             <Button
@@ -520,14 +514,23 @@ export default function OpportunitiesPage({
   ] = useState([]);
   const [selectedBoard, setSelectedBoard] = useState(boardId);
   const [selectedClub, setSelectedClub] = useState(null);
-  const [loading, setLoading] = useState(false); // Changed to false since we use showSkeleton state instead
-  const [isLoadingData, setIsLoadingData] = useState(true); // New state to track actual data loading
+  const [loading, setLoading] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(true);
   const [error, setError] = useState(null);
   const [showSkeleton, setShowSkeleton] = useState(true);
   const router = useRouter();
   const [arrayPermissions, setArrayPermissions] = useState({});
-
   const [canCreateOpportunities, setCanCreateOpportunities] = useState(false);
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   useEffect(() => {
     async function checkOpportunityCreationPermission() {
@@ -540,7 +543,12 @@ export default function OpportunitiesPage({
         return;
       }
       if (boardId) {
-        const hasOpportunityPermission = await hasPermission("opportunities", userData, boardId, null);
+        const hasOpportunityPermission = await hasPermission(
+          "opportunities",
+          userData,
+          boardId,
+          null
+        );
         setCanCreateOpportunities(hasOpportunityPermission);
         return;
       }
@@ -551,13 +559,11 @@ export default function OpportunitiesPage({
   }, [isSuperAdmin, userData, boardId]);
 
   useEffect(() => {
-    // Check permissions for all resources
     if (userData && filteredOpportunities.length > 0) {
       filteredOpportunities.forEach(async (element) => {
         const clubId = element.club_id?._id || element.club_id;
         const boardId = element.board_id?._id || element.board_id;
 
-        // If you must use the async version of hasPermission
         const hasAccess = await hasPermission(
           "opportunities",
           userData,
@@ -656,11 +662,12 @@ export default function OpportunitiesPage({
 
   useEffect(() => {
     const fetchOpportunities = async () => {
+      if (!authToken) return;
+
       try {
         setIsLoadingData(true);
         setShowSkeleton(true);
 
-        // Start a timer to ensure skeleton shows for at least 500ms
         const startTime = Date.now();
 
         let url = "http://localhost:5000/opportunities";
@@ -668,25 +675,25 @@ export default function OpportunitiesPage({
           url += `?board_id=${boardId}`;
         }
 
-        const response = await fetch(url);
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        });
         if (!response.ok) {
           throw new Error("Failed to fetch opportunities");
         }
 
         const data = await response.json();
         setAllOpportunities(data);
-        console.log(data);
 
-        // Calculate how much time has passed since fetch started
         const elapsedTime = Date.now() - startTime;
-        // If less than 500ms has passed, wait until 500ms is reached
         if (elapsedTime < 500) {
           setTimeout(() => {
             setIsLoadingData(false);
             setShowSkeleton(false);
           }, 500 - elapsedTime);
         } else {
-          // If more than 500ms has passed, update immediately
           setIsLoadingData(false);
           setShowSkeleton(false);
         }
@@ -699,7 +706,7 @@ export default function OpportunitiesPage({
     };
 
     fetchOpportunities();
-  }, [boardId]);
+  }, [boardId, authToken]);
 
   useEffect(() => {
     let result = allOpportunities;
@@ -729,6 +736,8 @@ export default function OpportunitiesPage({
   }, [searchQuery, allOpportunities, selectedKeywords]);
 
   const fetchOpportunityDetails = async (id) => {
+    if (!authToken) return;
+
     try {
       const response = await fetch(
         `http://localhost:5000/opportunities/${id}`,
@@ -736,6 +745,7 @@ export default function OpportunitiesPage({
           method: "GET",
           headers: {
             "Content-Type": "application/json",
+            'Authorization': `Bearer ${authToken}`,
           },
         }
       );
@@ -757,6 +767,8 @@ export default function OpportunitiesPage({
   };
 
   const handleDelete = async (opportunityId) => {
+    if (!authToken) return;
+
     if (window.confirm("Are you sure you want to delete this opportunity?")) {
       try {
         const response = await fetch(
@@ -765,6 +777,7 @@ export default function OpportunitiesPage({
             method: "DELETE",
             headers: {
               "Content-Type": "application/json",
+              'Authorization': `Bearer ${authToken}`,
             },
           }
         );
@@ -862,7 +875,6 @@ export default function OpportunitiesPage({
       <Box sx={{ p: 4, bgcolor: theme.palette.background.default }}>
         <Grid container spacing={3}>
           {showSkeleton ? (
-            // Show skeleton cards while loading
             Array(9)
               .fill()
               .map((_, index) => (

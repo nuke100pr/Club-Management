@@ -40,7 +40,7 @@ import PeopleIcon from "@mui/icons-material/People";
 import PersonRemoveIcon from "@mui/icons-material/PersonRemove";
 import SearchIcon from "@mui/icons-material/Search";
 import ForumCreateDialog from "../../components/forums/ForumCreateDialog";
-import { fetchUserData,hasPermission } from "@/utils/auth";
+import { fetchUserData, hasPermission, getAuthToken } from "@/utils/auth";
 
 const ForumMembersDialog = ({ open, onClose, forumId }) => {
   const [members, setMembers] = useState([]);
@@ -50,6 +50,16 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
   const [addingMember, setAddingMember] = useState(false);
   const [searchNewMember, setSearchNewMember] = useState("");
   const [searchExistingMember, setSearchExistingMember] = useState("");
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   useEffect(() => {
     if (open && forumId) {
@@ -59,16 +69,22 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
   }, [open, forumId]);
 
   const fetchMembers = async () => {
+    if (!authToken) return;
+    
     setLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:5000/forums2/forums/${forumId}/members`
+        `http://localhost:5000/forums2/forums/${forumId}/members`,
+        {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        }
       );
       if (!response.ok) {
         throw new Error("Failed to fetch forum members");
       }
       const data = await response.json();
-      // Update this line to handle the response structure correctly
       setMembers(data.data || data.members || data);
     } catch (error) {
       console.error("Error fetching forum members:", error);
@@ -78,8 +94,14 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
   };
 
   const fetchAllUsers = async () => {
+    if (!authToken) return;
+    
     try {
-      const response = await fetch(`http://localhost:5000/users/users/`);
+      const response = await fetch(`http://localhost:5000/users/users/`, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
+      });
       if (!response.ok) {
         throw new Error("Failed to fetch users");
       }
@@ -91,11 +113,16 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
   };
 
   const handleRemoveMember = async (userId) => {
+    if (!authToken) return;
+    
     try {
       const response = await fetch(
         `http://localhost:5000/forums2/forums/${forumId}/members/${userId}`,
         {
           method: "DELETE",
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
         }
       );
 
@@ -117,6 +144,7 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
   };
 
   const handleAddMember = async () => {
+    if (!authToken) return;
     if (selectedUsers.length === 0) return;
 
     setAddingMember(true);
@@ -128,6 +156,7 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            'Authorization': `Bearer ${authToken}`,
           },
           body: JSON.stringify({
             user_id: userId,
@@ -163,13 +192,10 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
 
   const availableUsers = (Array.isArray(allUsers) ? allUsers : []).filter(
     (user) => {
-      // Ensure user exists and has _id
       if (!user?._id) return false;
 
       return !(Array.isArray(members) ? members : []).some((member) => {
-        // Safely get member's user ID from either structure
         const memberUserId = member?.user_id?._id || member?._id;
-        // Compare only if both IDs exist
         return memberUserId && user._id && memberUserId === user._id;
       });
     }
@@ -178,12 +204,9 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
   const filteredAvailableUsers = (
     Array.isArray(availableUsers) ? availableUsers : []
   ).filter((user) => {
-    // Return all if empty search
     if (!searchNewMember?.trim()) return true;
 
     const searchTerm = searchNewMember.toLowerCase().trim();
-
-    // Safely check name and email
     const userName = user?.name?.toString().toLowerCase() || "";
     const userEmail = user?.email?.toString().toLowerCase() || "";
 
@@ -192,17 +215,12 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
 
   const filteredMembers = (Array.isArray(members) ? members : []).filter(
     (member) => {
-      // Return all if empty search
       if (!searchExistingMember?.trim()) return true;
 
       const searchTerm = searchExistingMember.toLowerCase().trim();
-
-      // Safely get name from either structure
       const memberName = (member?.name || member?.user_id?.name || "")
         .toString()
         .toLowerCase();
-
-      // Safely get email from either structure
       const memberEmail = (member?.email || member?.user_id?.email || "")
         .toString()
         .toLowerCase();
@@ -712,7 +730,6 @@ const ForumCard = ({
   onEditForum,
   hasPermission,
 }) => {
-
   console.log(hasPermission)
   const truncateText = (text, maxLength = 100) => {
     if (text.length <= maxLength) return text;
@@ -729,6 +746,9 @@ const ForumCard = ({
         `http://localhost:5000/forums2/forums/${forumId}`,
         {
           method: "DELETE",
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
         }
       );
 
@@ -955,8 +975,18 @@ const ForumList = ({ boardId }) => {
     useState([]);
   const [loading, setLoading] = useState(true);
   const [minLoadingEndTime, setMinLoadingEndTime] = useState(0);
+  const [authToken, setAuthToken] = useState(null);
   const router = useRouter();
   
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
+
   const sampleBoards = {
     "65f1a2b3c4d5e6f7890pqrst": "Arts & Culture",
     board2: "Technology & Innovation",
@@ -969,15 +999,6 @@ const ForumList = ({ boardId }) => {
   };
   const [arrayPermissions, setArrayPermissions] = useState({});
   const [canCreateForums, setCanCreateForums] = useState(false);
-
-  // const filteredForums = forums.filter(
-  //   (forum) =>
-  //     forum.title.toLowerCase().includes(search.toLowerCase()) &&
-  //     (boardId ? forum.board_id === boardId : true) &&
-  //     (!selectedBoard || forum.board_id === selectedBoard) &&
-  //     (!selectedClub || forum.club_id === selectedClub) &&
-  //     (!privacyFilter || forum.public_or_private === privacyFilter)
-  // );
 
   const filteredForums = useMemo(() => {
     return forums.filter(
@@ -1012,13 +1033,11 @@ const ForumList = ({ boardId }) => {
   }, [isSuperAdmin, userData, boardId]);
 
   useEffect(() => {
-    // Check permissions for all resources
     if (userData && filteredForums.length > 0) {
       filteredForums.forEach(async (element) => {
         const clubId = element.club_id?._id || element.club_id;
         const boardId = element.board_id?._id || element.board_id;
 
-        // If you must use the async version of hasPermission
         const hasAccess = await hasPermission(
           "opportunities",
           userData,
@@ -1033,7 +1052,6 @@ const ForumList = ({ boardId }) => {
       });
     }
   }, [userData, filteredForums]);
-
 
   useEffect(() => {
     async function loadUserData() {
@@ -1069,7 +1087,12 @@ const ForumList = ({ boardId }) => {
   const checkMembership = async (forumId, userId) => {
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/forums2/forums/${forumId}/membership/${userId}`
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/forums2/forums/${forumId}/membership/${userId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        }
       );
       if (!response.ok) {
         throw new Error("Failed to check membership");
@@ -1085,10 +1108,17 @@ const ForumList = ({ boardId }) => {
 
   useEffect(() => {
     const fetchForums = async () => {
+      if (!authToken) return;
+      
       setLoading(true);
       try {
         const response = await fetch(
-          "http://localhost:5000/forums2/api/forums"
+          "http://localhost:5000/forums2/api/forums",
+          {
+            headers: {
+              'Authorization': `Bearer ${authToken}`,
+            }
+          }
         );
         if (!response.ok) {
           throw new Error("Failed to fetch forums");
@@ -1122,7 +1152,7 @@ const ForumList = ({ boardId }) => {
     };
 
     fetchForums();
-  }, []);
+  }, [authToken]);
 
   const hasForumPermission = (forum) => {
     if (isSuperAdmin) return true;
@@ -1161,37 +1191,26 @@ const ForumList = ({ boardId }) => {
   };
 
   const handleViewForum = async (forumId, isPrivate) => {
-    // Only check membership if userId exists
+    if (!authToken) return;
+    
     if (userId) {
       const membershipStatus = await checkMembership(forumId, userId);
 
       if (membershipStatus?.data?.isMember) {
-        // Member can access any forumc
-        console.log("kvndkv");
         router.push(`/current_forum/${forumId}`);
       } else if (isPrivate) {
-        // Private forum and not a member - show error message
-        // You could use a state variable to display a modal/alert here
         alert("This is a private forum. You need to be a member to access it.");
       } else {
-        // Public forum and not a member - redirect to a page with join option
         router.push(`/forum_join/${forumId}`);
       }
     } else {
-      // Handle not logged in case
       alert("Please log in to view forums");
-      // Optionally redirect to login
-      // router.push('/login');
     }
   };
 
   const handleViewMembers = (forumId) => {
     setSelectedForumId(forumId);
     setMembersDialogOpen(true);
-  };
-
-  const handleCloseMembersDialog = () => {
-    setMembersDialogOpen(false);
   };
 
   const handleCreateForumToggle = () => {
@@ -1221,6 +1240,8 @@ const ForumList = ({ boardId }) => {
   };
 
   const handleCreateForum = async (newForum) => {
+    if (!authToken) return;
+    
     try {
       if (editForumData) {
         const response = await fetch(
@@ -1229,6 +1250,7 @@ const ForumList = ({ boardId }) => {
             method: "PUT",
             headers: {
               "Content-Type": "application/json",
+              'Authorization': `Bearer ${authToken}`,
             },
             body: JSON.stringify(newForum),
           }
@@ -1249,6 +1271,7 @@ const ForumList = ({ boardId }) => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            'Authorization': `Bearer ${authToken}`,
           },
           body: JSON.stringify(newForum),
         });
@@ -1284,8 +1307,6 @@ const ForumList = ({ boardId }) => {
     setCreateForumOpen(false);
     setEditForumData(null);
   };
-
-
 
   const defaultContext = getDefaultClubOrBoardId();
 

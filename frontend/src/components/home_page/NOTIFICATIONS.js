@@ -14,7 +14,7 @@ import {
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { fetchUserData } from "@/utils/auth";
+import { fetchUserData, getAuthToken } from "@/utils/auth";
 
 const NotificationCard = ({ notification, onDelete }) => {
   const [slideOut, setSlideOut] = useState(false);
@@ -124,10 +124,15 @@ const Notifications = () => {
   const [userId, setUserId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [authToken, setAuthToken] = useState(null);
 
   useEffect(() => {
     const loadUserData = async () => {
       try {
+        const token = await getAuthToken();
+        setAuthToken(token);
+        if (!token) return;
+
         const userData = await fetchUserData();
         setUserId(userData.userId);
         if (userData.userId) {
@@ -145,9 +150,15 @@ const Notifications = () => {
   }, []);
 
   const fetchNotifications = async (userId) => {
+    if (!authToken) return;
+    
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:5000/baat/user/${userId}`);
+      const response = await fetch(`http://localhost:5000/baat/user/${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
+      });
       if (!response.ok) throw new Error("Failed to fetch notifications");
       const data = await response.json();
       setNotifications(data.data || []);
@@ -168,10 +179,14 @@ const Notifications = () => {
   };
 
   const deleteNotification = async (id) => {
+    if (!authToken) return;
+    
     try {
-
       const response = await fetch(`http://localhost:5000/baat/${id}`, {
         method: "DELETE",
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
       });
       if (!response.ok) throw new Error("Failed to delete notification");
       setNotifications(notifications.filter((item) => item._id !== id));

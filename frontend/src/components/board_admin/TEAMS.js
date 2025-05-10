@@ -16,17 +16,34 @@ import {
   Box,
 } from '@mui/material';
 import { green, blue, grey, indigo } from '@mui/material/colors';
+import { getAuthToken } from "@/utils/auth";
 
 export default function BoardPrivileges({ boardId }) {
   const [privileges, setPrivileges] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   useEffect(() => {
     const fetchPrivileges = async () => {
+      if (!authToken) return;
+
       try {
         setLoading(true);
-        const response = await fetch(`http://localhost:5000/misc/misc/board/${boardId}`);
+        const response = await fetch(`http://localhost:5000/misc/misc/board/${boardId}`, {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        });
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -48,7 +65,7 @@ export default function BoardPrivileges({ boardId }) {
     if (boardId) {
       fetchPrivileges();
     }
-  }, [boardId]);
+  }, [boardId, authToken]);
 
   if (loading) {
     return (

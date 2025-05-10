@@ -29,7 +29,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
-import { fetchUserData, hasPermission } from "@/utils/auth";
+import { fetchUserData, hasPermission, getAuthToken } from "@/utils/auth";
 
 const LeftDrawer = ({ open, onClose }) => {
   const theme = useTheme();
@@ -39,10 +39,27 @@ const LeftDrawer = ({ open, onClose }) => {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [isBoardAdmin, setIsBoardAdmin] = useState(false);
   const [isClubAdmin, setIsClubAdmin] = useState(false);
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   useEffect(() => {
     async function loadUserData() {
-      const result = await fetchUserData();
+      if (!authToken) {
+        return;
+      }
+      const result = await fetchUserData({
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
+      });
 
       if (result) {
         setUserData(result.userData);
@@ -53,7 +70,7 @@ const LeftDrawer = ({ open, onClose }) => {
       }
     }
     loadUserData();
-  }, []);
+  }, [authToken]);
 
   const handleLogout = () => {
     // Remove the auth_token cookie
@@ -238,3 +255,4 @@ const LeftDrawer = ({ open, onClose }) => {
 };
 
 export default LeftDrawer;
+

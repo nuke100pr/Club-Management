@@ -6,7 +6,8 @@ import {
   Chip,
   useMediaQuery,
   useTheme,
-  CircularProgress
+  CircularProgress,
+  Button
 } from "@mui/material";
 import React, { useState, useEffect } from "react";
 import {
@@ -18,19 +19,36 @@ import {
   EventNote as EventNoteIcon,
 } from "@mui/icons-material";
 import { motion } from "framer-motion";
+import { getAuthToken } from "@/utils/auth";
 
 const Dashboard = () => {
   const [statsData, setStatsData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [authToken, setAuthToken] = useState(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const darkMode = theme.palette.mode === 'dark';
 
   useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
+
+  useEffect(() => {
     const fetchStats = async () => {
+      if (!authToken) return;
+      
       try {
-        const response = await fetch("http://localhost:5000/stats");
+        const response = await fetch("http://localhost:5000/stats", {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        });
         if (!response.ok) {
           throw new Error("Network response was not ok");
         }
@@ -44,8 +62,10 @@ const Dashboard = () => {
       }
     };
 
-    fetchStats();
-  }, []);
+    if (authToken) {
+      fetchStats();
+    }
+  }, [authToken]);
 
   const getStats = () => {
     if (!statsData) return [];

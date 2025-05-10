@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { fetchUserData } from "@/utils/auth";
+import { fetchUserData, getAuthToken } from "@/utils/auth";
 import {
   Box,
   Typography,
@@ -57,14 +57,29 @@ export default function SuperAdminManagement() {
   const isDarkMode = theme.palette.mode === "dark";
   const [searchQuery, setSearchQuery] = useState("");
   const [selectOpen, setSelectOpen] = useState(false);
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+    fetchAuthToken();
+  }, []);
 
   useEffect(() => {
     const loadData = async () => {
+      if (!authToken) return;
+      
       try {
         const userData = await fetchUserData();
         setCurrentUser(userData);
 
-        const response = await fetch("http://localhost:5000/users/users");
+        const response = await fetch("http://localhost:5000/users/users", {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        });
         const data = await response.json();
         setUsers(data);
 
@@ -83,8 +98,10 @@ export default function SuperAdminManagement() {
       }
     };
 
-    loadData();
-  }, []);
+    if (authToken) {
+      loadData();
+    }
+  }, [authToken]);
 
   const handleOpenDialog = () => {
     setFormData({ userId: "" });
@@ -116,6 +133,8 @@ export default function SuperAdminManagement() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!authToken) return;
+    
     try {
       const requestBody = {
         userId: formData.userId,
@@ -127,6 +146,7 @@ export default function SuperAdminManagement() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            'Authorization': `Bearer ${authToken}`,
           },
           body: JSON.stringify(requestBody),
         }
@@ -164,11 +184,16 @@ export default function SuperAdminManagement() {
   };
 
   const handleDeleteSuperAdmin = async () => {
+    if (!authToken) return;
+    
     try {
       const response = await fetch(
         `http://localhost:5000/users/remove-admin/${selectedUser._id}`,
         {
           method: "PATCH",
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
         }
       );
 
@@ -214,11 +239,9 @@ export default function SuperAdminManagement() {
   };
 
   const handleSearchKeyDown = (e) => {
-    // Prevent dropdown from closing when pressing keys in search field
     e.stopPropagation();
   };
 
-  // Handle select open/close state
   const handleSelectOpen = () => {
     setSelectOpen(true);
   };
@@ -234,7 +257,6 @@ export default function SuperAdminManagement() {
       user.email_id.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Custom gradient text component
   const GradientText = ({ children, variant }) => (
     <Typography
       variant={variant || "h5"}
@@ -252,7 +274,6 @@ export default function SuperAdminManagement() {
     </Typography>
   );
 
-  // Text colors based on theme
   const textColors = {
     primary: isDarkMode ? "#f0f4ff" : "#2A3B4F",
     secondary: isDarkMode ? "#c5d1ff" : "#607080",
@@ -561,7 +582,6 @@ export default function SuperAdminManagement() {
                     },
                   }}
                 >
-                  {/* Use a custom rendered element for the search bar */}
                   <Box
                     sx={{
                       position: "sticky",
@@ -572,7 +592,6 @@ export default function SuperAdminManagement() {
                       borderBottom: `1px solid ${isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)"}`,
                     }}
                     onClick={(e) => {
-                      // This is critical - prevent the click from closing the dropdown
                       e.stopPropagation();
                       e.preventDefault();
                     }}
@@ -620,7 +639,6 @@ export default function SuperAdminManagement() {
                     />
                   </Box>
                   
-                  {/* User options */}
                   {filteredUsers.length > 0 ? (
                     filteredUsers.map((user) => (
                       <MenuItem key={user._id} value={user._id}>

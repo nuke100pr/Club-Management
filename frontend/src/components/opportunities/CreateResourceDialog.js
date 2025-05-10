@@ -30,6 +30,7 @@ import {
 } from "@mui/icons-material";
 import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
+import { getAuthToken } from "@/utils/auth";
 
 const CreateResourceDialog = ({ 
   open, 
@@ -45,6 +46,7 @@ const CreateResourceDialog = ({
   });
   const [submitError, setSubmitError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [authToken, setAuthToken] = useState(null);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -75,6 +77,15 @@ const CreateResourceDialog = ({
   const [originalImage, setOriginalImage] = useState(null);
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   useEffect(() => {
     if (initialData) {
@@ -274,6 +285,10 @@ const CreateResourceDialog = ({
   };
 
   const handleSubmit = async () => {
+    if (!authToken) {
+      return;
+    }
+
     const urlPattern = /^https?:\/\/.+/;
     const isValidUrl = urlPattern.test(formData.external_link);
 
@@ -323,6 +338,9 @@ const CreateResourceDialog = ({
       const response = await fetch(url, {
         method,
         body: formDataToSend,
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
       });
 
       if (!response.ok) {

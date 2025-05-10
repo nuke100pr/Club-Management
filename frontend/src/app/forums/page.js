@@ -42,7 +42,7 @@ import PersonRemoveIcon from "@mui/icons-material/PersonRemove";
 import SearchAndFilter from "../../components/forums/SearchAndFilter";
 import ForumCreateDialog from "../../components/forums/ForumCreateDialog";
 import Navbar from "../../components/Navbar";
-import { fetchUserData,hasPermission } from "@/utils/auth";
+import { fetchUserData,hasPermission, getAuthToken } from "@/utils/auth";
 
 // ForumMembersDialog component with theme support
 const ForumMembersDialog = ({ open, onClose, forumId }) => {
@@ -54,6 +54,16 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
   const [addingMember, setAddingMember] = useState(false);
   const [searchNewMember, setSearchNewMember] = useState("");
   const [searchExistingMember, setSearchExistingMember] = useState("");
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   useEffect(() => {
     if (open && forumId) {
@@ -63,10 +73,16 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
   }, [open, forumId]);
 
   const fetchMembers = async () => {
+    if(!authToken) return;
     setLoading(true);
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/forums2/forums/${forumId}/members`
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/forums2/forums/${forumId}/members`,
+        {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        }
       );
       if (!response.ok) {
         throw new Error("Failed to fetch forum members");
@@ -82,9 +98,15 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
   };
 
   const fetchAllUsers = async () => {
+    if(!authToken) return;
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/users/users/`
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/users/users/`,
+        {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        }
       );
       if (!response.ok) {
         throw new Error("Failed to fetch users");
@@ -97,11 +119,15 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
   };
 
   const handleRemoveMember = async (userId) => {
+    if(!authToken) return;
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/forums2/forums/${forumId}/members/${userId}`,
         {
           method: "DELETE",
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
         }
       );
 
@@ -122,6 +148,7 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
   };
 
   const handleAddMember = async () => {
+    if(!authToken) return;
     if (selectedUsers.length === 0) return;
 
     setAddingMember(true);
@@ -135,6 +162,7 @@ const ForumMembersDialog = ({ open, onClose, forumId }) => {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
+              'Authorization': `Bearer ${authToken}`,
             },
             body: JSON.stringify({
               user_id: userId,
@@ -488,11 +516,16 @@ const ForumCard = ({
   };
 
   const handleDelete = async (forumId) => {
+    const authToken = await getAuthToken();
+    if(!authToken) return;
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/forums2/forums/${forumId}`,
         {
           method: "DELETE",
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
         }
       );
 
@@ -751,12 +784,28 @@ const ForumList = ({ boards: propBoards = {}, clubs: propClubs = {} }) => {
   const [userBoardsWithForumPermission, setUserBoardsWithForumPermission] =
     useState([]);
   const [arrayPermissions, setArrayPermissions] = useState({});
+  const [authToken, setAuthToken] = useState(null);
   const router = useRouter();
 
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
+
   const checkMembership = async (forumId, userId) => {
+    if(!authToken) return { isMember: false };
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/forums2/forums/${forumId}/membership/${userId}`
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/forums2/forums/${forumId}/membership/${userId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        }
       );
       if (!response.ok) {
         throw new Error("Failed to check membership");
@@ -829,9 +878,15 @@ const ForumList = ({ boards: propBoards = {}, clubs: propClubs = {} }) => {
 
   useEffect(() => {
     const fetchForums = async () => {
+      if(!authToken) return;
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/forums2/api/forums`
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/forums2/api/forums`,
+          {
+            headers: {
+              'Authorization': `Bearer ${authToken}`,
+            }
+          }
         );
         if (!response.ok) {
           throw new Error("Failed to fetch forums");
@@ -845,7 +900,7 @@ const ForumList = ({ boards: propBoards = {}, clubs: propClubs = {} }) => {
     };
 
     fetchForums();
-  }, []);
+  }, [authToken]);
 
   const handleViewForum = async (forumId, isPrivate) => {
     // Only check membership if userId exists
@@ -900,6 +955,7 @@ const ForumList = ({ boards: propBoards = {}, clubs: propClubs = {} }) => {
   };
 
   const handleCreateForum = async (newForum) => {
+    if(!authToken) return;
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/forums2/forums`,
@@ -907,6 +963,7 @@ const ForumList = ({ boards: propBoards = {}, clubs: propClubs = {} }) => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            'Authorization': `Bearer ${authToken}`,
           },
           body: JSON.stringify(newForum),
         }

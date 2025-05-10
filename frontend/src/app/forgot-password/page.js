@@ -16,6 +16,7 @@ import {
   RefreshCw,
   AlertCircle
 } from "lucide-react";
+import { getAuthToken } from "@/utils/auth";
 
 export default function ForgotPasswordPage() {
   const [step, setStep] = useState(1); // 1: email, 2: OTP, 3: new password
@@ -34,8 +35,18 @@ export default function ForgotPasswordPage() {
   const [canResend, setCanResend] = useState(true);
   const [resendCooldown, setResendCooldown] = useState(0); // 30 seconds cooldown
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [authToken, setAuthToken] = useState(null);
   const otpInputRefs = useRef([]);
   const images = [img6, img7, img8];
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   // Image carousel effect
   useEffect(() => {
@@ -109,6 +120,8 @@ export default function ForgotPasswordPage() {
   };
 
   const sendOTPRequest = async () => {
+    if (!authToken) return;
+    
     setLoading(true);
     setMessage({ type: "", text: "" });
 
@@ -117,6 +130,7 @@ export default function ForgotPasswordPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          'Authorization': `Bearer ${authToken}`,
         },
         body: JSON.stringify({
           email: formData.email,
@@ -165,13 +179,15 @@ export default function ForgotPasswordPage() {
   };
 
   const handleResendOTP = async () => {
-    if (!canResend) return;
+    if (!canResend || !authToken) return;
     
     await sendOTPRequest();
   };
 
   const handleVerifyOTP = async (e) => {
     e.preventDefault();
+
+    if (!authToken) return;
 
     const otp = formData.otp.join('');
     if (otp.length !== 6) {
@@ -192,6 +208,7 @@ export default function ForgotPasswordPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          'Authorization': `Bearer ${authToken}`,
         },
         body: JSON.stringify({
           email: formData.email,
@@ -236,6 +253,8 @@ export default function ForgotPasswordPage() {
   const handleResetPassword = async (e) => {
     e.preventDefault();
 
+    if (!authToken) return;
+
     if (!formData.newPassword || !formData.confirmPassword) {
       setMessage({ type: "error", text: "Both password fields are required" });
       return;
@@ -254,6 +273,7 @@ export default function ForgotPasswordPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          'Authorization': `Bearer ${authToken}`,
         },
         body: JSON.stringify({
           email: formData.email,

@@ -132,15 +132,10 @@ const EventModal = ({ open, onClose, selectedDate, events }) => {
 
 async function filterEventsByBoardId(eventsData, targetBoardId) {
   try {
-    // First check if eventsData has the expected structure
     if (!eventsData || !eventsData.data || !Array.isArray(eventsData.data)) {
       return [];
     }
 
-    // Filter events where:
-    // 1. board_id exists and matches the target ID (direct board assignment)
-    // OR
-    // 2. club_id exists and its board_id matches the target ID (club's board assignment)
     const filtered = eventsData.data.filter((event) => {
       const hasDirectBoardMatch =
         event.board_id && event.board_id._id === targetBoardId;
@@ -148,7 +143,6 @@ async function filterEventsByBoardId(eventsData, targetBoardId) {
       return hasDirectBoardMatch;
     });
 
-    // Return the filtered data in the same structure as the input
     return {
       success: true,
       count: filtered.length,
@@ -164,12 +158,10 @@ async function filterEventsByBoardId(eventsData, targetBoardId) {
   }
 }
 
-// Main Calendar Component
 const CalendarView = ({ boardId }) => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -178,22 +170,35 @@ const CalendarView = ({ boardId }) => {
   const [selectedDay, setSelectedDay] = useState(new Date().getDate());
   const [search, setSearch] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
-
-  // Filter states
   const [selectedClub, setSelectedClub] = useState(null);
   const [selectedBoard, setSelectedBoard] = useState(null);
   const [eventType, setEventType] = useState(null);
+  const [authToken, setAuthToken] = useState(null);
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const isSmall = useMediaQuery(theme.breakpoints.down("sm"));
 
-  // Fetch events from API
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
+
   useEffect(() => {
     const fetchEvents = async () => {
+      if (!authToken) return;
+      
       setLoading(true);
       try {
-        const response = await fetch("http://localhost:5000/events");
+        const response = await fetch("http://localhost:5000/events", {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        });
 
         const result = await response.json();
         console.log(result);
@@ -216,7 +221,7 @@ const CalendarView = ({ boardId }) => {
     };
 
     fetchEvents();
-  }, []);
+  }, [authToken]);
 
   const months = [
     "January",
@@ -236,7 +241,6 @@ const CalendarView = ({ boardId }) => {
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
   const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
 
-  // Calculate actual weeks needed for the month to avoid unnecessary empty rows
   const totalDaysDisplayed = daysInMonth + firstDayOfMonth;
   const weeksNeeded = Math.ceil(totalDaysDisplayed / 7);
 
@@ -246,17 +250,14 @@ const CalendarView = ({ boardId }) => {
     return day;
   });
 
-  // Create array of days for the week view
   const createWeekDays = () => {
     const now = new Date(currentYear, currentMonth, selectedDay);
-    const day = now.getDay(); // 0-6, Sunday is 0
+    const day = now.getDay();
     const weekDays = [];
 
-    // Calculate the start of the week (Sunday)
     const startDate = new Date(now);
     startDate.setDate(now.getDate() - day);
 
-    // Create 7 days starting from Sunday
     for (let i = 0; i < 7; i++) {
       const currentDate = new Date(startDate);
       currentDate.setDate(startDate.getDate() + i);
@@ -284,7 +285,6 @@ const CalendarView = ({ boardId }) => {
     setEventType(null);
   };
 
-  // Transform API events to a format we can use with our calendar
   const transformEvents = (events) => {
     return events.map((event) => {
       const date = new Date(event.timestamp);
@@ -303,7 +303,6 @@ const CalendarView = ({ boardId }) => {
 
   const transformedEvents = transformEvents(events);
 
-  // Filter events based on selected criteria
   const filteredEvents = transformedEvents.filter(
     (event) =>
       (event.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -314,7 +313,6 @@ const CalendarView = ({ boardId }) => {
       (!eventType || event.event_type_id === eventType)
   );
 
-  // Get events for a specific day with filters applied
   const getEventsForDay = (day, month = currentMonth, year = currentYear) => {
     return filteredEvents.filter(
       (event) =>
@@ -332,10 +330,8 @@ const CalendarView = ({ boardId }) => {
       });
 
       if (currentView === "day") {
-        // For day view, update the selected day but don't open modal
         setSelectedDay(day);
       } else {
-        // For other views, open the modal with events
         setIsModalOpen(true);
       }
     }
@@ -350,13 +346,11 @@ const CalendarView = ({ boardId }) => {
         setCurrentMonth(currentMonth - 1);
       }
     } else if (currentView === "week") {
-      // Move back one week
       const newDate = new Date(currentYear, currentMonth, selectedDay - 7);
       setSelectedDay(newDate.getDate());
       setCurrentMonth(newDate.getMonth());
       setCurrentYear(newDate.getFullYear());
     } else if (currentView === "day") {
-      // Move back one day
       const newDate = new Date(currentYear, currentMonth, selectedDay - 1);
       setSelectedDay(newDate.getDate());
       setCurrentMonth(newDate.getMonth());
@@ -373,13 +367,11 @@ const CalendarView = ({ boardId }) => {
         setCurrentMonth(currentMonth + 1);
       }
     } else if (currentView === "week") {
-      // Move forward one week
       const newDate = new Date(currentYear, currentMonth, selectedDay + 7);
       setSelectedDay(newDate.getDate());
       setCurrentMonth(newDate.getMonth());
       setCurrentYear(newDate.getFullYear());
     } else if (currentView === "day") {
-      // Move forward one day
       const newDate = new Date(currentYear, currentMonth, selectedDay + 1);
       setSelectedDay(newDate.getDate());
       setCurrentMonth(newDate.getMonth());
@@ -393,7 +385,6 @@ const CalendarView = ({ boardId }) => {
     }
   };
 
-  // Get upcoming events
   const getUpcomingEvents = () => {
     const today = new Date();
 
@@ -421,19 +412,16 @@ const CalendarView = ({ boardId }) => {
     }
   };
 
-  // Calculate appropriate cell height based on available space and number of weeks
   const calculateDayCellHeight = () => {
     if (currentView === "day") return "auto";
     if (isSmall) return 60;
     if (isMobile) return 70;
 
-    // Adjust height based on weeks needed
     return weeksNeeded <= 5 ? 100 : 80;
   };
 
   const dayCellHeight = calculateDayCellHeight();
 
-  // Get title based on current view
   const getViewTitle = () => {
     if (currentView === "month") {
       return `${months[currentMonth]} ${currentYear}`;
@@ -726,7 +714,6 @@ const CalendarView = ({ boardId }) => {
     }
   };
 
-  // Extract unique clubs and boards for filters
   const clubs = [...new Set(events.map((event) => event.club_id))];
   const boards = [...new Set(events.map((event) => event.board_id))];
   const eventTypes = [...new Set(events.map((event) => event.event_type_id))];
@@ -737,12 +724,11 @@ const CalendarView = ({ boardId }) => {
         height: "100vh",
         display: "flex",
         flexDirection: "column",
-        overflow: "hidden", // Prevent outer scrollbar
+        overflow: "hidden",
       }}
     >
       <Box sx={{ flexGrow: 1 }}>
         <Container maxWidth="xl" sx={{ py: 2, height: "100%" }}>
-          {/* Search Bar with Paper styling */}
           <Paper
             sx={{
               p: 2,
@@ -770,7 +756,6 @@ const CalendarView = ({ boardId }) => {
             />
           </Paper>
 
-          {/* Filter dialog */}
           <Dialog open={filterOpen} onClose={handleFilterToggle}>
             <DialogTitle>Filters</DialogTitle>
             <DialogContent>

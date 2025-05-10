@@ -40,6 +40,7 @@ import {
   Search as SearchIcon,
   Launch
 } from "@mui/icons-material";
+import {getAuthToken } from "@/utils/auth";
 
 // Custom styled components using theme
 const GradientButton = styled(Button)(({ theme }) => ({
@@ -344,6 +345,7 @@ const CalendarView = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [authToken, setAuthToken] = useState(null);
 
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
@@ -363,6 +365,15 @@ const CalendarView = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const isSmall = useMediaQuery(theme.breakpoints.down("sm"));
 
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
+
   // Today's date for highlighting
   const today = new Date();
   const isToday = (day) => {
@@ -376,10 +387,17 @@ const CalendarView = () => {
   // Fetch events from API
   useEffect(() => {
     const fetchEvents = async () => {
+      if (!authToken) return;
+      
       setLoading(true);
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/events`
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/events`,
+          {
+            headers: {
+              'Authorization': `Bearer ${authToken}`,
+            }
+          }
         );
         const result = await response.json();
 
@@ -397,7 +415,7 @@ const CalendarView = () => {
     };
 
     fetchEvents();
-  }, []);
+  }, [authToken]);
 
   const months = [
     "January",
@@ -758,650 +776,646 @@ const CalendarView = () => {
               sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}
             >
               <Box
-                sx={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                }}
+                sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}
+            >
+              <Typography
+                variant="caption"
+                color={theme.palette.text.secondary}
+                fontWeight={500}
               >
-                <Typography
-                  variant="caption"
-                  color={theme.palette.text.secondary}
-                  fontWeight={500}
-                >
-                  {["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"][index]}
-                </Typography>
-                <Typography
-                  variant="h6"
-                  fontWeight={600}
-                  color={
+                {["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"][index]}
+              </Typography>
+              <Typography
+                variant="h6"
+                fontWeight={600}
+                color={
+                  dayInfo.day === today.getDate() &&
+                  dayInfo.month === today.getMonth() &&
+                  dayInfo.year === today.getFullYear()
+                    ? theme.palette.primary.main
+                    : dayInfo.isCurrentMonth
+                    ? theme.palette.text.primary
+                    : theme.palette.text.secondary
+                }
+                sx={{
+                  mt: 0.5,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 32,
+                  height: 32,
+                  borderRadius: "50%",
+                  background:
                     dayInfo.day === today.getDate() &&
                     dayInfo.month === today.getMonth() &&
                     dayInfo.year === today.getFullYear()
-                      ? theme.palette.primary.main
-                      : dayInfo.isCurrentMonth
-                      ? theme.palette.text.primary
-                      : theme.palette.text.secondary
-                  }
-                  sx={{
-                    mt: 0.5,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: 32,
-                    height: 32,
-                    borderRadius: "50%",
-                    background:
-                      dayInfo.day === today.getDate() &&
-                      dayInfo.month === today.getMonth() &&
-                      dayInfo.year === today.getFullYear()
-                        ? alpha(theme.palette.primary.main, 0.1)
-                        : "transparent",
-                  }}
-                >
-                  {dayInfo.day}
-                </Typography>
-              </Box>
-            </Box>
-            <Divider sx={{ my: 1 }} />
-            <Stack spacing={1} sx={{ mt: 2 }}>
-              {getEventsForDay(dayInfo.day, dayInfo.month, dayInfo.year)
-                .slice(0, 3)
-                .map((event) => (
-                  <Box
-                    key={event._id}
-                    sx={{
-                      p: 1,
-                      fontSize: "0.75rem",
-                      borderRadius: 2,
-                      background: alpha(theme.palette.primary.main, 0.05),
-                      color: theme.palette.primary.main,
-                      borderLeft: `3px solid ${theme.palette.primary.main}`,
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      fontWeight: 500,
-                    }}
-                  >
-                    {event.name}
-                  </Box>
-                ))}
-              {getEventsForDay(dayInfo.day, dayInfo.month, dayInfo.year)
-                .length > 3 && (
-                <Typography
-                  variant="caption"
-                  color={theme.palette.text.secondary}
-                  sx={{
-                    textAlign: "center",
-                    display: "block",
-                    background: alpha(theme.palette.primary.main, 0.05),
-                    p: 0.5,
-                    borderRadius: 1,
-                  }}
-                >
-                  +{" "}
-                  {getEventsForDay(dayInfo.day, dayInfo.month, dayInfo.year)
-                    .length - 3}{" "}
-                  more
-                </Typography>
-              )}
-            </Stack>
-          </Paper>
-        </Grid>
-      ))}
-    </Grid>
-  );
-
-  const renderDayView = () => {
-    const dayEvents = getEventsForDay(selectedDay);
-
-    return (
-      <Box sx={{ p: { xs: 2, md: 3 } }}>
-        <Paper
-          sx={{
-            p: 3,
-            borderRadius: 2,
-            mb: 3,
-            background: theme.palette.background.paper,
-            borderLeft: `4px solid ${theme.palette.primary.main}`,
-            boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.05)}`,
-          }}
-        >
-          <Typography
-            variant="h5"
-            sx={{
-              fontWeight: 600,
-              color: theme.palette.text.primary,
-              mb: 1,
-            }}
-          >
-            {months[currentMonth]} {selectedDay}, {currentYear}
-          </Typography>
-          <Typography variant="body2" color={theme.palette.text.secondary}>
-            {dayEvents.length} {dayEvents.length === 1 ? "event" : "events"}{" "}
-            scheduled
-          </Typography>
-        </Paper>
-
-        {dayEvents.length > 0 ? (
-          <Stack spacing={2}>
-            {dayEvents.map((event) => (
-              <Paper
-                key={event._id}
-                elevation={0}
-                sx={{
-                  p: 3,
-                  borderRadius: 2,
-                  background: theme.palette.background.paper,
-                  boxShadow: theme.shadows[1],
-                  borderLeft: `4px solid ${theme.palette.primary.main}`,
-                  transition: "all 0.2s ease",
-                  "&:hover": {
-                    boxShadow: `0 4px 12px ${alpha(
-                      theme.palette.primary.main,
-                      0.1
-                    )}`,
-                  },
+                      ? alpha(theme.palette.primary.main, 0.1)
+                      : "transparent",
                 }}
               >
+                {dayInfo.day}
+              </Typography>
+            </Box>
+          </Box>
+          <Divider sx={{ my: 1 }} />
+          <Stack spacing={1} sx={{ mt: 2 }}>
+            {getEventsForDay(dayInfo.day, dayInfo.month, dayInfo.year)
+              .slice(0, 3)
+              .map((event) => (
                 <Box
+                  key={event._id}
                   sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
+                    p: 1,
+                    fontSize: "0.75rem",
+                    borderRadius: 2,
+                    background: alpha(theme.palette.primary.main, 0.05),
+                    color: theme.palette.primary.main,
+                    borderLeft: `3px solid ${theme.palette.primary.main}`,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    fontWeight: 500,
                   }}
                 >
-                  <Typography
-                    variant="h6"
-                    fontWeight={600}
-                    color={theme.palette.text.primary}
-                  >
-                    {event.name}
-                  </Typography>
-                  <Chip
-                    label={event.event_type_id}
-                    size="small"
-                    sx={{
-                      borderRadius: 6,
-                      background: alpha(theme.palette.primary.main, 0.1),
-                      color: theme.palette.primary.main,
-                      fontWeight: 500,
-                      fontSize: "0.65rem",
-                      textTransform: "uppercase",
-                      py: 0.5,
-                    }}
-                  />
+                  {event.name}
                 </Box>
-                <Stack spacing={1.5} mt={2}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <AccessTime
-                      fontSize="small"
-                      sx={{ color: theme.palette.primary.main }}
-                    />
-                    <Typography
-                      variant="body2"
-                      color={theme.palette.text.secondary}
-                    >
-                      {event.time} - Duration: {event.duration}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <LocationOn
-                      fontSize="small"
-                      sx={{ color: theme.palette.primary.main }}
-                    />
-                    <Typography
-                      variant="body2"
-                      color={theme.palette.text.secondary}
-                    >
-                      {event.venue}
-                    </Typography>
-                  </Box>
-                  <Divider sx={{ my: 1 }} />
-                  <Typography
-                    variant="body2"
-                    color={theme.palette.text.secondary}
-                    sx={{ mt: 1, lineHeight: 1.6 }}
-                  >
-                    {event.description}
-                  </Typography>
-                </Stack>
-              </Paper>
-            ))}
+              ))}
+            {getEventsForDay(dayInfo.day, dayInfo.month, dayInfo.year)
+              .length > 3 && (
+              <Typography
+                variant="caption"
+                color={theme.palette.text.secondary}
+                sx={{
+                  textAlign: "center",
+                  display: "block",
+                  background: alpha(theme.palette.primary.main, 0.05),
+                  p: 0.5,
+                  borderRadius: 1,
+                }}
+              >
+                +{" "}
+                {getEventsForDay(dayInfo.day, dayInfo.month, dayInfo.year)
+                  .length - 3}{" "}
+                more
+              </Typography>
+            )}
           </Stack>
-        ) : (
-          <Box sx={{ py: 8, textAlign: "center" }}>
-            <Typography color={theme.palette.text.secondary} variant="h6">
-              No events scheduled for this day
-            </Typography>
-            <Typography
-              color={theme.palette.text.secondary}
-              variant="body2"
-              sx={{ mt: 1 }}
-            >
-              Select a different day or create a new event
-            </Typography>
-          </Box>
-        )}
-      </Box>
-    );
-  };
+        </Paper>
+      </Grid>
+    ))}
+  </Grid>
+);
 
-  const renderFilterPanel = () => (
-    <Paper
-      sx={{
-        p: 3,
-        borderRadius: 2,
-        mb: 3,
-        background: theme.palette.background.paper,
-        boxShadow: theme.shadows[1],
-        border: `1px solid ${theme.palette.divider}`,
-      }}
-    >
-      <Box
+const renderDayView = () => {
+  const dayEvents = getEventsForDay(selectedDay);
+
+  return (
+    <Box sx={{ p: { xs: 2, md: 3 } }}>
+      <Paper
         sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 2,
+          p: 3,
+          borderRadius: 2,
+          mb: 3,
+          background: theme.palette.background.paper,
+          borderLeft: `4px solid ${theme.palette.primary.main}`,
+          boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.05)}`,
         }}
       >
         <Typography
-          variant="h6"
-          fontWeight={600}
-          color={theme.palette.text.primary}
+          variant="h5"
+          sx={{
+            fontWeight: 600,
+            color: theme.palette.text.primary,
+            mb: 1,
+          }}
         >
-          Filters
+          {months[currentMonth]} {selectedDay}, {currentYear}
         </Typography>
-        <Button
-          variant="text"
-          color="primary"
-          onClick={handleResetFilters}
-          sx={{ textTransform: "none", color: theme.palette.primary.main }}
-        >
-          Reset
-        </Button>
-      </Box>
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={4}>
-          <FormControl fullWidth>
-            <Typography
-              variant="body2"
-              fontWeight={500}
-              color={theme.palette.text.secondary}
-              gutterBottom
-            >
-              Club
-            </Typography>
-            <RadioGroup
-              value={selectedClub || ""}
-              onChange={(e) =>
-                setSelectedClub(e.target.value !== "" ? e.target.value : null)
-              }
-            >
-              <FormControlLabel
-                value="IEEE"
-                control={<Radio color="primary" />}
-                label="IEEE"
-              />
-              <FormControlLabel
-                value="ACM"
-                control={<Radio color="primary" />}
-                label="ACM"
-              />
-              <FormControlLabel
-                value="GDSC"
-                control={<Radio color="primary" />}
-                label="GDSC"
-              />
-            </RadioGroup>
-          </FormControl>
-        </Grid>
-        <Grid item xs={12} md={4}>
-          <FormControl fullWidth>
-            <Typography
-              variant="body2"
-              fontWeight={500}
-              color={theme.palette.text.secondary}
-              gutterBottom
-            >
-              Board
-            </Typography>
-            <RadioGroup
-              value={selectedBoard || ""}
-              onChange={(e) =>
-                setSelectedBoard(e.target.value !== "" ? e.target.value : null)
-              }
-            >
-              <FormControlLabel
-                value="PR"
-                control={<Radio color="primary" />}
-                label="PR Board"
-              />
-              <FormControlLabel
-                value="Technical"
-                control={<Radio color="primary" />}
-                label="Technical Board"
-              />
-              <FormControlLabel
-                value="HR"
-                control={<Radio color="primary" />}
-                label="HR Board"
-              />
-            </RadioGroup>
-          </FormControl>
-        </Grid>
-        <Grid item xs={12} md={4}>
-          <FormControl fullWidth>
-            <Typography
-              variant="body2"
-              fontWeight={500}
-              color={theme.palette.text.secondary}
-              gutterBottom
-            >
-              Event Type
-            </Typography>
-            <RadioGroup
-              value={eventType || ""}
-              onChange={(e) =>
-                setEventType(e.target.value !== "" ? e.target.value : null)
-              }
-            >
-              <FormControlLabel
-                value="Workshop"
-                control={<Radio color="primary" />}
-                label="Workshop"
-              />
-              <FormControlLabel
-                value="Meeting"
-                control={<Radio color="primary" />}
-                label="Meeting"
-              />
-              <FormControlLabel
-                value="Competition"
-                control={<Radio color="primary" />}
-                label="Competition"
-              />
-            </RadioGroup>
-          </FormControl>
-        </Grid>
-      </Grid>
-    </Paper>
-  );
+        <Typography variant="body2" color={theme.palette.text.secondary}>
+          {dayEvents.length} {dayEvents.length === 1 ? "event" : "events"}{" "}
+          scheduled
+        </Typography>
+      </Paper>
 
-  return (
-    <Box
-      sx={{
-        p: { xs: 2, md: 3 },
-        background: theme.palette.background.default,
-        minHeight: "100vh",
-      }}
-    >
-      <StyledHeader>
-        <Box>
-          <Typography variant="h5" fontWeight={600}>
-            Event Calendar
-          </Typography>
-          <Typography
-            variant="body2"
-            color={theme.palette.text.secondary}
-            sx={{ mt: 0.5 }}
-          >
-            {getViewTitle()}
-          </Typography>
-        </Box>
-        <Box sx={{ display: "flex", alignItems: "center" }}>
-          <Box sx={{ display: { xs: "none", md: "flex" } }}>
-            <ViewButton
-              active={currentView === "month"}
-              onClick={() => handleViewChange("month")}
-              startIcon={<ViewWeek />}
-            >
-              Month
-            </ViewButton>
-            <ViewButton
-              active={currentView === "week"}
-              onClick={() => handleViewChange("week")}
-              startIcon={<CalendarMonth />}
-            >
-              Week
-            </ViewButton>
-            <ViewButton
-              active={currentView === "day"}
-              onClick={() => handleViewChange("day")}
-              startIcon={<Today />}
-            >
-              Day
-            </ViewButton>
-          </Box>
-          <StyledIconButton onClick={handlePrev} size="small">
-            <ChevronLeft />
-          </StyledIconButton>
-          <StyledIconButton onClick={handleNext} size="small">
-            <ChevronRight />
-          </StyledIconButton>
-        </Box>
-      </StyledHeader>
-
-      <Grid container spacing={3}>
-        <Grid item xs={12} lg={currentView === "day" ? 8 : 9}>
-          <Box sx={{ mb: 3 }}>
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                mb: 2,
-              }}
-            >
-              <Box sx={{ display: { xs: "flex", md: "none" }, mb: 2 }}>
-                <ViewButton
-                  active={currentView === "month"}
-                  onClick={() => handleViewChange("month")}
-                  startIcon={<ViewWeek />}
-                >
-                  Month
-                </ViewButton>
-                <ViewButton
-                  active={currentView === "week"}
-                  onClick={() => handleViewChange("week")}
-                  startIcon={<CalendarMonth />}
-                >
-                  Week
-                </ViewButton>
-                <ViewButton
-                  active={currentView === "day"}
-                  onClick={() => handleViewChange("day")}
-                  startIcon={<Today />}
-                >
-                  Day
-                </ViewButton>
-              </Box>
-              <Box sx={{ display: "flex", gap: 2, width: "100%" }}>
-                <SearchField
-                  placeholder="Search events..."
-                  variant="outlined"
-                  fullWidth
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  InputProps={{
-                    startAdornment: (
-                      <SearchIcon
-                        sx={{ mr: 1, color: theme.palette.primary.main }}
-                      />
-                    ),
-                  }}
-                  size="small"
-                />
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  onClick={handleFilterToggle}
-                  startIcon={<FilterList />}
-                  sx={{
-                    borderRadius: 2,
-                    whiteSpace: "nowrap",
-                    display: { xs: "none", md: "flex" },
-                    borderColor: alpha(theme.palette.primary.main, 0.3),
-                    color: theme.palette.primary.main,
-                    "&:hover": {
-                      borderColor: theme.palette.primary.main,
-                      background: alpha(theme.palette.primary.main, 0.05),
-                    },
-                  }}
-                >
-                  Filters
-                </Button>
-                <IconButton
-                  onClick={handleFilterToggle}
-                  sx={{
-                    display: { xs: "flex", md: "none" },
-                    background: alpha(theme.palette.primary.main, 0.1),
-                    color: theme.palette.primary.main,
-                    "&:hover": {
-                      background: alpha(theme.palette.primary.main, 0.2),
-                    },
-                  }}
-                >
-                  <FilterList />
-                </IconButton>
-              </Box>
-            </Box>
-
-            {filterOpen && renderFilterPanel()}
-
-            {currentView === "month" && renderMonthView()}
-            {currentView === "week" && renderWeekView()}
-            {currentView === "day" && renderDayView()}
-          </Box>
-        </Grid>
-
-        <Grid item xs={12} lg={currentView === "day" ? 4 : 3}>
-          <StyledCard>
-            <Box
+      {dayEvents.length > 0 ? (
+        <Stack spacing={2}>
+          {dayEvents.map((event) => (
+            <Paper
+              key={event._id}
+              elevation={0}
               sx={{
                 p: 3,
+                borderRadius: 2,
                 background: theme.palette.background.paper,
-                color: theme.palette.text.primary,
-                borderRadius: "12px 12px 0 0",
-                borderBottom: `1px solid ${theme.palette.divider}`,
+                boxShadow: theme.shadows[1],
+                borderLeft: `4px solid ${theme.palette.primary.main}`,
+                transition: "all 0.2s ease",
+                "&:hover": {
+                  boxShadow: `0 4px 12px ${alpha(
+                    theme.palette.primary.main,
+                    0.1
+                  )}`,
+                },
               }}
             >
-              <Typography variant="h6" fontWeight={600}>
-                Upcoming Events
-              </Typography>
-              <Typography
-                variant="body2"
-                color={theme.palette.text.secondary}
-                sx={{ mt: 0.5 }}
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                }}
               >
-                Next 5 events on your calendar
-              </Typography>
-            </Box>
-            <CardContent sx={{ p: 0 }}>
-              {getUpcomingEvents().length > 0 ? (
-                <Stack
-                  divider={
-                    <Divider sx={{ borderColor: theme.palette.divider }} />
-                  }
+                <Typography
+                  variant="h6"
+                  fontWeight={600}
+                  color={theme.palette.text.primary}
                 >
-                  {getUpcomingEvents().map((event) => (
-                    <Box
-                      key={event._id}
-                      sx={{
-                        p: 2,
-                        transition: "all 0.2s ease",
-                        "&:hover": {
-                          background: alpha(theme.palette.primary.main, 0.03),
-                        },
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <Typography
-                          variant="subtitle2"
-                          fontWeight={600}
-                          color={theme.palette.text.primary}
-                        >
-                          {event.name}
-                        </Typography>
-                        <Chip
-                          label={event.event_type_id}
-                          size="small"
-                          sx={{
-                            height: 20,
-                            fontSize: "0.6rem",
-                            fontWeight: 500,
-                            background: alpha(theme.palette.primary.main, 0.1),
-                            color: theme.palette.primary.main,
-                          }}
-                        />
-                      </Box>
-                      <Box
-                        sx={{ display: "flex", alignItems: "center", mt: 1 }}
-                      >
-                        <CalendarMonth
-                          fontSize="small"
-                          sx={{
-                            color: theme.palette.primary.main,
-                            mr: 1,
-                            fontSize: 16,
-                          }}
-                        />
-                        <Typography
-                          variant="caption"
-                          color={theme.palette.text.secondary}
-                        >
-                          {months[event.month]} {event.day}, {event.year}
-                        </Typography>
-                        <Box sx={{ mx: 1, color: theme.palette.divider }}>
-                          •
-                        </Box>
-                        <AccessTime
-                          fontSize="small"
-                          sx={{
-                            color: theme.palette.primary.main,
-                            mr: 1,
-                            fontSize: 16,
-                          }}
-                        />
-                        <Typography
-                          variant="caption"
-                          color={theme.palette.text.secondary}
-                        >
-                          {event.time}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  ))}
-                </Stack>
-              ) : (
-                <Box sx={{ p: 3, textAlign: "center" }}>
-                  <Typography color={theme.palette.text.secondary}>
-                    No upcoming events
+                  {event.name}
+                </Typography>
+                <Chip
+                  label={event.event_type_id}
+                  size="small"
+                  sx={{
+                    borderRadius: 6,
+                    background: alpha(theme.palette.primary.main, 0.1),
+                    color: theme.palette.primary.main,
+                    fontWeight: 500,
+                    fontSize: "0.65rem",
+                    textTransform: "uppercase",
+                    py: 0.5,
+                  }}
+                />
+              </Box>
+              <Stack spacing={1.5} mt={2}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <AccessTime
+                    fontSize="small"
+                    sx={{ color: theme.palette.primary.main }}
+                  />
+                  <Typography
+                    variant="body2"
+                    color={theme.palette.text.secondary}
+                  >
+                    {event.time} - Duration: {event.duration}
                   </Typography>
                 </Box>
-              )}
-            </CardContent>
-          </StyledCard>
-        </Grid>
-      </Grid>
-
-      {isModalOpen && (
-        <EventModal
-          open={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          selectedDate={selectedDate}
-          events={getEventsForDay(selectedDay)}
-        />
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <LocationOn
+                    fontSize="small"
+                    sx={{ color: theme.palette.primary.main }}
+                  />
+                  <Typography
+                    variant="body2"
+                    color={theme.palette.text.secondary}
+                  >
+                    {event.venue}
+                  </Typography>
+                </Box>
+                <Divider sx={{ my: 1 }} />
+                <Typography
+                  variant="body2"
+                  color={theme.palette.text.secondary}
+                  sx={{ mt: 1, lineHeight: 1.6 }}
+                >
+                  {event.description}
+                </Typography>
+              </Stack>
+            </Paper>
+          ))}
+        </Stack>
+      ) : (
+        <Box sx={{ py: 8, textAlign: "center" }}>
+          <Typography color={theme.palette.text.secondary} variant="h6">
+            No events scheduled for this day
+          </Typography>
+          <Typography
+            color={theme.palette.text.secondary}
+            variant="body2"
+            sx={{ mt: 1 }}
+          >
+            Select a different day or create a new event
+          </Typography>
+        </Box>
       )}
     </Box>
   );
+};
+
+const renderFilterPanel = () => (
+  <Paper
+    sx={{
+      p: 3,
+      borderRadius: 2,
+      mb: 3,
+      background: theme.palette.background.paper,
+      boxShadow: theme.shadows[1],
+      border: `1px solid ${theme.palette.divider}`,
+    }}
+  >
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        mb: 2,
+      }}
+    >
+      <Typography
+        variant="h6"
+        fontWeight={600}
+        color={theme.palette.text.primary}
+      >
+        Filters
+      </Typography>
+      <Button
+        variant="text"
+        color="primary"
+        onClick={handleResetFilters}
+        sx={{ textTransform: "none", color: theme.palette.primary.main }}
+      >
+        Reset
+      </Button>
+    </Box>
+    <Grid container spacing={3}>
+      <Grid item xs={12} md={4}>
+        <FormControl fullWidth>
+          <Typography
+            variant="body2"
+            fontWeight={500}
+            color={theme.palette.text.secondary}
+            gutterBottom
+          >
+            Club
+          </Typography>
+          <RadioGroup
+            value={selectedClub || ""}
+            onChange={(e) =>
+              setSelectedClub(e.target.value !== "" ? e.target.value : null)
+            }
+          >
+            <FormControlLabel
+              value="IEEE"
+              control={<Radio color="primary" />}
+              label="IEEE"
+            />
+            <FormControlLabel
+              value="ACM"
+              control={<Radio color="primary" />}
+              label="ACM"
+            />
+            <FormControlLabel
+              value="GDSC"
+              control={<Radio color="primary" />}
+              label="GDSC"
+            />
+          </RadioGroup>
+        </FormControl>
+      </Grid>
+      <Grid item xs={12} md={4}>
+        <FormControl fullWidth>
+          <Typography
+            variant="body2"
+            fontWeight={500}
+            color={theme.palette.text.secondary}
+            gutterBottom
+          >
+            Board
+          </Typography>
+          <RadioGroup
+            value={selectedBoard || ""}
+            onChange={(e) =>
+              setSelectedBoard(e.target.value !== "" ? e.target.value : null)
+            }
+          >
+            <FormControlLabel
+              value="PR"
+              control={<Radio color="primary" />}
+              label="PR Board"
+            />
+            <FormControlLabel
+              value="Technical"
+              control={<Radio color="primary" />}
+              label="Technical Board"
+            />
+            <FormControlLabel
+              value="HR"
+              control={<Radio color="primary" />}
+              label="HR Board"
+            />
+          </RadioGroup>
+        </FormControl>
+      </Grid>
+      <Grid item xs={12} md={4}>
+        <FormControl fullWidth>
+          <Typography
+            variant="body2"
+            fontWeight={500}
+            color={theme.palette.text.secondary}
+            gutterBottom
+          >
+            Event Type
+          </Typography>
+          <RadioGroup
+            value={eventType || ""}
+            onChange={(e) =>
+              setEventType(e.target.value !== "" ? e.target.value : null)
+            }
+          >
+            <FormControlLabel
+              value="Workshop"
+              control={<Radio color="primary" />}
+              label="Workshop"
+            />
+            <FormControlLabel
+              value="Meeting"
+              control={<Radio color="primary" />}
+              label="Meeting"
+            />
+            <FormControlLabel
+              value="Competition"
+              control={<Radio color="primary" />}
+              label="Competition"
+            />
+          </RadioGroup>
+        </FormControl>
+      </Grid>
+    </Grid>
+  </Paper>
+);
+
+return (
+  <Box
+    sx={{
+      p: { xs: 2, md: 3 },
+      background: theme.palette.background.default,
+      minHeight: "100vh",
+    }}
+  >
+    <StyledHeader>
+      <Box>
+        <Typography variant="h5" fontWeight={600}>
+          Event Calendar
+        </Typography>
+        <Typography
+          variant="body2"
+          color={theme.palette.text.secondary}
+          sx={{ mt: 0.5 }}
+        >
+          {getViewTitle()}
+        </Typography>
+      </Box>
+      <Box sx={{ display: "flex", alignItems: "center" }}>
+        <Box sx={{ display: { xs: "none", md: "flex" } }}>
+          <ViewButton
+            active={currentView === "month"}
+            onClick={() => handleViewChange("month")}
+            startIcon={<ViewWeek />}
+          >
+            Month
+          </ViewButton>
+          <ViewButton
+            active={currentView === "week"}
+            onClick={() => handleViewChange("week")}
+            startIcon={<CalendarMonth />}
+          >
+            Week
+          </ViewButton>
+          <ViewButton
+            active={currentView === "day"}
+            onClick={() => handleViewChange("day")}
+            startIcon={<Today />}
+          >
+            Day
+          </ViewButton>
+        </Box>
+        <StyledIconButton onClick={handlePrev} size="small">
+          <ChevronLeft />
+        </StyledIconButton>
+        <StyledIconButton onClick={handleNext} size="small">
+          <ChevronRight />
+        </StyledIconButton>
+      </Box>
+    </StyledHeader>
+
+    <Grid container spacing={3}>
+      <Grid item xs={12} lg={currentView === "day" ? 8 : 9}>
+        <Box sx={{ mb: 3 }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 2,
+            }}
+          >
+            <Box sx={{ display: { xs: "flex", md: "none" }, mb: 2 }}>
+              <ViewButton
+                active={currentView === "month"}
+                onClick={() => handleViewChange("month")}
+                startIcon={<ViewWeek />}
+              >
+                Month
+              </ViewButton>
+              <ViewButton
+                active={currentView === "week"}
+                onClick={() => handleViewChange("week")}
+                startIcon={<CalendarMonth />}
+              >
+                Week
+              </ViewButton>
+              <ViewButton
+                active={currentView === "day"}
+                onClick={() => handleViewChange("day")}
+                startIcon={<Today />}
+              >
+                Day
+              </ViewButton>
+            </Box>
+            <Box sx={{ display: "flex", gap: 2, width: "100%" }}>
+              <SearchField
+                placeholder="Search events..."
+                variant="outlined"
+                fullWidth
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <SearchIcon
+                      sx={{ mr: 1, color: theme.palette.primary.main }}
+                    />
+                  ),
+                }}
+                size="small"
+              />
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={handleFilterToggle}
+                startIcon={<FilterList />}
+                sx={{
+                  borderRadius: 2,
+                  whiteSpace: "nowrap",
+                  display: { xs: "none", md: "flex" },
+                  borderColor: alpha(theme.palette.primary.main, 0.3),
+                  color: theme.palette.primary.main,
+                  "&:hover": {
+                    borderColor: theme.palette.primary.main,
+                    background: alpha(theme.palette.primary.main, 0.05),
+                  },
+                }}
+              >
+                Filters
+              </Button>
+              <IconButton
+                onClick={handleFilterToggle}
+                sx={{
+                  display: { xs: "flex", md: "none" },
+                  background: alpha(theme.palette.primary.main, 0.1),
+                  color: theme.palette.primary.main,
+                  "&:hover": {
+                    background: alpha(theme.palette.primary.main, 0.2),
+                  },
+                }}
+              >
+                <FilterList />
+              </IconButton>
+            </Box>
+          </Box>
+
+          {filterOpen && renderFilterPanel()}
+
+          {currentView === "month" && renderMonthView()}
+          {currentView === "week" && renderWeekView()}
+          {currentView === "day" && renderDayView()}
+        </Box>
+      </Grid>
+
+      <Grid item xs={12} lg={currentView === "day" ? 4 : 3}>
+        <StyledCard>
+          <Box
+            sx={{
+              p: 3,
+              background: theme.palette.background.paper,
+              color: theme.palette.text.primary,
+              borderRadius: "12px 12px 0 0",
+              borderBottom: `1px solid ${theme.palette.divider}`,
+            }}
+          >
+            <Typography variant="h6" fontWeight={600}>
+              Upcoming Events
+            </Typography>
+            <Typography
+              variant="body2"
+              color={theme.palette.text.secondary}
+              sx={{ mt: 0.5 }}
+            >
+              Next 5 events on your calendar
+            </Typography>
+          </Box>
+          <CardContent sx={{ p: 0 }}>
+            {getUpcomingEvents().length > 0 ? (
+              <Stack
+                divider={
+                  <Divider sx={{ borderColor: theme.palette.divider }} />
+                }
+              >
+                {getUpcomingEvents().map((event) => (
+                  <Box
+                    key={event._id}
+                    sx={{
+                      p: 2,
+                      transition: "all 0.2s ease",
+                      "&:hover": {
+                        background: alpha(theme.palette.primary.main, 0.03),
+                      },
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <Typography
+                        variant="subtitle2"
+                        fontWeight={600}
+                        color={theme.palette.text.primary}
+                      >
+                        {event.name}
+                      </Typography>
+                      <Chip
+                        label={event.event_type_id}
+                        size="small"
+                        sx={{
+                          height: 20,
+                          fontSize: "0.6rem",
+                          fontWeight: 500,
+                          background: alpha(theme.palette.primary.main, 0.1),
+                          color: theme.palette.primary.main,
+                        }}
+                      />
+                    </Box>
+                    <Box
+                      sx={{ display: "flex", alignItems: "center", mt: 1 }}
+                    >
+                      <CalendarMonth
+                        fontSize="small"
+                        sx={{
+                          color: theme.palette.primary.main,
+                          mr: 1,
+                          fontSize: 16,
+                        }}
+                      />
+                      <Typography
+                        variant="caption"
+                        color={theme.palette.text.secondary}
+                      >
+                        {months[event.month]} {event.day}, {event.year}
+                      </Typography>
+                      <Box sx={{ mx: 1, color: theme.palette.divider }}>
+                        •
+                      </Box>
+                      <AccessTime
+                        fontSize="small"
+                        sx={{
+                          color: theme.palette.primary.main,
+                          mr: 1,
+                          fontSize: 16,
+                        }}
+                      />
+                      <Typography
+                        variant="caption"
+                        color={theme.palette.text.secondary}
+                      >
+                        {event.time}
+                      </Typography>
+                    </Box>
+                  </Box>
+                ))}
+              </Stack>
+            ) : (
+              <Box sx={{ p: 3, textAlign: "center" }}>
+                <Typography color={theme.palette.text.secondary}>
+                  No upcoming events
+                </Typography>
+              </Box>
+            )}
+          </CardContent>
+        </StyledCard>
+      </Grid>
+    </Grid>
+
+    {isModalOpen && (
+      <EventModal
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        selectedDate={selectedDate}
+        events={getEventsForDay(selectedDay)}
+      />
+    )}
+  </Box>
+);
 };
 
 export default CalendarView;

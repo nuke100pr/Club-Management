@@ -18,7 +18,7 @@ import { Edit, Delete, Share, Visibility } from "@mui/icons-material";
 import AddIcon from "@mui/icons-material/Add";
 import { useTheme } from "@mui/material/styles";
 import { useEffect, useState } from "react";
-import { fetchUserData,hasPermission } from "@/utils/auth";
+import { fetchUserData, hasPermission, getAuthToken } from "@/utils/auth";
 import CreateResourceDialog from "../../components/resources/CreateResourceDialog";
 
 // Add fade-in animation styles
@@ -60,11 +60,19 @@ export default function ResourcesPage({ clubId = null, searchQuery = "" }) {
     userBoardsWithResourcePermission,
     setUserBoardsWithResourcePermission,
   ] = useState([]);
-
   const [selectedClub, setSelectedClub] = useState(clubId);
-
   const [arrayPermissions, setArrayPermissions] = useState({});
   const [canCreateResources, setCanCreateResources] = useState(false);
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   useEffect(() => {
     // Check permissions for all resources
@@ -184,6 +192,8 @@ export default function ResourcesPage({ clubId = null, searchQuery = "" }) {
   useEffect(() => {
     const fetchResources = async () => {
       try {
+        if (!authToken) return;
+        
         // Set loading to true at the start of data fetch
         setLoading(true);
 
@@ -196,7 +206,11 @@ export default function ResourcesPage({ clubId = null, searchQuery = "" }) {
           url += `?board_id=${clubId}`;
         }
 
-        const response = await fetch(url);
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        });
         const result = await response.json();
 
         if (result.success && result.data) {
@@ -236,7 +250,7 @@ export default function ResourcesPage({ clubId = null, searchQuery = "" }) {
     };
 
     fetchResources();
-  }, [clubId]);
+  }, [clubId, authToken]);
 
   useEffect(() => {
     let result = allResources;
@@ -279,8 +293,15 @@ export default function ResourcesPage({ clubId = null, searchQuery = "" }) {
 
   const handleEdit = async (resourceId) => {
     try {
+      if (!authToken) return;
+      
       const response = await fetch(
-        `http://localhost:5000/resources/api/resource/${resourceId}`
+        `http://localhost:5000/resources/api/resource/${resourceId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        }
       );
       const result = await response.json();
 
@@ -307,10 +328,15 @@ export default function ResourcesPage({ clubId = null, searchQuery = "" }) {
   const handleDelete = async (resourceId) => {
     if (window.confirm("Are you sure you want to delete this resource?")) {
       try {
+        if (!authToken) return;
+        
         const response = await fetch(
           `http://localhost:5000/resources/bpi/${resourceId}`,
           {
             method: "DELETE",
+            headers: {
+              'Authorization': `Bearer ${authToken}`,
+            }
           }
         );
         const result = await response.json();

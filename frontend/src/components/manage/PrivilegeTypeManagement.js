@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -27,6 +27,7 @@ import {
   Search as SearchIcon,
   VpnKey as VpnKeyIcon,
 } from "@mui/icons-material";
+import { getAuthToken } from "@/utils/auth";
 
 const PrivilegeTypeManagement = ({
   privilegeTypes,
@@ -47,8 +48,22 @@ const PrivilegeTypeManagement = ({
     blogs: false,
     forums: false,
   });
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   const handlePrivilegeSearch = () => {
+    if (!authToken) {
+      return;
+    }
+
     if (!privilegeSearchTerm.trim()) {
       setFilteredPrivilegeTypes(privilegeTypes);
       return;
@@ -73,6 +88,10 @@ const PrivilegeTypeManagement = ({
   };
 
   const handleOpenDialog = () => {
+    if (!authToken) {
+      return;
+    }
+
     setNewPrivilegeType({
       position: "",
       description: "",
@@ -92,7 +111,16 @@ const PrivilegeTypeManagement = ({
   };
 
   const handleSubmit = () => {
-    onAddPrivilegeType(newPrivilegeType);
+    if (!authToken) {
+      return;
+    }
+
+    onAddPrivilegeType({
+      ...newPrivilegeType,
+      headers: {
+        'Authorization': `Bearer ${authToken}`,
+      }
+    });
     handleCloseDialog();
   };
 

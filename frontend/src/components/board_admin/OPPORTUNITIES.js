@@ -33,8 +33,8 @@ import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import LaunchIcon from "@mui/icons-material/Launch";
 import CreateResourceDialog from "../../components/opportunities/CreateResourceDialog";
 import { fetchUserData } from "@/utils/auth";
+import { getAuthToken } from "@/utils/auth";
 
-// Create a custom theme with soothing blue colors
 const theme = createTheme({
   palette: {
     primary: {
@@ -117,7 +117,6 @@ const StatusChip = ({ status }) => {
   );
 };
 
-// Opportunity Card Component
 const OpportunityCard = ({ 
   opportunity, 
   hasPermission,
@@ -346,10 +345,22 @@ export default function OpportunitiesPage({ boardId = null }) {
   const [selectedClub, setSelectedClub] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [authToken, setAuthToken] = useState(null);
   const router = useRouter();
 
   useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
+
+  useEffect(() => {
     async function loadUserData() {
+      if (!authToken) return;
+      
       const result = await fetchUserData();
 
       if (result) {
@@ -383,7 +394,7 @@ export default function OpportunitiesPage({ boardId = null }) {
       }
     }
     loadUserData();
-  }, [boardId]);
+  }, [boardId, authToken]);
 
   const hasOpportunityPermission = (opportunity) => {
     if (isSuperAdmin) return true;
@@ -443,13 +454,19 @@ export default function OpportunitiesPage({ boardId = null }) {
 
   useEffect(() => {
     const fetchOpportunities = async () => {
+      if (!authToken) return;
+      
       try {
         let url = "http://localhost:5000/opportunities";
         if (boardId) {
           url += `?board_id=${boardId}`;
         }
 
-        const response = await fetch(url);
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        });
         if (!response.ok) {
           throw new Error("Failed to fetch opportunities");
         }
@@ -465,7 +482,7 @@ export default function OpportunitiesPage({ boardId = null }) {
     };
 
     fetchOpportunities();
-  }, [boardId]);
+  }, [boardId, authToken]);
 
   useEffect(() => {
     let result = allOpportunities;
@@ -492,6 +509,8 @@ export default function OpportunitiesPage({ boardId = null }) {
   }, [searchTerm, allOpportunities, selectedKeywords]);
 
   const fetchOpportunityDetails = async (id) => {
+    if (!authToken) return;
+    
     try {
       const response = await fetch(
         `http://localhost:5000/opportunities/${id}`,
@@ -499,6 +518,7 @@ export default function OpportunitiesPage({ boardId = null }) {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
+            'Authorization': `Bearer ${authToken}`,
           },
         }
       );
@@ -520,6 +540,8 @@ export default function OpportunitiesPage({ boardId = null }) {
   };
 
   const handleDelete = async (opportunityId) => {
+    if (!authToken) return;
+    
     if (window.confirm("Are you sure you want to delete this opportunity?")) {
       try {
         const response = await fetch(
@@ -528,6 +550,7 @@ export default function OpportunitiesPage({ boardId = null }) {
             method: "DELETE",
             headers: {
               "Content-Type": "application/json",
+              'Authorization': `Bearer ${authToken}`,
             },
           }
         );
@@ -645,7 +668,6 @@ export default function OpportunitiesPage({ boardId = null }) {
       </Head>
 
       <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-        {/* Left sidebar with sticky search (25% width) */}
         <Box
           sx={{
             width: '25%',
@@ -716,7 +738,6 @@ export default function OpportunitiesPage({ boardId = null }) {
             </Typography>
           </Box>
 
-          {/* Keywords/Tags Filter */}
           {allKeywords.length > 0 && (
             <Box sx={{ mt: 2 }}>
               <Typography variant="subtitle2" gutterBottom>
@@ -778,7 +799,6 @@ export default function OpportunitiesPage({ boardId = null }) {
           )}
         </Box>
 
-        {/* Right content with opportunity cards (70% width) */}
         <Box
           sx={{
             width: '70%',

@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchUserData,hasPermission } from "@/utils/auth";
+import { fetchUserData, hasPermission, getAuthToken } from "@/utils/auth";
 import EventForm from "../events/EventForm";
 import {
   Grid,
@@ -88,15 +88,23 @@ export default function EventsPage({ boardId = null, searchQuery = "" }) {
   const router = useRouter();
   const [arrayPermissions, setArrayPermissions] = useState({});
   const [canCreateEvents, setCanCreateEvents] = useState(false);
+  const [authToken, setAuthToken] = useState(null);
 
   useEffect(() => {
-    // Check permissions for all resources
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
+
+  useEffect(() => {
     if (userData && events.length > 0) {
       events.forEach(async (element) => {
         const clubId = element.club_id?._id || element.club_id;
         const boardId = element.board_id?._id || element.board_id;
 
-        // If you must use the async version of hasPermission
         const hasAccess = await hasPermission(
           "events",
           userData,
@@ -112,27 +120,26 @@ export default function EventsPage({ boardId = null, searchQuery = "" }) {
     }
   }, [userData, events]);
 
-
-useEffect(() => {
-  async function checkEventCreationPermission() {
-    if (isSuperAdmin) {
-      setCanCreateEvents(true);
-      return;
-    }
-    if (!userData) {
+  useEffect(() => {
+    async function checkEventCreationPermission() {
+      if (isSuperAdmin) {
+        setCanCreateEvents(true);
+        return;
+      }
+      if (!userData) {
+        setCanCreateEvents(false);
+        return;
+      }
+      if (boardId) {
+        const hasEventPermission = await hasPermission("events", userData, boardId, null);
+        setCanCreateEvents(hasEventPermission);
+        return;
+      }
       setCanCreateEvents(false);
-      return;
     }
-    if (boardId) {
-      const hasEventPermission = await hasPermission("events", userData, boardId, null);
-      setCanCreateEvents(hasEventPermission);
-      return;
-    }
-    setCanCreateEvents(false);
-  }
 
-  checkEventCreationPermission();
-}, [isSuperAdmin, userData, boardId]);
+    checkEventCreationPermission();
+  }, [isSuperAdmin, userData, boardId]);
 
   useEffect(() => {
     async function loadUserData() {
@@ -167,7 +174,6 @@ useEffect(() => {
     loadUserData();
   }, []);
 
-  // Set minimum loading time of 2 seconds
   useEffect(() => {
     const timer = setTimeout(() => {
       setMinimumLoadingTimeElapsed(true);
@@ -179,12 +185,12 @@ useEffect(() => {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
+        if (!authToken) return;
+
         setLoading(true);
 
-        // Build URL with query parameters
         let url = new URL("http://localhost:5000/events");
 
-        // Add userId parameter if available
         if (user_id) {
           url.searchParams.append("userId", user_id);
         }
@@ -193,12 +199,15 @@ useEffect(() => {
           url.searchParams.append("board_id", boardId);
         }
 
-        // Add search query if provided
         if (searchQuery) {
           url.searchParams.append("search", searchQuery);
         }
 
-        const response = await fetch(url.toString());
+        const response = await fetch(url.toString(), {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        });
         if (!response.ok)
           throw new Error(`HTTP error! status: ${response.status}`);
 
@@ -210,13 +219,16 @@ useEffect(() => {
           (result.data || []).map(async (event) => {
             try {
               const rsvpResponse = await fetch(
-                `http://localhost:5000/events/${event._id}/rsvp`
+                `http://localhost:5000/events/${event._id}/rsvp`,
+                {
+                  headers: {
+                    'Authorization': `Bearer ${authToken}`,
+                  }
+                }
               );
               if (!rsvpResponse.ok) return { ...event, registeredCount: 0 };
 
               const rsvpResult = await rsvpResponse.json();
-              console.log(rsvpResult);
-              console.log(user_id);
               return {
                 ...event,
                 registeredCount: rsvpResult.data?.length || 0,
@@ -236,10 +248,6 @@ useEffect(() => {
         );
 
         setEvents(eventsWithCounts);
-        console.log(eventsWithCounts);
-
-        // We don't immediately set loading to false here
-        // Instead, we check if minimum loading time has elapsed in a separate effect
       } catch (error) {
         console.error("Failed to fetch events:", error);
         setError(error.message);
@@ -252,11 +260,9 @@ useEffect(() => {
     };
 
     fetchEvents();
-  }, [user_id, isEditing, boardId, searchQuery]);
+  }, [user_id, isEditing, boardId, searchQuery, authToken]);
 
-  // Effect to control the loading state based on data fetching and minimum time
   useEffect(() => {
-    // Check if data fetching has completed (whether events exist or not)
     if (minimumLoadingTimeElapsed && events !== undefined) {
       setLoading(false);
     } else if (error && minimumLoadingTimeElapsed) {
@@ -282,6 +288,7 @@ useEffect(() => {
   };
 
   const handleRegister = async (event) => {
+    if (!authToken) return;
     if (!user_id) {
       setNotification({
         open: true,
@@ -298,6 +305,7 @@ useEffect(() => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            'Authorization': `Bearer ${authToken}`,
           },
           body: JSON.stringify({
             event_id: event._id,
@@ -338,6 +346,8 @@ useEffect(() => {
 
   const handleViewRegistrations = async (eventId) => {
     try {
+      if (!authToken) return;
+
       const foundEvent = events.find((event) => event._id === eventId);
       const eventName = foundEvent ? foundEvent.name : "Event";
 
@@ -350,7 +360,12 @@ useEffect(() => {
       });
 
       const response = await fetch(
-        `http://localhost:5000/events/${eventId}/rsvp`
+        `http://localhost:5000/events/${eventId}/rsvp`,
+        {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        }
       );
       if (!response.ok)
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -382,7 +397,6 @@ useEffect(() => {
     try {
       const { registrations, eventName } = registrationsDialog;
 
-      // Format data for Excel export
       const exportData = registrations.map((registration, index) => ({
         "S.No": index + 1,
         Name: registration.user_id?.name || "N/A",
@@ -395,21 +409,18 @@ useEffect(() => {
         ).toLocaleTimeString(),
       }));
 
-      // Create worksheet and workbook
       const worksheet = XLSX.utils.json_to_sheet(exportData);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Registrations");
 
-      // Set column widths
       const colWidths = [
-        { wch: 5 }, // S.No
-        { wch: 25 }, // Name
-        { wch: 35 }, // Email
-        { wch: 15 }, // Registration Date
+        { wch: 5 },
+        { wch: 25 },
+        { wch: 35 },
+        { wch: 15 },
       ];
       worksheet["!cols"] = colWidths;
 
-      // Generate filename and export
       const filename = `${eventName.replace(
         /[^a-zA-Z0-9]/g,
         "_"
@@ -433,8 +444,13 @@ useEffect(() => {
 
   const handleDelete = async (eventId) => {
     try {
+      if (!authToken) return;
+
       const response = await fetch(`http://localhost:5000/events/${eventId}`, {
         method: "DELETE",
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
       });
       if (!response.ok)
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -469,6 +485,8 @@ useEffect(() => {
 
   const handleFormSubmit = async (formData) => {
     try {
+      if (!authToken) return;
+
       const url = isEditing
         ? `http://localhost:5000/events/${currentEvent._id}`
         : "http://localhost:5000/events";
@@ -503,6 +521,9 @@ useEffect(() => {
       const response = await fetch(url, {
         method: method,
         body: multipartFormData,
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
       });
 
       if (!response.ok)
@@ -931,7 +952,6 @@ useEffect(() => {
         ))}
       </Grid>
 
-      {/* Add Event Button */}
       {canCreateEvents && (
         <Fab
           color="primary"
@@ -954,7 +974,6 @@ useEffect(() => {
         </Fab>
       )}
 
-      {/* Registrations Dialog */}
       <Dialog
         open={registrationsDialog.open}
         onClose={() =>
@@ -1040,7 +1059,6 @@ useEffect(() => {
         </DialogContent>
       </Dialog>
 
-      {/* Event Form Dialog */}
       <Dialog
         open={openDialog}
         onClose={() => setOpenDialog(false)}
@@ -1065,7 +1083,6 @@ useEffect(() => {
         </DialogContent>
       </Dialog>
 
-      {/* Notification Snackbar */}
       <Snackbar
         open={notification.open}
         autoHideDuration={6000}

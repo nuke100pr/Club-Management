@@ -20,6 +20,7 @@ import FilterListIcon from "@mui/icons-material/FilterList";
 import CloseIcon from "@mui/icons-material/Close";
 import TuneIcon from "@mui/icons-material/Tune";
 import { useTheme } from "@mui/material/styles";
+import { getAuthToken } from "@/utils/auth";
 
 const SearchAndFilterBar = ({
   searchTerm,
@@ -34,6 +35,16 @@ const SearchAndFilterBar = ({
   const theme = useTheme();
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [isSticky, setIsSticky] = useState(false);
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -52,11 +63,13 @@ const SearchAndFilterBar = ({
   };
 
   const handleFilterApply = () => {
+    if (!authToken) return;
     setFilterActive(selectedKeywords.length > 0);
     toggleFilterDrawer();
   };
 
   const handleKeywordToggle = (keyword) => {
+    if (!authToken) return;
     setSelectedKeywords(prev =>
       prev.includes(keyword) ? prev.filter(k => k !== keyword) : [...prev, keyword]
     );
@@ -97,7 +110,10 @@ const SearchAndFilterBar = ({
               variant="standard"
               placeholder="Search resources..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                if (!authToken) return;
+                setSearchTerm(e.target.value);
+              }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -133,7 +149,10 @@ const SearchAndFilterBar = ({
             <Box sx={{ flexGrow: 1 }} />
             
             <Button
-              onClick={toggleFilterDrawer}
+              onClick={() => {
+                if (!authToken) return;
+                toggleFilterDrawer();
+              }}
               startIcon={<TuneIcon />}
               variant={filterActive ? "contained" : "outlined"}
               size="medium"
@@ -195,6 +214,7 @@ const SearchAndFilterBar = ({
                   label={keyword}
                   size="small"
                   onDelete={() => {
+                    if (!authToken) return;
                     setSelectedKeywords(prev => prev.filter(k => k !== keyword));
                     if (selectedKeywords.length === 1) setFilterActive(false);
                   }}
@@ -214,7 +234,10 @@ const SearchAndFilterBar = ({
               <Chip
                 label="Clear all"
                 size="small"
-                onClick={handleFilterReset}
+                onClick={() => {
+                  if (!authToken) return;
+                  handleFilterReset();
+                }}
                 sx={{
                   backgroundColor: theme.palette.action.hover,
                   color: theme.palette.primary.main,
@@ -335,8 +358,11 @@ const SearchAndFilterBar = ({
           <Box sx={{ mt: 4, display: 'flex', justifyContent: 'space-between' }}>
             <Button 
               variant="text" 
-              onClick={handleFilterReset}
-              disabled={selectedKeywords.length === 0}
+              onClick={() => {
+                if (!authToken) return;
+                handleFilterReset();
+              }}
+              disabled={selectedKeywords.length === 0 || !authToken}
               sx={{ 
                 textTransform: 'none',
                 fontWeight: 500,
@@ -355,6 +381,7 @@ const SearchAndFilterBar = ({
             <Button 
               variant="contained" 
               onClick={handleFilterApply}
+              disabled={!authToken}
               sx={{ 
                 background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
                 boxShadow: theme.shadows[2],

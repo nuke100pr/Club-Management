@@ -1,9 +1,8 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { fetchUserData, hasPermission } from "@/utils/auth";
+import { fetchUserData, hasPermission, getAuthToken } from "@/utils/auth";
 import EventForm from "../../../components/events/EventForm";
-import * as XLSX from "xlsx";
 import {
   Box,
   Typography,
@@ -84,6 +83,7 @@ const EventsPage = () => {
     message: "",
     severity: "success",
   });
+  const [authToken, setAuthToken] = useState(null);
 
   const [arrayPermissions, setArrayPermissions] = useState({});
   const [editFormData, setEditFormData] = useState(null);
@@ -91,9 +91,20 @@ const EventsPage = () => {
   const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
+
+  useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
+
+        if (!authToken) return;
 
         // Fetch user data for permissions
         const userData = await fetchUserData();
@@ -115,7 +126,12 @@ const EventsPage = () => {
           console.log(eventId);
           // Fetch single event details
           const eventResponse = await fetch(
-            `${process.env.NEXT_PUBLIC_BACKEND_URL}/events/${eventId}`
+            `${process.env.NEXT_PUBLIC_BACKEND_URL}/events/${eventId}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${authToken}`,
+              }
+            }
           );
 
           if (!eventResponse.ok) throw new Error("Failed to fetch event");
@@ -127,7 +143,12 @@ const EventsPage = () => {
 
           // Fetch RSVPs for this event
           const rsvpResponse = await fetch(
-            `${process.env.NEXT_PUBLIC_BACKEND_URL}/events/${eventId}/rsvp`
+            `${process.env.NEXT_PUBLIC_BACKEND_URL}/events/${eventId}/rsvp`,
+            {
+              headers: {
+                'Authorization': `Bearer ${authToken}`,
+              }
+            }
           );
           if (!rsvpResponse.ok) throw new Error("Failed to fetch RSVPs");
           const rsvpResult = await rsvpResponse.json();
@@ -161,7 +182,7 @@ const EventsPage = () => {
     };
 
     fetchData();
-  }, [eventId, userId]);
+  }, [eventId, userId, authToken]);
 
   useEffect(() => {
     if (currentEvent && currentUser) {
@@ -186,28 +207,10 @@ const EventsPage = () => {
     return hasPermission("events", currentUser, boardId, clubId);
   };
 
-  const handleExportToExcel = () => {
-    // Prepare data for Excel
-    const excelData = rsvps.map((rsvp) => ({
-      Name: rsvp.user_id?.name || "Unknown User",
-      Email: rsvp.user_id?.email_id || "Unknown Email",
-      "Registration Date": formatDate(rsvp.timestamp),
-      'Registration Time': formatTime(rsvp.timestamp),
-    }));
-
-    // Create worksheet
-    const ws = XLSX.utils.json_to_sheet(excelData);
-
-    // Create workbook
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Registrations");
-
-    // Generate file and download
-    XLSX.writeFile(wb, `${currentEvent.name}_registrations.xlsx`);
-  };
-
   const handleRegisterForEvent = async () => {
     try {
+      if (!authToken) return;
+      
       if (!userId) {
         setNotification({
           open: true,
@@ -227,6 +230,7 @@ const EventsPage = () => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            'Authorization': `Bearer ${authToken}`,
           },
           body: JSON.stringify({
             event_id: eventId,
@@ -244,7 +248,12 @@ const EventsPage = () => {
       setIsRegistered(true);
       // Refresh RSVPs to get updated list
       const rsvpResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/events/${eventId}/rsvp`
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/events/${eventId}/rsvp`,
+        {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        }
       );
       if (rsvpResponse.ok) {
         const rsvpResult = await rsvpResponse.json();
@@ -273,10 +282,15 @@ const EventsPage = () => {
       message: "Are you sure you want to remove this registration?",
       onConfirm: async () => {
         try {
+          if (!authToken) return;
+          
           const response = await fetch(
             `${process.env.NEXT_PUBLIC_BACKEND_URL}/events/${eventId}/rsvp/${rsvpId}`,
             {
               method: "DELETE",
+              headers: {
+                'Authorization': `Bearer ${authToken}`,
+              }
             }
           );
 
@@ -288,7 +302,12 @@ const EventsPage = () => {
 
           // Refresh RSVPs list
           const rsvpResponse = await fetch(
-            `${process.env.NEXT_PUBLIC_BACKEND_URL}/events/${eventId}/rsvp`
+            `${process.env.NEXT_PUBLIC_BACKEND_URL}/events/${eventId}/rsvp`,
+            {
+              headers: {
+                'Authorization': `Bearer ${authToken}`,
+              }
+            }
           );
           if (rsvpResponse.ok) {
             const rsvpResult = await rsvpResponse.json();
@@ -321,10 +340,15 @@ const EventsPage = () => {
         "Are you sure you want to delete this event? This action cannot be undone.",
       onConfirm: async () => {
         try {
+          if (!authToken) return;
+          
           const response = await fetch(
             `${process.env.NEXT_PUBLIC_BACKEND_URL}/events/${eventId}`,
             {
               method: "DELETE",
+              headers: {
+                'Authorization': `Bearer ${authToken}`,
+              }
             }
           );
 
@@ -355,8 +379,15 @@ const EventsPage = () => {
 
   const handleEdit = async () => {
     try {
+      if (!authToken) return;
+      
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/events/${eventId}`
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/events/${eventId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        }
       );
       if (!response.ok) throw new Error("Failed to fetch event");
       const result = await response.json();
@@ -412,6 +443,8 @@ const EventsPage = () => {
 
   const handleFormSubmit = async (formData) => {
     try {
+      if (!authToken) return;
+      
       const multipartFormData = new FormData();
       multipartFormData.append("name", formData.name);
       multipartFormData.append("venue", formData.venue);
@@ -438,6 +471,9 @@ const EventsPage = () => {
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/events/${eventId}`,
         {
           method: "PUT",
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          },
           body: multipartFormData,
         }
       );
@@ -447,7 +483,12 @@ const EventsPage = () => {
 
       // Refresh event data
       const eventResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/events/${eventId}`
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/events/${eventId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        }
       );
 
       const eventResult = await eventResponse.json();
@@ -908,22 +949,6 @@ const EventsPage = () => {
                 >
                   Registrations ({rsvps.length})
                 </Typography>
-
-                {rsvps.length > 0 && (
-                  <Button
-                    variant="outlined"
-                    onClick={handleExportToExcel}
-                    sx={{
-                      mb: 2,
-                      float: "right",
-                      textTransform: "none",
-                      borderRadius: "8px",
-                      fontWeight: 500,
-                    }}
-                  >
-                    Export to Excel
-                  </Button>
-                )}
 
                 {rsvps.length > 0 ? (
                   <TableContainer

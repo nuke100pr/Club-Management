@@ -14,6 +14,8 @@ import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
+import { useState, useEffect } from 'react';
+import { getAuthToken } from "@/utils/auth";
 
 const sidebarItems = [
   { label: 'Events', path: '/events', icon: <EventIcon /> },
@@ -32,8 +34,22 @@ const sidebarItems = [
 export default function LeftSidebar() {
   const theme = useTheme();
   const router = useRouter();
-  
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
+
   const handleLogout = () => {
+    if (!authToken) {
+      return;
+    }
+    
     // Remove the auth_token cookie
     Cookies.remove('auth_token');
     // Redirect to login page

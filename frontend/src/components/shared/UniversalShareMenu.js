@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Menu,
   MenuItem,
@@ -22,6 +22,8 @@ import {
   Instagram,
   Close,
 } from "@mui/icons-material";
+import { getAuthToken } from "@/utils/auth";
+
 const API_URL = "http://localhost:5000";
 /**
  * Universal Share Menu Component - can be used for any content type
@@ -51,6 +53,16 @@ const UniversalShareMenu = ({
     message: "",
     severity: "success",
   });
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   // Determine content path segment based on content type
   const getPathSegment = () => {
@@ -114,6 +126,10 @@ const UniversalShareMenu = ({
   };
 
   const copyToClipboard = async () => {
+    if (!authToken) {
+      return;
+    }
+    
     if (typeof window !== "undefined" && typeof navigator !== "undefined") {
       try {
         await navigator.clipboard.writeText(shareUrl);
@@ -128,6 +144,10 @@ const UniversalShareMenu = ({
   };
 
   const shareViaEmail = () => {
+    if (!authToken) {
+      return;
+    }
+    
     const subject = encodeURIComponent(`${getShareText()}`);
     const body = encodeURIComponent(getShareText("email"));
     window.open(`mailto:?subject=${subject}&body=${body}`);
@@ -136,40 +156,75 @@ const UniversalShareMenu = ({
   };
 
   const shareViaWhatsApp = () => {
+    if (!authToken) {
+      return;
+    }
+    
     const text = encodeURIComponent(`${getShareText()} ${shareUrl}`);
     window.open(`https://wa.me/?text=${text}`);
     onClose();
   };
 
   const shareViaLinkedIn = () => {
+    if (!authToken) {
+      return;
+    }
+    
     window.open(
       `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
         shareUrl
-      )}`
+      )}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
+      }
     );
     onClose();
   };
 
   const shareViaX = () => {
+    if (!authToken) {
+      return;
+    }
+    
     const text = encodeURIComponent(getShareText());
     window.open(
       `https://x.com/intent/tweet?text=${text}&url=${encodeURIComponent(
         shareUrl
-      )}`
+      )}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
+      }
     );
     onClose();
   };
 
   const shareViaFacebook = () => {
+    if (!authToken) {
+      return;
+    }
+    
     window.open(
       `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
         shareUrl
-      )}`
+      )}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
+      }
     );
     onClose();
   };
 
   const shareViaInstagram = () => {
+    if (!authToken) {
+      return;
+    }
+    
     // Instagram doesn't have a direct web sharing API, so copy the link
     // and show a message about sharing to Instagram
     copyToClipboard();
@@ -177,6 +232,10 @@ const UniversalShareMenu = ({
   };
 
   const useNativeShare = () => {
+    if (!authToken) {
+      return;
+    }
+    
     if (typeof window !== "undefined" && typeof navigator !== "undefined") {
       if (navigator.share) {
         navigator
@@ -184,6 +243,11 @@ const UniversalShareMenu = ({
             title: title,
             text: getShareText(),
             url: shareUrl,
+          },
+          {
+            headers: {
+              'Authorization': `Bearer ${authToken}`,
+            }
           })
           .then(() => showNotification("Shared successfully"))
           .catch(() => showNotification("Sharing canceled", "info"));

@@ -20,6 +20,7 @@ import {
   useTheme,
 } from "@mui/material";
 import { PhotoCamera, Add as AddIcon } from "@mui/icons-material";
+import { getAuthToken } from "@/utils/auth";
 
 const CreateProjectDialog = ({
   open,
@@ -34,6 +35,7 @@ const CreateProjectDialog = ({
 }) => {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
+  const [authToken, setAuthToken] = useState(null);
   
   const [newProject, setNewProject] = useState({
     title: "",
@@ -59,9 +61,24 @@ const CreateProjectDialog = ({
   const chipColor = isDark ? '#78a6ff' : '#4776E6';
 
   useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
+
+  useEffect(() => {
     const loadProjectDetails = async () => {
+      if (!authToken) return;
+      
       if (projectToEdit) {
-        const projectData = await fetchProjectDetails(projectToEdit._id);
+        const projectData = await fetchProjectDetails(projectToEdit._id, {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        });
 
         if (projectData) {
           setNewProject({
@@ -98,7 +115,7 @@ const CreateProjectDialog = ({
       setNewTag("");
       setImagePreview(null);
     }
-  }, [projectToEdit, open, fetchProjectDetails]);
+  }, [projectToEdit, open, fetchProjectDetails, authToken]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -142,6 +159,8 @@ const CreateProjectDialog = ({
 
   const handleSubmit = async () => {
     try {
+      if (!authToken) return;
+      
       const formData = new FormData();
       formData.append("title", newProject.title);
       formData.append("description", newProject.description);
@@ -163,9 +182,17 @@ const CreateProjectDialog = ({
 
       let result;
       if (projectToEdit) {
-        result = await updateProject(projectToEdit._id, formData);
+        result = await updateProject(projectToEdit._id, formData, {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        });
       } else {
-        result = await createProject(formData);
+        result = await createProject(formData, {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        });
       }
 
       if (result) {

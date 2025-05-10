@@ -22,7 +22,7 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import AddIcon from "@mui/icons-material/Add";
 import { useRouter } from "next/navigation";
 import BlogCreateForm from "@/components/blogs/BlogCreateForm";
-import { fetchUserData, hasPermission } from "@/utils/auth";
+import { fetchUserData, hasPermission, getAuthToken } from "@/utils/auth";
 
 // Styled components (keep all existing styled components)
 const StyledCard = styled(Card)(({ theme, delay }) => ({
@@ -170,6 +170,16 @@ export default function BlogCardGrid({ clubId, searchQuery = "" }) {
   const router = useRouter();
   const [arrayPermissions, setArrayPermissions] = useState({});
   const [canCreateBlogs, setCanCreateBlogs] = useState(false);
+  const [authToken, setAuthToken] = useState(null);
+
+  useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
 
   useEffect(() => {
     // Check permissions for all resources
@@ -283,6 +293,8 @@ export default function BlogCardGrid({ clubId, searchQuery = "" }) {
 
   useEffect(() => {
     const fetchBlogs = async () => {
+      if (!authToken) return;
+      
       let fetchStartTime = Date.now();
       setIsLoading(true);
       setShowSkeleton(true);
@@ -294,7 +306,11 @@ export default function BlogCardGrid({ clubId, searchQuery = "" }) {
           url += `?club_id=${clubId}`;
         }
 
-        const response = await fetch(url);
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        });
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -349,7 +365,7 @@ export default function BlogCardGrid({ clubId, searchQuery = "" }) {
     };
 
     fetchBlogs();
-  }, [clubId]);
+  }, [clubId, authToken]);
 
   // Filter blogs based on searchQuery prop and boardId
   useEffect(() => {
@@ -382,11 +398,16 @@ export default function BlogCardGrid({ clubId, searchQuery = "" }) {
   };
 
   const handleDelete = async (blogId) => {
+    if (!authToken) return;
+    
     try {
       const response = await fetch(
         `http://localhost:5000/blogs/blogs/${blogId}`,
         {
           method: "DELETE",
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
         }
       );
 
@@ -403,9 +424,16 @@ export default function BlogCardGrid({ clubId, searchQuery = "" }) {
   };
 
   const handleEdit = async (blog) => {
+    if (!authToken) return;
+    
     try {
       const response = await fetch(
-        `http://localhost:5000/blogs/blogs/${blog.id}`
+        `http://localhost:5000/blogs/blogs/${blog.id}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        }
       );
 
       if (!response.ok) {
@@ -444,12 +472,17 @@ export default function BlogCardGrid({ clubId, searchQuery = "" }) {
   };
 
   const handleView = async (blogId) => {
+    if (!authToken) return;
+    
     // Increment view count before navigation
     try {
       await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/blogs/blogs/${blogId}/views`,
         {
           method: "PATCH",
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
         }
       );
     } catch (error) {
@@ -462,6 +495,8 @@ export default function BlogCardGrid({ clubId, searchQuery = "" }) {
   };
 
   const handleFormSubmit = async (formData) => {
+    if (!authToken) return;
+    
     try {
       const url = isEditing
         ? `http://localhost:5000/blogs/blogs/${selectedBlog.id}`
@@ -502,6 +537,9 @@ export default function BlogCardGrid({ clubId, searchQuery = "" }) {
       const response = await fetch(url, {
         method: method,
         body: multipartFormData,
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        }
       });
 
       if (!response.ok) {

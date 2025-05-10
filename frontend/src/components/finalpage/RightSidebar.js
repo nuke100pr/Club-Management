@@ -9,6 +9,7 @@ import {
   AccessTime as AccessTimeIcon,
   LocationOn as LocationOnIcon
 } from '@mui/icons-material';
+import { getAuthToken } from "@/utils/auth";
 
 const API_URL = `${process.env.NEXT_PUBLIC_BACKEND_URL}/uploads`;
 
@@ -16,18 +17,36 @@ export default function RightSidebar({ userId }) {
   const [events, setEvents] = useState([]);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [eventsError, setEventsError] = useState(null);
+  const [authToken, setAuthToken] = useState(null);
   const router = useRouter();
   const theme = useTheme();
 
   useEffect(() => {
+    async function fetchAuthToken() {
+      const token = await getAuthToken();
+      setAuthToken(token);
+    }
+
+    fetchAuthToken();
+  }, []);
+
+  useEffect(() => {
     const fetchEvents = async () => {
       try {
+        if (!authToken) {
+          return;
+        }
+
         setEventsLoading(true);
         const url = userId
           ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/events?userId=${userId}`
           : `${process.env.NEXT_PUBLIC_BACKEND_URL}/events`;
 
-        const response = await fetch(url);
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          }
+        });
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
         const result = await response.json();
@@ -48,7 +67,7 @@ export default function RightSidebar({ userId }) {
     };
 
     fetchEvents();
-  }, [userId]);
+  }, [userId, authToken]);
 
   const cardBackground = theme.palette.mode === 'dark' 
     ? alpha(theme.palette.background.paper, 0.8)
